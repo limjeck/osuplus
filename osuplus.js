@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name         Moresu
-// @namespace    whatever
+// @name         osuplus
+// @namespace    https://osu.ppy.sh/u/1843447
 // @version      0.1
 // @description  show pp, selected mods and other stuff
 // @author       oneplusone
-// @include      http*//osu.ppy.sh/b/*
-// @include      http*//osu.ppy.sh/s/*
+// @include      http*://osu.ppy.sh/b/*
+// @include      http*://osu.ppy.sh/s/*
 // @include      http*://osu.ppy.sh/p/beatmap?b=*
 // @include      http*://osu.ppy.sh/p/beatmap?s=*
 // @grant        GM_xmlhttpRequest
@@ -16,17 +16,14 @@
 /* jshint -W097 */
 'use strict';
 
-// pls insert your own apikey here
-var apikey = "your key here";
-
-var result = null,
+var apikey = null,
+    hasKey = false,
+    result = null,
     mapID = null,
     mapsetID = null,
     mapMode = null,
     timeDelay = 1000,
     timeoutID = null,
-    requestedUpdate = false,
-    updateInProgress = true,
     songInfoRef = null,
     scoresTableRef = null,
     scoresTableBodyRef = null,
@@ -71,20 +68,21 @@ var modnames = [
     ];
 
 
-
 $(document).ready(function(){
-    p("hi");
     init();
     p(mapID);
     p(mapsetID);
     p(mapMode);
-    //playerCountries = GM_getValue("playerCountries", {});
-    //p(playerCountries);
-    //getPlayerCountry(264923, p);
 });
 
 function init(){
-    
+    apikey = GM_getValue("apikey", null);
+    if(apikey !== null){
+        hasKey = true;
+    }else{
+        hasKey = false;
+        displayGetKey();
+    }
     songInfoRef = $("#songinfo")[0];
     scoresTableRef = $(".beatmapListing")[0].children[0];
     scoresTableBodyRef = scoresTableRef.children[0];
@@ -100,13 +98,52 @@ function init(){
     }
     addBloodcatMirror();
     showMapValues();
-    putModButtons();
     
-    getScores({b:mapID, m:mapMode, limit:100}, function(response){
-        result = response;
-        //p(result);
-        addPPColHeader();
-        updateScoresTable();
+    if(hasKey){
+        putModButtons();
+        getScores({b:mapID, m:mapMode, limit:100}, function(response){
+            result = response;
+            addPPColHeader();
+            updateScoresTable();
+        });
+    }
+}
+
+function displayGetKey(){
+    $(document.body).prepend($("<div style='text-align: center; color: white'></div>")
+                             .attr("id", "osuplusnotice")
+                             .append("[osuplus] Click ",
+                                     $("<a>here</a>").click(promptKey),
+                                     " to use your osu!API key"
+                                    ));
+}
+
+function promptKey(){
+    var yourKey = prompt("Enter your API key");
+    if(yourKey !== null){
+        testKey(yourKey, function(islegit){
+            if(islegit){
+                GM_setValue("apikey", yourKey);
+                apikey = yourKey;
+                hasKey = true;
+                alert("API key worked! Your page will now refresh");
+                location.reload();
+            }else{
+                alert("API key failed :(");
+            }
+        });
+    }
+}
+
+function testKey(key, callback){
+    var url = "https://osu.ppy.sh/api/get_user?k=" + key;
+    GetPage(url, function(response){
+        var jresponse = JSON.parse(response);
+        if("error" in jresponse){
+            callback(false);
+        }else{
+            callback(true);
+        }
     });
 }
 
