@@ -1,5 +1,7 @@
 # osuplus
 
+A Tampermonkey userscript to add features to your boring osu! beatmap pages.
+
 ## Features
 - Displays up to top 100 scores
 - Displays pp for each score
