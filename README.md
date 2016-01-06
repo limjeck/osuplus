@@ -2,6 +2,7 @@
 
 ## Features
 - Displays up to top 100 scores
+- Displays pp for each score
 - Displays scores according to selected mods
 - Bloodcat mirror
 - Display numerical value of CS, AR, HP, OD
