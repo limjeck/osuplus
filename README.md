@@ -2,10 +2,14 @@
 
 A Tampermonkey userscript to add features to your boring osu! beatmap pages.
 
+## [Changelog](CHANGELOG.md)
+
 ## Features
 - Displays up to top 100 scores
 - Displays pp for each score
 - Displays scores according to selected mods
+- Display friend rankings
+- Search scores of any user
 - Bloodcat mirror
 - Display numerical value of CS, AR, HP, OD
 
