@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.0.1
+// @version      1.0.2
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -294,7 +294,7 @@ function updateScoreLeaderpp(scoreLeader, score){
     var rowclass = "row" + ((numrows+1)%2+1) + "p";
     scoreLeader.children().append($("<tr></tr>").attr("class", rowclass)
                                   .append($("<td><strong>pp</strong></td>"))
-                                  .append($("<td></td>").text(Math.round(score.pp)))
+                                  .append($("<td></td>").text(parseFloat(score.pp).toFixed(2)))
                                  );
 }
 
@@ -480,7 +480,7 @@ function makeScoreTableRow(score, rankno){
         $("<td></td>").text(rankno>0 ? "#" + rankno : ""),
         $("<td></td>").append(getRankImg(score.rank)),
         $("<td></td>").html(rankno===1 ? "<b>"+commarise(score.score)+"</b>" : commarise(score.score)),
-        $("<td></td>").text(Math.round(score.pp)),
+        $("<td></td>").text(parseFloat(score.pp).toFixed(2)),
         $("<td></td>").html(acc==100 ? "<b>"+acc.toFixed(2) + "%</b>" : acc.toFixed(2) + "%"),
         $("<td></td>").append(function(playerid, img){
             img.attr("class", "flag");
