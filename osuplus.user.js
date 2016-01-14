@@ -8,7 +8,6 @@
 // @include      http*://osu.ppy.sh/s/*
 // @include      http*://osu.ppy.sh/p/beatmap?b=*
 // @include      http*://osu.ppy.sh/p/beatmap?s=*
-// @updateURL    https://github.com/limjeck/osuplus/raw/master/osuplus.user.js
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
