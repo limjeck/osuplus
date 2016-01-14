@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.0
-// @description  show pp, selected mods and other stuff
+// @version      1.0.1
+// @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
 // @include      http*://osu.ppy.sh/s/*
@@ -220,7 +220,7 @@ function updateFriendsScores(){
         funs.push(function(uid){
             return function(callback){
                 getScores({b:mapID, u:uid, m:mapMode, type:"id"}, function(response){
-                    if(response && response.length > 0){
+                    if(response.length > 0){
                         result.push(response[0]);
                     }
                     callback();
@@ -560,13 +560,9 @@ function getPlayerCountry(playerid, callback){
         callback(playerCountries[playerid]);
     }else{
         function responseFun(response){
-            if(response == null){
-                getUser({u:playerid, type:"id"}, responseFun);
-            }else{
-                var country = response[0].country.toLowerCase();
-                savePlayerCountry(playerid, country);
-                callback(country);
-            }
+            var country = response[0].country.toLowerCase();
+            savePlayerCountry(playerid, country);
+            callback(country);
         }
         getUser({u:playerid, type:"id"}, responseFun);
     }
@@ -605,7 +601,7 @@ function getReplay(params, callback){
     */
     var url = "https://osu.ppy.sh/api/get_replay";
     params.k = apikey;
-    GetPage(getUrl(url, params), function(response){
+    persistGetPage(getUrl(url, params), function(response){
         callback(JSON.parse(response));
     });
 }
@@ -622,7 +618,7 @@ function getScores(params, callback){
     */
     var url = "https://osu.ppy.sh/api/get_scores";
     params.k = apikey;
-    GetPage(getUrl(url, params), function(response){
+    persistGetPage(getUrl(url, params), function(response){
         callback(JSON.parse(response));
     });
 }
@@ -637,7 +633,7 @@ function getUser(params, callback){
     */
     var url = "https://osu.ppy.sh/api/get_user";
     params.k = apikey;
-    GetPage(getUrl(url, params), function(response){
+    persistGetPage(getUrl(url, params), function(response){
         callback(JSON.parse(response));
     });
 }
@@ -652,6 +648,16 @@ function getUrl(url, params){
     }else{
         return url;
     }
+}
+
+function persistGetPage(url, callback){
+    GetPage(url, function(response){
+        if(response === null){
+            persistGetPage(url, callback);
+        }else{
+            callback(response);
+        }
+    });
 }
 
 function GetPage(url, callback) {
