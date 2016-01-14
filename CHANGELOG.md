@@ -1,3 +1,8 @@
+## 1.0.2 (14 Jan 2016)
+
+### Features
+- pp now to 2 decimal places
+
 ## 1.0.1 (14 Jan 2016)
 
 ### Bugfixes
