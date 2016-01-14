@@ -1,3 +1,8 @@
+## 1.0.3 (14 Jan 2016)
+
+### Bugfixes
+- Now works with Firefox!
+
 ## 1.0.2 (14 Jan 2016)
 
 ### Features
