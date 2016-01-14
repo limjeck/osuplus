@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.0.2
+// @version      1.0.3
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -71,7 +71,6 @@ var modnames = [
         ["PF", "SD"]
     ];
 
-
 $(document).ready(function(){
     init();
     p(mapID);
@@ -90,15 +89,14 @@ function init(){
     songInfoRef = $("#songinfo");
     scoresTableRef = $(".beatmapListing").children();
     scoresTableBodyRef = scoresTableRef.children();
-    var osuLink = songInfoRef.children().children().last().children().eq(2).children().eq(3).attr("href").split("/");
+    var osuLink = songInfoRef.children().children().last().children().eq(2).children("a").eq(2).attr("href").split("/");
     mapID = osuLink[osuLink.length - 1];
     var mapsetIDLink = $(".beatmap_download_link").last().attr("href").split("/");
     mapsetID = mapsetIDLink[mapsetIDLink.length - 1];
     mapMode = getMapmode();
     playerCountries = GM_getValue("playerCountries", {});
-    if(typeof localUserId !== "undefined"){
-        localUser = localUserId;
-    }
+    var temp = $(".content-infoline").children("div").children("b").children("a").attr("href").split("/");
+    localUser = temp[temp.length - 1];
     scoreListing = $(".beatmapListing");
     scoreListingTitlerow = $(".titlerow");
     addBloodcatMirror();
@@ -142,20 +140,7 @@ function addSearchUser(){
             .append(
                 $("<table width=100% cellspacing=0></table>").append("<tbody></tbody>").append(
                     scoreListingTitlerow.clone()
-                )/*
-                $("<table width=100% cellspacing=0>" +
-                  "<tbody><tr class=\"titlerow\"><th></th>" + 
-                  "<th><strong>Rank</strong></th>" +
-                  "<th><strong>Score</strong></th>" +
-                  "<th><strong>pp</strong></th>" +
-                  "<th><strong>Accuracy</strong></th>" +
-                  "<th><strong>Player</strong></th>" +
-                  "<th><strong>Max Combo</strong></th>" +
-                  "<th><strong>300 / 100 / 50</strong></th>" +
-                  "<th><strong>Geki</strong></th>" +
-                  "<th><strong>Katu</strong></th>" +
-                  "<th><strong>Misses</strong></th>" +
-                  "<th><strong>Mods</strong></th><th></th></tr></tbody></table>")*/
+                )
             ).hide()
         )
     );
@@ -559,12 +544,11 @@ function getPlayerCountry(playerid, callback){
     if(playerid in playerCountries){
         callback(playerCountries[playerid]);
     }else{
-        function responseFun(response){
+        getUser({u:playerid, type:"id"}, function(response){
             var country = response[0].country.toLowerCase();
             savePlayerCountry(playerid, country);
             callback(country);
-        }
-        getUser({u:playerid, type:"id"}, responseFun);
+        });
     }
 }
 
@@ -641,7 +625,7 @@ function getUser(params, callback){
 function getUrl(url, params){
     if(params){
         var paramarray = [];
-        for(k in params){
+        for(var k in params){
             paramarray.push(k + "=" + encodeURIComponent(params[k]));
         }
         return url + "?" + paramarray.join("&");
