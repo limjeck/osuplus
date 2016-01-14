@@ -480,7 +480,7 @@ function makeScoreTableRow(score, rankno){
         $("<td></td>").text(rankno>0 ? "#" + rankno : ""),
         $("<td></td>").append(getRankImg(score.rank)),
         $("<td></td>").html(rankno===1 ? "<b>"+commarise(score.score)+"</b>" : commarise(score.score)),
-        $("<td></td>").text(Math.round(score.pp)),
+        $("<td></td>").text(parseFloat(score.pp).toFixed(2)),
         $("<td></td>").html(acc==100 ? "<b>"+acc.toFixed(2) + "%</b>" : acc.toFixed(2) + "%"),
         $("<td></td>").append(function(playerid, img){
             img.attr("class", "flag");
