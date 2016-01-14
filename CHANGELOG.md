@@ -1,3 +1,8 @@
+## 1.0.1 (14 Jan 2016)
+
+### Bugfixes
+- Fix inconsistent friend ranking (the API can screw up if you do multiple requests at the same time, or something)
+
 ## 1.0 (13 Jan 2016)
 
 ### Features
