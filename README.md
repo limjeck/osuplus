@@ -18,8 +18,6 @@ A Tampermonkey userscript to add features to your boring osu! beatmap pages.
 - osu!api key (you can obtain it at https://osu.ppy.sh/p/api)
 
 ## How to install
-Click the Tampermonkey logo at the top right side of your browser (Tampermonkey should be enabled) and click "Add a new script..."
-
-Copy the script in https://raw.githubusercontent.com/limjeck/osuplus/master/osuplus.js and paste it in Tampermonkey and click the save button.
+Ensure you have Tampermonkey installed and enabled. Click [here](https://github.com/limjeck/osuplus/raw/master/osuplus.user.js) to install.
 
 Now go to any osu! beatmap listing page. It should prompt you for your API key at the top of the page. Simply paste your API key and done!
