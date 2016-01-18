@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.0.3
+// @version      1.1.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -11,7 +11,10 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_getResourceURL
+// @resource     bloodcatBtnImg https://i.imgur.com/87WeqCL.png
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js
+// @require      http://timeago.yarp.com/jquery.timeago.js
 // ==/UserScript==
 /* jshint -W097 */
 'use strict';
@@ -25,15 +28,16 @@ var apikey = null,
     timeDelay = 1000,
     timeoutID = null,
     songInfoRef = null,
-    scoresTableRef = null,
-    scoresTableBodyRef = null,
     playerCountries = null,
     modBtns = [],
     localUser = null,
     localScore = null,
     friends = null,
     scoreListing = null,
-    scoreListingTitlerow = null;
+    scoreListingTitlerow = null,
+    tableLoadingNotice = null,
+    showDates = false,
+    bloodcatBtnImg = null;
 
 var modnames = [
     {val: 1, name: "NoFail", short: "NF"},
@@ -87,18 +91,19 @@ function init(){
         displayGetKey();
     }
     songInfoRef = $("#songinfo");
-    scoresTableRef = $(".beatmapListing").children();
-    scoresTableBodyRef = scoresTableRef.children();
+    scoreListing = $(".beatmapListing");
+    scoreListingTitlerow = $(".titlerow");
     var osuLink = songInfoRef.children().children().last().children().eq(2).children("a").eq(2).attr("href").split("/");
     mapID = osuLink[osuLink.length - 1];
     var mapsetIDLink = $(".beatmap_download_link").last().attr("href").split("/");
     mapsetID = mapsetIDLink[mapsetIDLink.length - 1];
     mapMode = getMapmode();
     playerCountries = GM_getValue("playerCountries", {});
+    minePlayerCountries();
+    showDates = GM_getValue("showDates", false);
     var temp = $(".content-infoline").children("div").children("b").children("a").attr("href").split("/");
     localUser = temp[temp.length - 1];
-    scoreListing = $(".beatmapListing");
-    scoreListingTitlerow = $(".titlerow");
+    bloodcatBtnImg = GM_getResourceURL("bloodcatBtnImg");
     addBloodcatMirror();
     showMapValues();
     friends = GM_getValue("friends", []);
@@ -110,6 +115,7 @@ function init(){
     if(hasKey){
         putModButtons();
         putRankingType();
+        addTableLoadingNotice();
         getScores({b:mapID, m:mapMode, limit:100}, function(response){
             result = response;
             addScoreLeaderpp();
@@ -120,11 +126,16 @@ function init(){
     }
 }
 
+function addTableLoadingNotice(){
+    tableLoadingNotice = $("<div></div>").text("Loading...").hide();
+    scoreListing.after(tableLoadingNotice);
+}
+
 function addSearchUser(){
     $(".content-with-bg").children("h2").before(
         $("<div></div>").attr("id", "searchuser")
         .append(
-            $("<strong>Search user:</strong>"),
+            $("<strong>Search user: </strong>"),
             $("<input>").attr({type: "text",
                                id: "searchusertxt"})
             .bind("enterKey", searchUserEnter)
@@ -155,6 +166,7 @@ function searchUserEnter(){
             var searchResult = response[0];
             $("#searchuserresult").find(".titlerow").nextAll().remove();
             $("#searchuserresult").find(".titlerow").parent().children().last().after(makeScoreTableRow(searchResult, 0));
+            $(".timeago").timeago();
             $("#searchuserinfo").hide();
             $("#searchuserresult").show();
         }else{
@@ -176,9 +188,26 @@ function putRankingType(){
                                                            name: "rankingtype",
                                                            value: "friends"})
                                         .change(rankingTypeChanged),
-                                        "Friends")
+                                        "Friends"),
+            //Also add show date button
+            $("<label></label>").append($("<input>").attr({type: "checkbox",
+                                                           id: "showdatebox"})
+                                        .change(showDateChanged)
+                                        .prop("checked", showDates),
+                                        "Show Date")
         )
     );
+}
+
+function showDateChanged(){
+    showDates = $("#showdatebox").prop("checked");
+    GM_setValue("showDates", showDates);
+    updateShowDate();
+}
+
+function updateShowDate(){
+    if(showDates) $(".datecol").show();
+    else $(".datecol").hide();
 }
 
 function rankingTypeChanged(){
@@ -200,6 +229,8 @@ function rankingTypeChanged(){
 }
 
 function updateFriendsScores(){
+    clearScoresTable();
+    
     var funs = [];
     for(var i=0; i<friends.length+1; i++){
         funs.push(function(uid){
@@ -213,17 +244,42 @@ function updateFriendsScores(){
             };
         }(i<friends.length ? friends[i] : localUser));
     }
-    result = [];
     doManyFunc(funs, function(){
-        sortResult();
+        sortResult("score");
         updateScoresTable();
     });
 }
 
-function sortResult(){
-    result.sort(function(a,b){
-        return parseInt(b.score) - parseInt(a.score);
-    });
+function sortResult(sortby){
+    if(sortby === "score"){
+        result.sort(function(a,b){
+            var ascore = parseInt(a.score),
+                bscore = parseInt(b.score);
+            if(ascore < bscore){
+                return 1;
+            }else if(ascore > bscore){
+                return -1;
+            }else{
+                return getTime(a.date) - getTime(b.date);
+            }
+        });
+    }else if(sortby === "pp"){
+        result.sort(function(a,b){
+            var ascore = parseFloat(a.pp),
+                bscore = parseFloat(b.pp);
+            if(ascore < bscore){
+                return 1;
+            }else if(ascore > bscore){
+                return -1;
+            }else{
+                return getTime(a.date) - getTime(b.date);
+            }
+        });
+    }
+}
+
+function getTime(datestring){
+    return new Date(datestring).getTime();
 }
 
 function doManyFunc(funs, finalcallback){
@@ -284,12 +340,16 @@ function updateScoreLeaderpp(scoreLeader, score){
 }
 
 function displayGetKey(){
-    $(document.body).prepend($("<div style='text-align: center; color: white'></div>")
-                             .attr("id", "osuplusnotice")
-                             .append("[osuplus] Click ",
-                                     $("<a>here</a>").click(promptKey),
-                                     " to use your osu!API key"
-                                    ));
+    $(document.body).prepend($("<div style='text-align: center; background-color: red;'></div>")
+                             .append($("<h1 style='color: white;'></h1>")
+                                     .attr("id", "osuplusnotice")
+                                     .append("[osuplus] Click ",
+                                             $("<a>here</a>").click(promptKey),
+                                             " to use your osu!API key.<br>"+
+                                             "Don't have API key? Get from ",
+                                             $("<a href='/p/api'>here</a>"))
+                                    )
+                            );
 }
 
 function promptKey(){
@@ -339,7 +399,15 @@ function showMapValues(){
 
 function addBloodcatMirror(){
     if(mapsetID !== null){
-        $(".beatmap_download_link").last().after("<br>",$("<a></a>").text("Bloodcat mirror").attr("href", "http://bloodcat.com/osu/s/" + mapsetID))
+        $(".beatmapDownloadButton").first().before(
+            $("<div></div>").addClass("beatmapDownloadButton").append(
+                $("<a></a>").addClass("beatmap_download_link")
+                .attr("href", "http://bloodcat.com/osu/s/" + mapsetID)
+                .append($("<img>").attr("src", bloodcatBtnImg))
+            )
+        );
+        // old mirror
+        //$(".beatmap_download_link").last().after("<br>",$("<a></a>").text("Bloodcat mirror").attr("href", "http://bloodcat.com/osu/s/" + mapsetID))
     }
 }
 
@@ -379,6 +447,8 @@ function timeoutUpdate(){
 }
 
 function updateModScores(){
+    clearScoresTable();
+    
     var modval = getSelectedMods();
     if(modval < 0){
         getScores({b:mapID, m:mapMode, limit:100}, function(response){
@@ -433,7 +503,33 @@ function getMapmode(){
 }
 
 function addPPColHeader(){
-    scoreListingTitlerow.children().eq(2).after("<th><strong>pp</strong></th>");
+    if(mapMode == 3){
+        //because ppy fked up
+        scoreListingTitlerow.children().eq(12).remove();
+    }
+    scoreListingTitlerow.children().eq(2).after(
+        $("<th></th>")
+        .append($("<a><strong>pp</strong></a>")
+                .click(function(){
+            p("hey");
+            sortResult("pp");
+            updateScoresTable();
+        })
+               )
+    );
+    //Add click scores to sort
+    scoreListingTitlerow.children().eq(2).empty().append(
+        $("<a><strong>Score</strong></a>")
+        .click(function(){
+            p("hey");
+            sortResult("score");
+            updateScoresTable();
+        })
+    );
+    //Add date column
+    scoreListingTitlerow.children().last().before(
+        $("<th class='datecol'>Date</th>")
+    );
 }
 
 function addPPCol(){
@@ -441,16 +537,26 @@ function addPPCol(){
     scoreListingTitlerow.nextAll().each(function(ind,ele){$(ele).children().eq(2).after("<td>" + result[ind].pp + "</td>");});
 }
 
+function clearScoresTable(){
+    result = [];
+    updateScoresTable();
+    tableLoadingNotice.show();
+}
+
 function updateScoresTable(){
     scoreListingTitlerow.nextAll().remove();
     for(var i=0; i<result.length; i++){
         scoreListingTitlerow.parent().children().last().after(makeScoreTableRow(result[i], i+1));
     }
+    $(".timeago").timeago();
+    updateShowDate();
+    tableLoadingNotice.hide();
 }
 
 function makeScoreTableRow(score, rankno){
     var acc = calcAcc(score);
-    var rowclass;
+    var rowclass, dateset;
+    dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
     if(localUser !== null && localUser.toString() === score.user_id){
         rowclass = "row3p";
     }else if(isFriend(score.user_id)){
@@ -460,7 +566,7 @@ function makeScoreTableRow(score, rankno){
     }
     return $("<tr></tr>")
         .attr("class", rowclass)
-        .attr("title", score.date)
+        //.attr("title", score.date)
         .append(
         $("<td></td>").text(rankno>0 ? "#" + rankno : ""),
         $("<td></td>").append(getRankImg(score.rank)),
@@ -494,6 +600,9 @@ function makeScoreTableRow(score, rankno){
          $("<td></td>").text(score.countkatu)],
         $("<td></td>").text(score.countmiss),
         $("<td></td>").text(getMods(score.enabled_mods)),
+        $("<td></td>").addClass("datecol").append($("<time class='timeago'></time>")
+                                                  .attr("datetime", dateset.toISOString())
+                                                  .text(dateset.toLocaleString())),
         $("<td></td>").append($("<a></a>")
                               .attr("onclick", "reportscore("+score.score_id+");")
                               .text("Report"))
@@ -538,6 +647,17 @@ function getMods(modnum){
     }
     if(mods.length == 0) return "None";
     else return mods.reverse().join(",");
+}
+
+function minePlayerCountries(){
+    scoreListingTitlerow.nextAll().each(function(index, ele){
+        var data = $(ele).children().eq(4).children();
+        var temp = data.first().attr("src").split("/");
+        var country = temp[temp.length-1].split(".")[0];
+        temp = data.last().attr("href").split("/");
+        var uid = temp[temp.length-1];
+        savePlayerCountry(uid, country);
+    });
 }
 
 function getPlayerCountry(playerid, callback){
@@ -648,11 +768,8 @@ function GetPage(url, callback) {
     GM_xmlhttpRequest({
         method: "GET",
         url: url,
-        synchronous: true,
-        timeout: 4000,
-        headers: {
-            Referer: location.href
-        },
+        synchronous: false,
+        timeout: 0,
         onload: function (resp) {
             callback(resp.responseText);
         },
@@ -662,6 +779,4 @@ function GetPage(url, callback) {
     });
 }
 
-function p(s){
-    console.log(s);
-}
+var p = console.log.bind(console);
