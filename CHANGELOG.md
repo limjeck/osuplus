@@ -1,3 +1,18 @@
+## 1.2.0 (11 Feb 2016)
+
+#### Features
+- Mod icons
+- Allow fuzzy mod selection (e.g. so you can display scores with DT or HDDT)
+- Download replay of any score (if available)
+- [osu!preview](https://osu.ppy.sh/forum/t/383371)
+- Bolded star difficulty
+- Display max combo value
+- Images now hard-coded in base64
+
+#### Bugfixes
+- No longer displays your name twice in friend ranking if you are your own friend
+- No longer displays duplicate scores if you click buttons too fast
+
 ## 1.1.0 (18 Jan 2016)
 
 #### Features
