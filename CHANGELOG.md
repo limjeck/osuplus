@@ -1,3 +1,8 @@
+## 1.2.1 (15 Feb 2016)
+
+#### Bugfixes
+- Now works with Greasemonkey 1.15.1 on Pale Moon
+
 ## 1.2.0 (11 Feb 2016)
 
 #### Features
