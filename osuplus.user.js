@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.2.0
+// @version      1.2.1
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -240,7 +240,8 @@ function initVars(){
     temp = $(".beatmap_download_link").last().attr("href").split("/");
     mapsetID = temp[temp.length - 1];
     mapMode = getMapmode();
-    playerCountries = GM_getValue("playerCountries", {});
+    temp = GM_getValue("playerCountries", "{}");
+    playerCountries = typeof(temp) === "string" ? JSON.parse(temp) : {};
     minePlayerCountries();
     showDates = GM_getValue("showDates", false);
     temp = $(".content-infoline").children("div").children("b").children("a").attr("href").split("/");
@@ -1062,7 +1063,7 @@ function getPlayerCountry(playerid, callback){
 
 function savePlayerCountry(playerid, country){
     playerCountries[playerid] = country;
-    GM_setValue("playerCountries", playerCountries);
+    GM_setValue("playerCountries", JSON.stringify(playerCountries));
 }
 
 function getCountryUrl(country){
