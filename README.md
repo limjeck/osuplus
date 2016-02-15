@@ -1,6 +1,6 @@
 # osuplus
 
-A Tampermonkey userscript to add features to your boring osu! beatmap pages.
+A userscript to add features to your boring osu! beatmap pages.
 
 ## [Changelog](CHANGELOG.md)
 
