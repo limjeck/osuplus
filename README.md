@@ -17,6 +17,8 @@ A userscript to add features to your boring osu! beatmap pages.
 - Display numerical value of CS, AR, HP, OD
 - [osu!preview](https://osu.ppy.sh/forum/t/383371)
 - Display max combo value
+- Display recent plays (including failed scores) in userpage
+- Display top 100 most played maps in userpage
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
