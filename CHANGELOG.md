@@ -1,3 +1,16 @@
+## 1.3.0 (9 May 2016)
+
+#### Features
+- osu!mania mods
+- Display recent plays (including failed scores) in userpage
+- Display top 100 most played maps in userpage
+- Display total 300/100/50 hits
+- Display hits/play
+
+#### Bugfixes
+- Improved performance
+- Reduced size of images
+
 ## 1.2.1 (15 Feb 2016)
 
 #### Bugfixes
