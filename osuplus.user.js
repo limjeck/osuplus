@@ -441,7 +441,7 @@ var osuplusUserpage = (function(){
             var temp = response.match(/json-user.*\n.*\n/);
             if(temp.length > 0){
                 var userInfo = JSON.parse(temp[0].split("\n")[1].trim());
-                p(userInfo);
+                //p(userInfo);
 
                 container.append("<h2>Most Played</h2>");
 
