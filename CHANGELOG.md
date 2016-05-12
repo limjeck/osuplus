@@ -1,3 +1,8 @@
+## 1.3.1 (12 May 2016)
+
+#### Bugfixes
+- Fixed most played not working
+
 ## 1.3.0 (9 May 2016)
 
 #### Features
