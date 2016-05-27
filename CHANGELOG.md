@@ -1,3 +1,14 @@
+## 1.4.0 (27 May 2016)
+
+#### Features
+- Detailed top ranks
+- Star rating in most played
+- Slider to highlight recent scores in beatmap listing and top ranks
+
+#### Bugfixes
+- Fixed most played not working (again)
+- Fixed taiko acc calculation
+
 ## 1.3.1 (12 May 2016)
 
 #### Bugfixes
