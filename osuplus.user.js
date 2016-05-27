@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.3.1
+// @version      1.4.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -253,13 +253,20 @@ var osuplusUserpage = (function(){
         userRecent = null,
         beatmapsCache = null,
         observer = null,
-        generalObserver = null;
+        generalObserver = null,
+        topObserver = null,
+        topSlider = null,
+        topSliderLbl = null,
+        topSliderCB = null;
 
     function addCss(){
         $(document.head).append($("<style></style>").html(
             ".pc-display {text-align: right; font-size: 175%; color: #9492dc; text-shadow: #b5c6cb 2px 0px 3px; padding-right: 5px;}\n" + 
             ".pc-img {width: 80px;}\n" +
-            ".pc-imgcol {width: 90px;}"
+            ".pc-imgcol {width: 90px;}\n" +
+            "#opslider {width: 250px;}\n" +
+            ".recentscore {background-color: greenyellow;}\n" +
+            ".star-display {text-align: right; color: #444444; padding-right: 5px;}"
         ));
     }
 
@@ -302,6 +309,12 @@ var osuplusUserpage = (function(){
         });
         observer.observe($(".profileGameModes")[0], {attributes:true, subtree:true});
 
+        //Listen for expand top ranks
+        topObserver = new MutationObserver(function(mutations){
+            detailedTop();
+        });
+        topObserver.observe($("#leader")[0], {attributes:true, subtree:true});
+
         doGeneral();
         addMostPlayed();
         addRecent();
@@ -322,6 +335,69 @@ var osuplusUserpage = (function(){
             $("#recent").removeClass("loaded").empty();
             gameMode = gm;
         }
+    }
+
+    function detailedTop(){
+        //Put slider
+        if($("#leader").find("#opslider").length === 0){
+            var sliderDiv = createSlider(function(val, checked){
+                if(checked){
+                    var tops = $(".prof-beatmap");
+                    var curTime = new Date();
+                    tops.each(function(index, top){
+                        top = $(top);
+                        if(!top.attr("id")) return;
+                        var scoreTime = new Date(top.find("time").attr("datetime"));
+                        var diff = (curTime - scoreTime) / (1000*60*60*24);
+                        if(diff < val){
+                            top.find("table").addClass("recentscore");
+                        }else{
+                            top.find("table").removeClass("recentscore");
+                        }
+                    });
+                }else{
+                    $(".prof-beatmap").removeClass("recentscore");
+                }
+            });
+            $("#leader").find("h2").first().after(sliderDiv);
+        }
+
+        //Update tops
+        var tops = $("#leader").find(".prof-beatmap").filter(":not(.oploading,.oploaded)");
+        tops.each(function(index, top){
+            top = $(top);
+            top.addClass("oploading");
+            var mapId = top.attr("id");
+            if(!mapId) return;
+            mapId = mapId.split("-")[1];
+            getScores({b: mapId, u: userId, m: gameMode, type: "id"}, function(score){
+                getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
+                    top.removeClass("oploading").addClass("oploaded");
+                    if(score.length < 1 || beatmap.length < 1) return;
+                    else{
+                        score = score[0];
+                        beatmap = beatmap[0];
+                    }
+
+                    var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
+                    maxmapcombo.text("(" + beatmap.max_combo + "x)");
+                    var h = top.find(".h");
+                    if(score.perfect === "1"){
+                        h.append("(FC)");
+                    }
+                    h.append(
+                        $("<div></div>").append(
+                            $("<b></b>").append(
+                                commarise(score.score) + " / " + 
+                                score.maxcombo + "x",
+                                maxmapcombo
+                            ),
+                            " { " + score.count300 + " / " + score.count100 + " / " + score.count50 + " / " + score.countmiss + " }"
+                        )
+                    );
+                });
+            });
+        });
     }
 
     function doGeneral(){
@@ -404,17 +480,17 @@ var osuplusUserpage = (function(){
     function addMostPlayedContent(container){
         function makeItem(beatmapInfo){
             var maplink = $("<a href='/b/" + beatmapInfo.beatmap.data.id + "'></a>"),
-                mapperlink = $("<a href='/u/" + beatmapInfo.beatmapSet.data.user_id + "'>" + beatmapInfo.beatmapSet.data.creator + "</a>");
+                mapperlink = $("<a href='/u/" + beatmapInfo.beatmapset.data.user_id + "'>" + beatmapInfo.beatmapset.data.creator + "</a>");
             maplink.append(
-                beatmapInfo.beatmapSet.data.artist + " - ",
-                beatmapInfo.beatmapSet.data.title,
+                beatmapInfo.beatmapset.data.artist + " - ",
+                beatmapInfo.beatmapset.data.title,
                 " [" + beatmapInfo.beatmap.data.version + "]"
             );
 
             return $("<div class='prof-beatmap'></div>").append(
                 $("<table></table>").append($("<tr></tr>").append(
                     $("<td class='pc-imgcol'></td>").append(
-                        $("<img class='pc-img' src='" + beatmapInfo.beatmapSet.data.covers.list + "'></img>")
+                        $("<img class='pc-img' src='" + beatmapInfo.beatmapset.data.covers.list + "'></img>")
                     ),
                     $("<td></td>").append(
                         $("<div></div>").append(
@@ -428,9 +504,8 @@ var osuplusUserpage = (function(){
                         )
                     ),
                     $("<td></td>").append(
-                        $("<div class='pc-display'></div>").append(
-                            $("<b>" + beatmapInfo.count + " plays</b>")
-                        )
+                        $("<div class='pc-display'><b>" + beatmapInfo.count + " plays</b></div>"),
+                        $("<div class='star-display'>" + beatmapInfo.beatmap.data.difficulty_rating.toFixed(2) + "&#9733;</div>")
                     )
                 ))
             );
@@ -468,7 +543,7 @@ var osuplusUserpage = (function(){
                     );
                 }
             }else{
-                p("invalid new page");
+                container.append("<h2>An error has occurred</h2>");
             }
         });
     }
@@ -504,12 +579,14 @@ var osuplusUserpage = (function(){
                     dateset = new Date(play.date.replace(' ','T') + "+0800"), // dates from API in GMT+8
                     maplink = $("<a href='/b/" + play.beatmap_id + "?m=" + gameMode + "'></a>").text("Loading..."),
                     maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
+                    //starrating = $("<b>...&#9733;</b>"),
                     failClass = play.rank === "F" ? "failedScore" : "passScore";
                 
                 getBeatmapsCache({b: play.beatmap_id, m: gameMode, a: 1}, function(response){
                     var r = response[0];
                     maplink.text(r.artist + " - " + r.title + " [" + r.version + "]");
                     maxmapcombo.text("(" + r.max_combo + "x)");
+                    //starrating.html(parseFloat(r.difficultyrating).toFixed(2) + "&#9733;");
                 });
 
                 container.append($("<div class='prof-beatmap'></div>").addClass(failClass).append(
@@ -591,7 +668,10 @@ var osuplusBeatmapListing = (function(){
             ".isSelected {border: 3px solid red;}\n" +
             ".partialSelected {border: 3px dashed red;}\n" +
             ".osupreview {width: 425px; height: 344px;}\n" +
-            ".count-display {text-align: right;}"
+            ".count-display {text-align: right;}\n" +
+            "#opslider {width: 250px;}\n" +
+            ".recentscore {background-color: greenyellow;}\n" +
+            ".recentscore:hover {background: #fde1ff; cursor: pointer;}"
         ));
     }
 
@@ -658,6 +738,7 @@ var osuplusBeatmapListing = (function(){
                 putModButtons();
                 putRankingType();
                 addSearchUser();
+                addSlider();
             });
         }
 
@@ -665,6 +746,29 @@ var osuplusBeatmapListing = (function(){
             // save player's countries
             GM_setValue("playerCountries", JSON.stringify(playerCountries));
         });
+    }
+
+    function addSlider(){
+        scoreListing.before(
+            createSlider(function(val, checked){
+                var rows = scoreListingTitlerow.nextAll();
+                if(checked){
+                    var curTime = new Date();
+                    rows.each(function(index, row){
+                        row = $(row);
+                        var scoreTime = new Date(row.find("time").attr("datetime"));
+                        var diff = (curTime - scoreTime) / (1000*60*60*24);
+                        if(diff < val){
+                            row.addClass("recentscore");
+                        }else{
+                            row.removeClass("recentscore");
+                        }
+                    });
+                }else{
+                    rows.removeClass("recentscore");
+                }
+            })
+        );
     }
 
     function abortReqs(){
@@ -1411,6 +1515,37 @@ var osuplusBeatmapListing = (function(){
 })();
 
 
+
+
+function createSlider(valueChange){
+    var slider, sliderLbl, sliderCB;
+    function getValue(){
+        var rawval = slider.val();
+        if(rawval <= 7){
+            return rawval;
+        }else if(rawval <= 9){
+            return (rawval - 6) * 7;
+        }else{
+            return (rawval - 9) * 30;
+        }
+    }
+
+    var changeFun = function(){
+        sliderLbl.text(getValue());
+        valueChange(getValue(), sliderCB.prop("checked"));
+    }
+
+    slider = $("<input type='range' min=1 max=21 id='opslider' value=7>").on("input", changeFun);
+    sliderLbl = $("<span>7</span>");
+    sliderCB = $("<input type=checkbox id='topcb'/>").change(changeFun);
+    return $("<div></div>").append(
+        slider,
+        $("<label></label>").append(
+            sliderCB, "Highlight past ", sliderLbl, " days"
+        )
+    );
+}
+
 function displayGetKey(){
     $(document.body).prepend($("<div style='text-align: center; background-color: red;'></div>")
                              .append($("<h1 style='color: white;'></h1>")
@@ -1482,9 +1617,12 @@ function calcAcc(score, mode){
         cmiss = parseInt(score.countmiss),
         cgeki = parseInt(score.countgeki),
         ckatu = parseInt(score.countkatu);
-    if(mode === 0 || mode === 1){
-        // Standard/Taiko
+    if(mode === 0){
+        // Standard
         return 100.0 * (6*c300 + 2*c100 + c50) / (6*(c50 + c100 + c300 + cmiss));
+    }else if(mode === 1){
+        // Taiko
+        return 100.0 * (2*c300 + c100) / (2*(c300 + c100 + cmiss));
     }else if(mode === 2){
         //CTB
         return 100.0 * (c300 + c100 + c50) / (c300 + c100 + c50 + ckatu + cmiss);
