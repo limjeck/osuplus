@@ -1,6 +1,6 @@
 # osuplus
 
-A userscript to add features to your boring osu! beatmap pages.
+A userscript to add features to your boring osu! web pages.
 
 ## [Changelog](CHANGELOG.md)
 
@@ -19,6 +19,8 @@ A userscript to add features to your boring osu! beatmap pages.
 - Display max combo value
 - Display recent plays (including failed scores) in userpage
 - Display top 100 most played maps in userpage
+- Detailed top ranks
+- Slider to highlight recent scores in beatmap listing and top ranks
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
