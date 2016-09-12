@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.4.0
+// @version      1.5.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -9,6 +9,7 @@
 // @include      http*://osu.ppy.sh/p/beatmap?b=*
 // @include      http*://osu.ppy.sh/p/beatmap?s=*
 // @include      http*://osu.ppy.sh/u/*
+// @include      http*://osu.ppy.sh/p/pp*
 // @noframes
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
@@ -24,6 +25,8 @@
 var bloodcatBtnImg = "data:image/png;base64,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",
 
     FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
+
+    loaderImg = "data:image/gif;base64,R0lGODlhEAAQAPIAAKmp/wAAAIGBwisrQgAAAEFBYlZWgmFhkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==",
 
     modIconImgs = {
         //http://puu.sh/n41q9/dd04d2b8b6.png
@@ -85,7 +88,8 @@ var bloodcatBtnImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAACLCAYA
     }
 
 var BEATMAPLISTING = 0,
-    USERPAGE = 1;
+    USERPAGE = 1,
+    PPRANKING = 2;
 
 var apikey = null,
     hasKey = false,
@@ -128,7 +132,7 @@ var modnames = [
     ];
 
 //----------------------
-// Replay composer
+// Replay composer 
 //----------------------
 
 var Replayer = (function(){
@@ -224,12 +228,15 @@ $(document).ready(function(){
     //GM_setValue("apikey", null);
     var url = window.location.href;
     init();
-    if(url.match(/^https?:\/\/osu.ppy.sh\/u\//)){ 
+    if(url.match(/^https?:\/\/osu\.ppy\.sh\/u\//)){ 
         pageType = USERPAGE;
         osuplusUserpage.init();
-    }else{
+    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/([bs]\/|beatmap\?)/)){
         pageType = BEATMAPLISTING;
         osuplusBeatmapListing.init();
+    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/pp/)){
+    	pageType = PPRANKING;
+    	osuplusPpRanking.init();
     }
 });
 
@@ -242,6 +249,96 @@ function init(){
         displayGetKey();
     }
 }
+
+var osuplusPpRanking = (function(){
+	var country = null,
+		isGlobal = true,
+		mode = null,
+		tableBody = null,
+		tableLoadingNotice = null,
+		playerInfo = [];
+
+
+    function addCss(){
+        $(document.head).append($("<style></style>").html(
+            ".centered {display: block; margin-left: auto; margin-right: auto;}"
+        ));
+    }
+
+	function init(){
+		addCss();
+		if(window.location.search === ""){
+			isGlobal = true;
+			mode = 0;
+		}else{
+			var searchObj = searchParser(window.location.search);
+			if(searchObj.c === undefined){
+				isGlobal = true;
+			}else{
+				isGlobal = false;
+			}
+			if(searchObj.m === undefined){
+				mode = 0;
+			}else{
+				mode = searchObj.m;
+			}
+		}
+		tableBody = $(".beatmapListing > tbody");
+
+		//Add Loader
+		tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
+        $("#tablist").before(tableLoadingNotice);
+
+        //Get player list
+        var playerList = [];
+        tableBody.children().first().nextAll().each(function(index, ele){
+        	var href = $(ele).children().eq(1).children().eq(1).attr("href");
+        	playerList[index] = href.split("/")[2];
+        });
+        var funs = [];
+        playerList.forEach(function(id, index){
+        	funs.push(function(donecb){
+        		getUser({u: id, m: mode, type: "id"}, function(response){
+        			playerInfo[index] = response[0];
+        			donecb();
+        		});
+        	});
+        });
+    	doManyFunc(funs, function(){
+    		tableLoadingNotice.hide();
+    		
+    		//Add new headers
+    		var newHeader = isGlobal ? "Country" : "Global";
+    		tableBody.children().first().children().first().after("<th>" + newHeader + "</th>");
+
+    		//Add new ranks
+    		tableBody.children().first().nextAll().each(function(index, row){
+    			row = $(row);
+    			var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
+    			row.children().first().after("<td>#" + newRank + "</td>");
+    		});
+    	})
+	}
+
+	function addTableLoadingNotice(){
+        
+    }
+
+	function searchParser(str){
+		if(str[0] === "?") str = str.slice(1);
+		var arr = str.split("&");
+		var rtn = {};
+		arr.forEach(function(x){
+			var xsplit = x.split("=");
+			if(xsplit.length > 1){
+				rtn[xsplit[0]] = xsplit[1];
+			}
+		})
+		return rtn;
+	}
+
+	return {init: init}
+})();
 
 var osuplusUserpage = (function(){
     var userId = null,
@@ -356,7 +453,7 @@ var osuplusUserpage = (function(){
                         }
                     });
                 }else{
-                    $(".prof-beatmap").removeClass("recentscore");
+                    $(".prof-beatmap > table").removeClass("recentscore");
                 }
             });
             $("#leader").find("h2").first().after(sliderDiv);
@@ -380,7 +477,9 @@ var osuplusUserpage = (function(){
                     }
 
                     var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
-                    maxmapcombo.text("(" + beatmap.max_combo + "x)");
+                    if(beatmap.max_combo !== null){
+                    	maxmapcombo.text("(" + beatmap.max_combo + "x)");
+                    }
                     var h = top.find(".h");
                     if(score.perfect === "1"){
                         h.append("(FC)");
@@ -585,7 +684,9 @@ var osuplusUserpage = (function(){
                 getBeatmapsCache({b: play.beatmap_id, m: gameMode, a: 1}, function(response){
                     var r = response[0];
                     maplink.text(r.artist + " - " + r.title + " [" + r.version + "]");
-                    maxmapcombo.text("(" + r.max_combo + "x)");
+                    if(r.max_combo !== null){
+                    	maxmapcombo.text("(" + r.max_combo + "x)");
+                    }
                     //starrating.html(parseFloat(r.difficultyrating).toFixed(2) + "&#9733;");
                 });
 
@@ -648,7 +749,8 @@ var osuplusBeatmapListing = (function(){
         scoreListing = null,
         scoreListingTitlerow = null,
         tableLoadingNotice = null,
-        showDates = false,
+        showDates = true,
+        showPpRank = true,
         modsEnabled = true,
         osupreviewLoaded = false,
         scoreReqs = [],
@@ -671,7 +773,8 @@ var osuplusBeatmapListing = (function(){
             ".count-display {text-align: right;}\n" +
             "#opslider {width: 250px;}\n" +
             ".recentscore {background-color: greenyellow;}\n" +
-            ".recentscore:hover {background: #fde1ff; cursor: pointer;}"
+            ".recentscore:hover {background: #fde1ff; cursor: pointer;}\n" +
+            ".centered {display: block; margin-left: auto; margin-right: auto;}"
         ));
     }
 
@@ -690,8 +793,9 @@ var osuplusBeatmapListing = (function(){
         //GM_setValue("playerCountries", "{}");
         temp = GM_getValue("playerCountries", "{}");
         playerCountries = typeof(temp) === "string" ? JSON.parse(temp) : {};
-        minePlayerCountries();
-        showDates = GM_getValue("showDates", false);
+        //minePlayerCountries();
+        showDates = GM_getValue("showDates", true);
+        showPpRank = GM_getValue("showPpRank", true);
         temp = $(".content-infoline").children("div").children("b");
         if(temp.length > 0){
             temp = temp.children("a").attr("href").split("/");
@@ -713,6 +817,12 @@ var osuplusBeatmapListing = (function(){
         addOsuPreview();
 
         if(hasKey){
+            putModButtons();
+            putRankingType();
+            addSearchUser();
+            addSlider();
+            addTableLoadingNotice();
+
             doManyFunc([
                 function(callback){
                     getBeatmapInfo(function(response){
@@ -725,20 +835,16 @@ var osuplusBeatmapListing = (function(){
                     });
                 },
                 function(callback){
-                    getScores({b:mapID, m:mapMode, limit:100}, function(response){
+                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:100}, function(response){
                         result = response;
+                        p(response);
                         callback();
                     });
                 }
             ], function(){
-                addTableLoadingNotice();
-                addScoreLeaderpp();
-                modifyTableHeaders();
+            	modifyTableHeaders();
+            	addScoreLeaderpp();
                 updateScoresTable();
-                putModButtons();
-                putRankingType();
-                addSearchUser();
-                addSlider();
             });
         }
 
@@ -797,8 +903,8 @@ var osuplusBeatmapListing = (function(){
     }
 
     function addTableLoadingNotice(){
-        tableLoadingNotice = $("<div></div>").text("Loading...");
-        scoreListing.after(tableLoadingNotice);
+        tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
+        scoreListing.before(tableLoadingNotice);
     }
 
     function addSearchUser(){
@@ -832,7 +938,7 @@ var osuplusBeatmapListing = (function(){
         $("#searchuserresult").hide();
         var searchusername = $("#searchusertxt").val();
         
-        getScores({b:mapID, u:searchusername, m:mapMode, type:"string"}, function(response){
+        getScoresWithPlayerInfo({b:mapID, u:searchusername, m:mapMode, type:"string"}, function(response){
             if(response && response.length > 0){
                 var searchResult = response[0];
                 $("#searchuserresult").find(".titlerow").nextAll().remove();
@@ -863,14 +969,31 @@ var osuplusBeatmapListing = (function(){
                                                                value: "friends"})
                                             .change(rankingTypeChanged),
                                             "Friends"),
-                //Also add show date button
+                //Show pp rank button
+                $("<label></label>").append($("<input>").attr({type: "checkbox",
+            												   id: "showpprankbox"})
+                							.change(showPpRankChanged)
+                							.prop("checked", showPpRank),
+                							"Show pp rank"),
+                //Show date button
                 $("<label></label>").append($("<input>").attr({type: "checkbox",
                                                                id: "showdatebox"})
                                             .change(showDateChanged)
                                             .prop("checked", showDates),
-                                            "Show Date")
+                                            "Show date")
             )
         );
+    }
+
+    function showPpRankChanged(){
+    	showPpRank = $("#showpprankbox").prop("checked");
+        GM_setValue("showDates", showDates);
+        updateShowPpRank();
+    }
+
+    function updateShowPpRank(){
+    	if(showPpRank) $(".pprank").show();
+    	else $(".pprank").hide();
     }
 
     function showDateChanged(){
@@ -912,7 +1035,7 @@ var osuplusBeatmapListing = (function(){
         for(var i=0; i<friends2.length; i++){
             funs.push(function(uid){
                 return function(callback){
-                    getScores({b:mapID, u:uid, m:mapMode, type:"id"}, function(response){
+                    getScoresWithPlayerInfo({b:mapID, u:uid, m:mapMode, type:"id"}, function(response){
                         if(response.length > 0){
                             result.push(response[0]);
                         }
@@ -949,7 +1072,15 @@ var osuplusBeatmapListing = (function(){
                 }else if(ascore > bscore){
                     return -1;
                 }else{
-                    return getTime(a.date) - getTime(b.date);
+                	ascore = parseFloat(a.score);
+                	bscore = parseFloat(b.score);
+                	if(ascore < bscore){
+                		return 1;
+                	}else if(ascore > bscore){
+                		return -1;
+                	}else{
+                    	return getTime(a.date) - getTime(b.date);
+                    }
                 }
             });
         }
@@ -978,7 +1109,7 @@ var osuplusBeatmapListing = (function(){
         var scoreLeaders = $(".scoreLeader");
         if(scoreLeaders.length > 0) updateScoreLeaderpp(scoreLeaders.first(), result[0]);
         if(scoreLeaders.length > 1){
-            getScores({b:mapID, u:localUser, m:mapMode, type:"id"}, function(response){
+            getScoresWithPlayerInfo({b:mapID, u:localUser, m:mapMode, type:"id"}, function(response){
                 if(response.length > 0){
                     localScore = response[0];
                     updateScoreLeaderpp(scoreLeaders.eq(1), localScore);
@@ -1266,7 +1397,7 @@ var osuplusBeatmapListing = (function(){
             var modval = modvals[i];
             if(modval < 0){
                 funs.push(function(callback){
-                    getScores({b:mapID, m:mapMode, limit:100}, function(response){
+                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:100}, function(response){
                         result = result.concat(response);
                         callback();
                     }, scoreReqs);
@@ -1274,7 +1405,7 @@ var osuplusBeatmapListing = (function(){
             }else{
                 funs.push(function(modval){
                     return function(callback){
-                        getScores({b:mapID, m:mapMode, limit:100, mods:modval}, function(response){
+                        getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:100, mods:modval}, function(response){
                             result = result.concat(response);
                             callback();
                         }, scoreReqs);
@@ -1399,6 +1530,7 @@ var osuplusBeatmapListing = (function(){
             scoreListingTitlerow.nextAll().remove();
             tableRef.append(tableRows);
             $(".timeago").timeago();
+            updateShowPpRank();
             updateShowDate();
             tableLoadingNotice.hide();
             if(callback) callback();
@@ -1406,56 +1538,56 @@ var osuplusBeatmapListing = (function(){
     }
 
     function makeScoreTableRow(score, rankno, callback){
-        getPlayerCountry(score.user_id, function(country){
-            var acc = calcAcc(score, mapMode);
-            var rowclass, dateset;
-            dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
-            if(localUser !== null && localUser.toString() === score.user_id){
-                rowclass = "row3p";
-            }else if(isFriend(score.user_id)){
-                rowclass = "row4p";
-            }else{
-                rowclass = "row" + ((rankno+1)%2 + 1) + "p";
-            }
+        var country = score.user.country.toLowerCase();
+        var acc = calcAcc(score, mapMode);
+        var rowclass, dateset;
+        dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
+        if(localUser !== null && localUser.toString() === score.user_id){
+            rowclass = "row3p";
+        }else if(isFriend(score.user_id)){
+            rowclass = "row4p";
+        }else{
+            rowclass = "row" + ((rankno+1)%2 + 1) + "p";
+        }
 
-            var countryImg = "<img src=" + getCountryUrl(country) + ">";
-            var userhref = "<a href='/u/" + score.user_id +"''>" + score.username + "</a>";
-            
-            var tableRow = ["<tr class='" + rowclass + "'>",
-                "<td><a class='require-login' href='/web/osu-getreplay.php?c=" + score.score_id,
-                    "&amp;m=" + mapMode + "'>#" + rankno + "</a></td>",
-                "<td>" + getRankImg(score.rank) + "</td>",
-                "<td>" + (rankno===1 ? "<b>"+commarise(score.score)+"</b>" : commarise(score.score)) + "</td>",
-                "<td>" + parseFloat(score.pp).toFixed(2) + "</td>",
-                "<td>" + (acc==100 ? "<b>"+acc.toFixed(2)+"%</b>" : acc.toFixed(2) + "%") + "</td>",
-                "<td>" + countryImg + "\n" + userhref + "</td>",
-                "<td>" + score.maxcombo + "</td>",
-                mapMode === 3 ?
-                // Mania
-                ["<td>" + score.countgeki + "</td>",
-                 "<td>" + score.count300 + "</td>",
-                 "<td>" + score.countkatu + "</td>",
-                 "<td>" + score.count100 + "</td>",
-                 "<td>" + score.count50 + "</td>"].join("") :
-                // Standard/Taiko/CTB
-                ["<td>" + score.count300 + "&nbsp;&nbsp;/&nbsp;&nbsp;",
-                          score.count100 + "&nbsp;&nbsp;/&nbsp;&nbsp;",
-                          score.count50 + "</td>",
-                 "<td>" + score.countgeki + "</td>",
-                 "<td>" + score.countkatu + "</td>"].join(""),
-                "<td>" + score.countmiss + "</td>",
-                "<td>" + getMods(score.enabled_mods) + "</td>",
-                "<td class='datecol'>",
-                    "<time class='timeago' datetime='" + dateset.toISOString() + "'>",
-                        dateset.toLocaleString() + "</time>",
-                "</td>",
-                "<td><a onclick='reportscore(" + score.score_id + ");'>Report</a></td>",
-                //"<td><a onclick='alert(\"hi\")'>Replay</a></td>",
-                "</tr>"
-            ].join("");
+        var countryImg = "<img src=" + getCountryUrl(country) + ">";
+        var userhref = "<a href='/u/" + score.user_id +"''>" + score.username + "</a>";
+        var pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
+        
+        var tableRow = ["<tr class='" + rowclass + "'>",
+            "<td><a class='require-login' href='/web/osu-getreplay.php?c=" + score.score_id,
+                "&amp;m=" + mapMode + "'>#" + rankno + "</a></td>",
+            "<td>" + getRankImg(score.rank) + "</td>",
+            "<td>" + (rankno===1 ? "<b>"+commarise(score.score)+"</b>" : commarise(score.score)) + "</td>",
+            "<td>" + parseFloat(score.pp).toFixed(2) + "</td>",
+            "<td>" + (acc==100 ? "<b>"+acc.toFixed(2)+"%</b>" : acc.toFixed(2) + "%") + "</td>",
+            "<td>" + countryImg + "\n" + userhref + pprank + "</td>",
+            "<td>" + score.maxcombo + "</td>",
+            mapMode === 3 ?
+            // Mania
+            ["<td>" + score.countgeki + "</td>",
+             "<td>" + score.count300 + "</td>",
+             "<td>" + score.countkatu + "</td>",
+             "<td>" + score.count100 + "</td>",
+             "<td>" + score.count50 + "</td>"].join("") :
+            // Standard/Taiko/CTB
+            ["<td>" + score.count300 + "&nbsp;&nbsp;/&nbsp;&nbsp;",
+                      score.count100 + "&nbsp;&nbsp;/&nbsp;&nbsp;",
+                      score.count50 + "</td>",
+             "<td>" + score.countgeki + "</td>",
+             "<td>" + score.countkatu + "</td>"].join(""),
+            "<td>" + score.countmiss + "</td>",
+            "<td>" + getMods(score.enabled_mods) + "</td>",
+            "<td class='datecol'>",
+                "<time class='timeago' datetime='" + dateset.toISOString() + "'>",
+                    dateset.toLocaleString() + "</time>",
+            "</td>",
+            "<td><a onclick='reportscore(" + score.score_id + ");'>Report</a></td>",
+            //"<td><a onclick='alert(\"hi\")'>Replay</a></td>",
+            "</tr>"
+        ].join("");
 
-            callback(tableRow);
-        });
+        callback(tableRow);
     }
 
     function dlReplay(score){
@@ -1673,6 +1805,24 @@ function getRequest(url, callback, reqTracker){
     }
 }
 
+function getScoresWithPlayerInfo(params, callback, reqTracker){
+	var mode = params.m || 0;
+	getScores(params, function(response){
+		var funs = [];
+		response.forEach(function(score, index){
+			funs.push(function(donecb){
+				getUser({u: score.user_id, type: "id", m: mode}, function(userInfo){
+					response[index].user = userInfo[0];
+					donecb();
+				}, reqTracker);
+			});
+		});
+		doManyFunc(funs, function(){
+			callback(response);
+		})
+	}, reqTracker);
+}
+
 function getUserRecent(params, callback, reqTracker){
     /*
     k - api key (required).
@@ -1750,6 +1900,7 @@ function getUrl(url, params){
         for(var k in params){
             paramarray.push(k + "=" + encodeURIComponent(params[k]));
         }
+        p(url + "?" + paramarray.join("&"));
         return url + "?" + paramarray.join("&");
     }else{
         return url;
