@@ -1,3 +1,14 @@
+## 1.5.0 (12 Sept 2016)
+
+#### Features
+- Display pp rank in beatmap listing
+- New loading image
+- Display global and country rank in performance ranking
+
+#### Bugfixes
+- Fixed unchecking highlight not dehighlighting in userpage
+- Fixed max combo displaying nullx for Taiko/Mania in userpage (now doesn't display at all, since max combo is not available for Taiko/Mania in the API)
+
 ## 1.4.0 (27 May 2016)
 
 #### Features
