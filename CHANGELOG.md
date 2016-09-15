@@ -1,3 +1,9 @@
+## 1.5.1 (15 Sept 2016)
+
+#### Bugfixes
+- Fixed column headers for search user scores
+- Button to show global/country rank (to be compatible with osu!savePP)
+
 ## 1.5.0 (12 Sept 2016)
 
 #### Features
