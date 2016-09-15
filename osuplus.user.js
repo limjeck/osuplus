@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.5.0
+// @version      1.5.1
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -256,6 +256,8 @@ var osuplusPpRanking = (function(){
 		mode = null,
 		tableBody = null,
 		tableLoadingNotice = null,
+		rankingVisible = false,
+		rankingBtn = null,
 		playerInfo = [];
 
 
@@ -284,12 +286,29 @@ var osuplusPpRanking = (function(){
 			}
 		}
 		tableBody = $(".beatmapListing > tbody");
+		showRanking = GM_getValue("showRanking", false);
+
+		//Add checkbox
+		rankingCheckbox = $("<label></label>").append($("<button></button>").attr({type: "button",
+            												   			 		   id: "rankingbtn",
+            												   			 		   class: "centered"})
+                							  					   			.click(rankingChanged)
+                							          			   			.text("Show global/country ranking"));
+		$("#tablist").before(rankingCheckbox);
 
 		//Add Loader
-		tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
+		tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>").hide();
         $("#tablist").before(tableLoadingNotice);
 
-        //Get player list
+        
+	}
+
+	function rankingChanged(){
+		if(rankingVisible) return;
+		rankingVisible = true;
+		tableLoadingNotice.show();
+
+		//Get player list
         var playerList = [];
         tableBody.children().first().nextAll().each(function(index, ele){
         	var href = $(ele).children().eq(1).children().eq(1).attr("href");
@@ -319,10 +338,6 @@ var osuplusPpRanking = (function(){
     		});
     	})
 	}
-
-	function addTableLoadingNotice(){
-        
-    }
 
 	function searchParser(str){
 		if(str[0] === "?") str = str.slice(1);
@@ -837,7 +852,6 @@ var osuplusBeatmapListing = (function(){
                 function(callback){
                     getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:100}, function(response){
                         result = response;
-                        p(response);
                         callback();
                     });
                 }
@@ -926,7 +940,20 @@ var osuplusBeatmapListing = (function(){
                 .attr("id", "searchuserresult")
                 .append(
                     $("<table width=100% cellspacing=0></table>").append("<tbody></tbody>").append(
-                        scoreListingTitlerow.clone()
+                        ["<tr class='titlerow'><th></th>",
+                        "<th><strong>Rank</strong></th>",
+                        "<th><strong>Score</strong></th>",
+                        "<th><strong>pp</strong></th>",
+                        "<th><strong>Accuracy</strong></th>",
+                        "<th><strong>Player</strong></th>",
+                        "<th><strong>Max combo</strong></th>",
+                        "<th><strong>300 / 100 / 50</strong></th>",
+                        "<th><strong>Geki</strong></th>",
+                        "<th><strong>Katu</strong></th>",
+                        "<th><strong>Misses</strong></th>",
+                        "<th><strong>Mods</strong></th>",
+                        "<th class='datecol'>Date</th>",
+                        "<th></th><th></th></tr>"].join("")
                     )
                 ).hide()
             )
@@ -1900,7 +1927,7 @@ function getUrl(url, params){
         for(var k in params){
             paramarray.push(k + "=" + encodeURIComponent(params[k]));
         }
-        p(url + "?" + paramarray.join("&"));
+        //p(url + "?" + paramarray.join("&"));
         return url + "?" + paramarray.join("&");
     }else{
         return url;
