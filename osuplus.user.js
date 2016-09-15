@@ -231,7 +231,7 @@ $(document).ready(function(){
     if(url.match(/^https?:\/\/osu\.ppy\.sh\/u\//)){ 
         pageType = USERPAGE;
         osuplusUserpage.init();
-    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/([bs]\/|beatmap\?)/)){
+    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/([bs]\/|p\/beatmap\?)/)){
         pageType = BEATMAPLISTING;
         osuplusBeatmapListing.init();
     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/pp/)){
@@ -834,7 +834,6 @@ var osuplusBeatmapListing = (function(){
         if(hasKey){
             putModButtons();
             putRankingType();
-            addSearchUser();
             addSlider();
             addTableLoadingNotice();
 
@@ -857,6 +856,7 @@ var osuplusBeatmapListing = (function(){
                 }
             ], function(){
             	modifyTableHeaders();
+            	addSearchUser();
             	addScoreLeaderpp();
                 updateScoresTable();
             });
@@ -940,20 +940,7 @@ var osuplusBeatmapListing = (function(){
                 .attr("id", "searchuserresult")
                 .append(
                     $("<table width=100% cellspacing=0></table>").append("<tbody></tbody>").append(
-                        ["<tr class='titlerow'><th></th>",
-                        "<th><strong>Rank</strong></th>",
-                        "<th><strong>Score</strong></th>",
-                        "<th><strong>pp</strong></th>",
-                        "<th><strong>Accuracy</strong></th>",
-                        "<th><strong>Player</strong></th>",
-                        "<th><strong>Max combo</strong></th>",
-                        "<th><strong>300 / 100 / 50</strong></th>",
-                        "<th><strong>Geki</strong></th>",
-                        "<th><strong>Katu</strong></th>",
-                        "<th><strong>Misses</strong></th>",
-                        "<th><strong>Mods</strong></th>",
-                        "<th class='datecol'>Date</th>",
-                        "<th></th><th></th></tr>"].join("")
+                        scoreListingTitlerow.clone()
                     )
                 ).hide()
             )
