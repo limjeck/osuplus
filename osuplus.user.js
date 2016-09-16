@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.5.1
+// @version      1.5.2
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -256,8 +256,8 @@ var osuplusPpRanking = (function(){
 		mode = null,
 		tableBody = null,
 		tableLoadingNotice = null,
-		rankingVisible = false,
-		rankingBtn = null,
+		rankingVisible = true,
+		rankingCheckbox = null,
 		playerInfo = [];
 
 
@@ -286,57 +286,72 @@ var osuplusPpRanking = (function(){
 			}
 		}
 		tableBody = $(".beatmapListing > tbody");
-		showRanking = GM_getValue("showRanking", false);
-
-		//Add checkbox
-		rankingCheckbox = $("<label></label>").append($("<button></button>").attr({type: "button",
-            												   			 		   id: "rankingbtn",
-            												   			 		   class: "centered"})
-                							  					   			.click(rankingChanged)
-                							          			   			.text("Show global/country ranking"));
-		$("#tablist").before(rankingCheckbox);
+		rankingVisible = GM_getValue("rankingVisible", true);
 
 		//Add Loader
 		tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>").hide();
         $("#tablist").before(tableLoadingNotice);
 
+		//Add checkbox
+		rankingCheckbox = $("<label></label>").append($("<input>").attr({type: "checkbox",
+            												   			 id: "rankingbtn"})
+                							  				      .click(rankingClicked)
+                							  				      .prop("checked", rankingVisible),
+                							          "Show global/country ranking");
+		$("#tablist").before(rankingCheckbox);
+		rankingClicked.bind($("#rankingbtn"))();
+
         
 	}
 
-	function rankingChanged(){
-		if(rankingVisible) return;
-		rankingVisible = true;
-		tableLoadingNotice.show();
+	function rankingClicked(){
+		var me = $(this);
+		rankingVisible = me.prop("checked");
+		p(me, rankingVisible);
+		GM_setValue("rankingVisible", rankingVisible);
+		p("hi");
+		if(!rankingVisible){
+			$(".rank2col").hide();
+		p("hi1");
+		}else{
+		p("hi2");
+			if($(".rank2col").length === 0){
+		p("hi3");
+				tableLoadingNotice.show();
 
-		//Get player list
-        var playerList = [];
-        tableBody.children().first().nextAll().each(function(index, ele){
-        	var href = $(ele).children().eq(1).children().eq(1).attr("href");
-        	playerList[index] = href.split("/")[2];
-        });
-        var funs = [];
-        playerList.forEach(function(id, index){
-        	funs.push(function(donecb){
-        		getUser({u: id, m: mode, type: "id"}, function(response){
-        			playerInfo[index] = response[0];
-        			donecb();
-        		});
-        	});
-        });
-    	doManyFunc(funs, function(){
-    		tableLoadingNotice.hide();
-    		
-    		//Add new headers
-    		var newHeader = isGlobal ? "Country" : "Global";
-    		tableBody.children().first().children().first().after("<th>" + newHeader + "</th>");
+				//Get player list
+		        var playerList = [];
+		        tableBody.children().first().nextAll().each(function(index, ele){
+		        	var href = $(ele).children().eq(1).children().eq(1).attr("href");
+		        	playerList[index] = href.split("/")[2];
+		        });
+		        var funs = [];
+		        playerList.forEach(function(id, index){
+		        	funs.push(function(donecb){
+		        		getUser({u: id, m: mode, type: "id"}, function(response){
+		        			playerInfo[index] = response[0];
+		        			donecb();
+		        		});
+		        	});
+		        });
+		    	doManyFunc(funs, function(){
+		    		tableLoadingNotice.hide();
+		    		
+		    		//Add new headers
+		    		var newHeader = isGlobal ? "Country" : "Global";
+		    		tableBody.children().first().children().first().after("<th class='rank2col'>" + newHeader + "</th>");
 
-    		//Add new ranks
-    		tableBody.children().first().nextAll().each(function(index, row){
-    			row = $(row);
-    			var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
-    			row.children().first().after("<td>#" + newRank + "</td>");
-    		});
-    	})
+		    		//Add new ranks
+		    		tableBody.children().first().nextAll().each(function(index, row){
+		    			row = $(row);
+		    			var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
+		    			row.children().first().after("<td class='rank2col'>#" + newRank + "</td>");
+		    		});
+		    	})
+			}else{
+				$(".rank2col").show();
+			}
+	    }
 	}
 
 	function searchParser(str){
