@@ -1,3 +1,9 @@
+## 1.5.2 (16 Sept 2016)
+
+#### Bugfixes
+- Checkbox to show global/country rank now (and it remembers your choice)
+- Fixed global/country rank for Firefox
+
 ## 1.5.1 (15 Sept 2016)
 
 #### Bugfixes
