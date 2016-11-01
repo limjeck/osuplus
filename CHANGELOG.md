@@ -1,3 +1,10 @@
+## 1.5.3 (1 Nov 2016)
+
+#### Bugfixes
+- Show pp rank checkbox now remembers your choice
+- Loads faster (when show pp rank is disabled)
+- Fixed most played tab (again)
+
 ## 1.5.2 (16 Sept 2016)
 
 #### Bugfixes
