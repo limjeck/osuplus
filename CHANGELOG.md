@@ -1,3 +1,10 @@
+## 1.5.4 (8 Feb 2017)
+
+#### Bugfixes
+- Fixed top pp scores in userpage displaying incorrect stats if it is not your top score
+- Fixed score stats in userpage for CTB (now {300/100/50/droplet miss/miss}) and mania (now {max/300/200/100/50/miss})
+- Search user textbox now appears faster
+
 ## 1.5.3 (1 Nov 2016)
 
 #### Bugfixes
