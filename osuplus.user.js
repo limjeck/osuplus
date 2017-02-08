@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.5.3
+// @version      1.5.4
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -381,7 +381,8 @@ var osuplusUserpage = (function(){
         topObserver = null,
         topSlider = null,
         topSliderLbl = null,
-        topSliderCB = null;
+        topSliderCB = null,
+        loadingTop = false;
 
     function addCss(){
         $(document.head).append($("<style></style>").html(
@@ -442,6 +443,11 @@ var osuplusUserpage = (function(){
         doGeneral();
         addMostPlayed();
         addRecent();
+
+        // :)
+        if(userId === "1843447"){
+        	$(".profile-username").parent().after("<div><b>osu!plus creator</b></div>");
+        }
     }
 
     function getGameMode(){
@@ -488,42 +494,58 @@ var osuplusUserpage = (function(){
 
         //Update tops
         var tops = $("#leader").find(".prof-beatmap").filter(":not(.oploading,.oploaded)");
-        tops.each(function(index, top){
-            top = $(top);
-            top.addClass("oploading");
-            var mapId = top.attr("id");
-            if(!mapId) return;
-            mapId = mapId.split("-")[1];
-            getScores({b: mapId, u: userId, m: gameMode, type: "id"}, function(score){
-                getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
-                    top.removeClass("oploading").addClass("oploaded");
-                    if(score.length < 1 || beatmap.length < 1) return;
-                    else{
-                        score = score[0];
-                        beatmap = beatmap[0];
-                    }
+    	tops.each(function(index, top){
+	        $(top).addClass("oploading");
+	    });
+	    if(tops.length > 0){
+	        getUserBest({u: userId, m: gameMode, type: "id", limit: 100}, function(scores){
+	        	tops.each(function(index, top){
+		            top = $(top);
+		            top.addClass("oploading");
+		            var mapId = top.attr("id");
+		            if(!mapId) return;
+		            mapId = mapId.split("-")[1];
+		            var score = null;
+		            for(var i in scores){
+		            	if(scores[i].beatmap_id == mapId){
+		            		score = scores[i];
+		            	}
+		            }
+		            if(score !== null){
+		                getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
+		                    top.removeClass("oploading").addClass("oploaded");
+		                    if(beatmap.length < 1) return;
+		                    else beatmap = beatmap[0];
 
-                    var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
-                    if(beatmap.max_combo !== null){
-                    	maxmapcombo.text("(" + beatmap.max_combo + "x)");
-                    }
-                    var h = top.find(".h");
-                    if(score.perfect === "1"){
-                        h.append("(FC)");
-                    }
-                    h.append(
-                        $("<div></div>").append(
-                            $("<b></b>").append(
-                                commarise(score.score) + " / " + 
-                                score.maxcombo + "x",
-                                maxmapcombo
-                            ),
-                            " { " + score.count300 + " / " + score.count100 + " / " + score.count50 + " / " + score.countmiss + " }"
-                        )
-                    );
-                });
-            });
-        });
+		                    var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
+		                    if(beatmap.max_combo !== null){
+		                    	maxmapcombo.text("(" + beatmap.max_combo + "x)");
+		                    }
+		                    var h = top.find(".h");
+		                    if(score.perfect === "1"){
+		                        h.append("(FC)");
+		                    }
+		                    h.append(
+		                        $("<div></div>").append(
+		                            $("<b></b>").append(
+		                                commarise(score.score) + " / " + 
+		                                score.maxcombo + "x",
+		                                maxmapcombo
+		                            ),
+		                            gameMode <= 1 ? // Standard/Taiko
+		                            " { " + score.count300 + " / " + score.count100 + " / " + score.count50 + " / " + score.countmiss + " }" :
+		                            gameMode == 2 ? // CTB
+		                            " { " + score.count300 + " / " + score.count100 + " / " + score.count50 + " / " + score.countkatu + " / " + score.countmiss + " }" :
+		                            // Mania
+		                            " { " + score.countgeki + " / " + score.count300 + " / " + score.countkatu + " / " + score.count100 + " / " + score.count50 + " / " + score.countmiss + " }"
+		                        )
+		                    );
+		                });
+		            }
+		        });
+	        });
+	    }
+        
     }
 
     function doGeneral(){
@@ -848,6 +870,8 @@ var osuplusBeatmapListing = (function(){
             putRankingType();
             addSlider();
             addTableLoadingNotice();
+            modifyTableHeaders();
+            addSearchUser();
 
             doManyFunc([
                 function(callback){
@@ -867,8 +891,7 @@ var osuplusBeatmapListing = (function(){
                     });
                 }
             ], function(){
-            	modifyTableHeaders();
-            	addSearchUser();
+            	modifyTableHeadersMaxcombo();
             	addScoreLeaderpp();
                 updateScoresTable();
             });
@@ -1513,9 +1536,6 @@ var osuplusBeatmapListing = (function(){
                    )
         );
 
-        // Add max combo value
-        scoreListingTitlerow.children().eq(6).html("<strong>Max combo" + (beatmapInfo.max_combo === null ? "" : " (" + beatmapInfo.max_combo + ")") + "</strong>");
-
         // Add click scores to sort
         scoreListingTitlerow.children().eq(2).empty().append(
             $("<a><strong>Score</strong></a>")
@@ -1534,6 +1554,17 @@ var osuplusBeatmapListing = (function(){
         scoreListingTitlerow.children().last().after(
             $("<th></th>")
         );
+
+        // Fill empty pp and date
+        scoreListingTitlerow.nextAll().each(function(index, row){
+        	row = $(row);
+        	row.children().eq(2).after("<td></td>");
+        	row.children().last().before("<td></td>");
+        });
+    }
+
+    function modifyTableHeadersMaxcombo(){
+    	scoreListingTitlerow.children().eq(6).html("<strong>Max combo" + (beatmapInfo.max_combo === null ? "" : " (" + beatmapInfo.max_combo + ")") + "</strong>");
     }
 
     function clearScoresTable(){
@@ -1938,6 +1969,19 @@ function getUser(params, callback, reqTracker){
     event_days - Max number of days between now and last event date. Range of 1-31. Optional, default value is 1.
     */
     var url = "https://osu.ppy.sh/api/get_user";
+    params.k = apikey;
+    getRequest(getUrl(url, params), callback, reqTracker);
+}
+
+function getUserBest(params, callback, reqTracker){
+	/*
+	k - api key (required).
+	u - specify a user_id or a username to return best scores from (required).
+	m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, default value is 0.
+	limit - amount of results (range between 1 and 100 - defaults to 10).
+	type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behavior is automatic recognition (may be problematic for usernames made up of digits only).
+	*/
+    var url = "https://osu.ppy.sh/api/get_user_best";
     params.k = apikey;
     getRequest(getUrl(url, params), callback, reqTracker);
 }
