@@ -1,3 +1,9 @@
+## 1.5.5 (22 Feb 2017)
+
+#### Features
+- Display multiple scores (if available) when you search the user in beatmap listings
+- Multiple scores by the same player (when multiple mod combinations selected) are now greyed out
+
 ## 1.5.4 (8 Feb 2017)
 
 #### Bugfixes
