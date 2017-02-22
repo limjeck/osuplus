@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.5.4
+// @version      1.5.5
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -446,7 +446,7 @@ var osuplusUserpage = (function(){
 
         // :)
         if(userId === "1843447"){
-        	$(".profile-username").parent().after("<div><b>osu!plus creator</b></div>");
+        	$(".profile-username").parent().after("<div><b>osuplus creator</b></div>");
         }
     }
 
@@ -822,7 +822,8 @@ var osuplusBeatmapListing = (function(){
             "#opslider {width: 250px;}\n" +
             ".recentscore {background-color: greenyellow;}\n" +
             ".recentscore:hover {background: #fde1ff; cursor: pointer;}\n" +
-            ".centered {display: block; margin-left: auto; margin-right: auto;}"
+            ".centered {display: block; margin-left: auto; margin-right: auto;}\n" +
+            ".greyedout {opacity: 0.5}\n"
         ));
     }
 
@@ -991,8 +992,9 @@ var osuplusBeatmapListing = (function(){
             if(response && response.length > 0){
                 var searchResult = response[0];
                 $("#searchuserresult").find(".titlerow").nextAll().remove();
-                makeScoreTableRow(searchResult, 0, function(tablerow){
-                    $("#searchuserresult").find(".titlerow").parent().children().last().after(tablerow);
+                response.forEach(function(score){
+                	var tableRow = makeScoreTableRow(score, 0);
+	                $("#searchuserresult").find(".titlerow").parent().children().last().after(tableRow);
                 });
                 
                 $(".timeago").timeago();
@@ -1577,39 +1579,47 @@ var osuplusBeatmapListing = (function(){
     function updateScoresTable(callback){
         var tableRef = scoreListingTitlerow.parent();
         var tableRows = [];
-        var funs = [];
+
+        var usedUsers = [];
+        var rank = 0;
         for(var i=0; i<result.length; i++){
-            (function(index){
-                funs.push(function(cb){
-                    makeScoreTableRow(result[index], index+1, function(tableRow){
-                        tableRows[index] = tableRow;
-                        cb();
-                    });
-                });
-            })(i);
+        	var greyedout = false;
+        	if(inArray(usedUsers, result[i].user_id)){
+        		greyedout = true;
+        	}else{
+        		usedUsers.push(result[i].user_id);
+        		rank += 1;
+        	}
+            var tableRow = makeScoreTableRow(result[i], rank, greyedout);
+            tableRows[i] = tableRow;
         }
-        doManyFunc(funs, function(){
-            scoreListingTitlerow.nextAll().remove();
-            tableRef.append(tableRows);
-            $(".timeago").timeago();
-            updateShowPpRank();
-            updateShowDate();
-            tableLoadingNotice.hide();
-            if(callback) callback();
-        });
+
+        scoreListingTitlerow.nextAll().remove();
+        tableRef.append(tableRows);
+        $(".timeago").timeago();
+        updateShowPpRank();
+        updateShowDate();
+        tableLoadingNotice.hide();
+        if(callback) callback();
     }
 
-    function makeScoreTableRow(score, rankno, callback){
+    function makeScoreTableRow(score, rankno, greyedout){
         var country = score.user.country.toLowerCase();
         var acc = calcAcc(score, mapMode);
         var rowclass, dateset;
         dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
+
+        // handle colour of the row, depending on you, friend, odd/even row etc
         if(localUser !== null && localUser.toString() === score.user_id){
             rowclass = "row3p";
         }else if(isFriend(score.user_id)){
             rowclass = "row4p";
         }else{
             rowclass = "row" + ((rankno+1)%2 + 1) + "p";
+        }
+
+        if(greyedout){
+        	rowclass += " greyedout";
         }
 
         var countryImg = "<img src=" + getCountryUrl(country) + ">";
@@ -1656,7 +1666,7 @@ var osuplusBeatmapListing = (function(){
             "</tr>"
         ].join("");
 
-        callback(tableRow);
+        return tableRow;
     }
 
     function dlReplay(score){
