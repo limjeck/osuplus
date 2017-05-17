@@ -1,3 +1,8 @@
+## 1.5.6 (18 May 2017)
+
+#### Bugfixes
+- Fixed rank image not displaying properly (due to ppy moving the image address)
+
 ## 1.5.5 (22 Feb 2017)
 
 #### Features
