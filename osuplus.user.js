@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.5.5
+// @version      1.5.6
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -1866,7 +1866,7 @@ function getRankImg(rank){
     if(rank === "F"){
         ranksrc = FImg;
     }else{
-        ranksrc = "/images/" + rank + "_small.png";
+        ranksrc = "//s.ppy.sh/images/" + rank + "_small.png";
     }
     return "<img src='" + ranksrc + "'>";
 }
