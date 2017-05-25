@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.5.6
+// @version      1.5.7
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -660,7 +660,7 @@ var osuplusUserpage = (function(){
         }
 
         gameMode = getGameMode();
-        GetPage("https://new.ppy.sh/u/" + userId, function(response){
+        GetPage("https://osu.ppy.sh/users/" + userId, function(response){
             var temp = response.match(/json-user.*\n.*\n/);
             if(temp.length > 0){
                 var userInfo = JSON.parse(temp[0].split("\n")[1].trim());
