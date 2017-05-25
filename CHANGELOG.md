@@ -1,3 +1,8 @@
+## 1.5.7 (25 May 2017)
+
+#### Bugfixes
+- Fixed Most Played tab (again)
+
 ## 1.5.6 (18 May 2017)
 
 #### Bugfixes
