@@ -1,3 +1,9 @@
+## 1.6.0 (22 June 2017)
+
+#### Features
+- Subscription to mappers and maps
+- Beatmap information in userpage top ranks/recent plays
+
 ## 1.5.7 (25 May 2017)
 
 #### Bugfixes
