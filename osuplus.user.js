@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.5.7
+// @version      1.6.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -10,6 +10,7 @@
 // @include      http*://osu.ppy.sh/p/beatmap?s=*
 // @include      http*://osu.ppy.sh/u/*
 // @include      http*://osu.ppy.sh/p/pp*
+// @include      http*://osu.ppy.sh/p/beatmaplist*
 // @noframes
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
@@ -21,12 +22,17 @@
 /* jshint -W097 */
 'use strict';
 
+var debug = false;
+
 //https://i.imgur.com/87WeqCL.png
 var bloodcatBtnImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAACLCAYAAACZWUJsAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOvgAADr4B6kKxwAAACPRJREFUeNrtnOtzE9cZh/0f9J9ov7QT4pBL22BMbAdIINjBlgwMhGDLcWkmKW0hM0wo00xDaRtmmmm5pE5NE0joeDKkgQHsgC/gCwaMYtlIli3ZRr7IV5BtLrZsJ+np+Z3Vaneloz1arRZnOvnwzNl939V5zmX37K7kcUY4HP7h7IP5b8Ozi+RRAd/8/PyPMuhOeTgNFaZAOZUvHExDRSmw8KeMuQfz/1AHXRu2WobaQ70VGPZTSyGH93v59/KEH5xobDVCeuWzs7NGSL88cPR4LLy4NfIk4/+HcnfJr7jxnj3vyPvYNiFfv4XLzFCQBD8/p4kFjlRCxHJDJ6rYfsjrA7w6xPK2nI1cxuqbyIPQFBmq+oL0/fUDVt4bm2DxmcEh9ZmOPK+OVOQKd5wutYRJ24vLkIOQ4X5jL/ZTk1/NekmXrn0HiO/QEYB9IyTVc8swM+dGMS6/vqqAB+bYKLF1mJ9zFemf85as9ZZhqueunXvIpLOd3Bsdw7CixD7i6em5ziWGRSYqHKlrlBuCOPLWye+4vZDxcogjb17eunIDDzbMTlsJuUa3o0RyN2mc5rGth1je+PMXSJOKZvDsi6iclS0RmhVwDPLRzzTyEcubaGU8pgcGydDZal4OceSxrYe+fH7u64Qf7Kv4iPVugs5v4NRp0v3eYZTYRxx58/LmFesSAYF8mclgH3HkRfDlsngh/E1Si4Vr5256VzuMMj2LDOSL898mc3fCPVu+d6fnrgb51wv/xQ0gIbcrP+ENO+LIixDKE7Y6UPkpZHiaUT9KyU83yFvX8+nBYRI8V8PLIY68+Z5fy87ngd6hNJ5XSLnnkeW1lJdDHPkUe66c7Qk/eJfdWDp4OcSRt07evf+gfEtlstH6RpTyLRV583K9Oet8/S0qdMU8TLgQR966OU8HQrnzeZsu/nf+QoKfnSHjDc1k8PinpHNLuZQToy//ZpEQZ14Rl47N5WSqt5/7iDzW0IxjRIjl7WvsXO62d0pvo/86Rbp3/Q4xVo5eqMUJhxIxPcRy14ubeUjv4b/Zz80FDleS+2Pj2NZDOOeibyZSyCuI5S8Ucwl19ZDA3//Jzbm3vY6hx7YuYvm6LVyCp89hzjHEcUxcaUHjYuNxdYjn/OXtPFJ5UYytI6Ecj1CSfON2LoEPPjJKXB1iedEOyxDLC3fo0rP3XRI8c4FMNF9DiX0pJ0Ys79j4qhrNsE22OblzO9HUirwI8QnXWbRDQ0chg/X0wdQU7W018e19FzGU2JfjiOkhvtRu2UpjKGHcG6ZfAp46Le0rsAYO0/gMzXcUlegBh77cY3NocNtKAYYXZVzjOoGUp2WJDkyu/zDhtZVp6LI5gLS2/2I38bDGKNyiPfKW/xZ5bOshlvcUv6ah217GmOkPkLGzNcSLxiiwxozS+Z7uH1AaxAcntb7cT4VqfFTcQxnHa3BPrzQiMfKpbj8akIwcnsRy36ZyNcoIFJcxBg4dI/37/ki67GUM5dxwqOQOHsKeRyQKXrsDUOlRcn98Mnpthzo9xGOXhJNYcP79OXqnh/Bsl3qkAAFgcz7V42eSyZbrrAGjZ6tZpRPN1zHn5uWe4jINbiqmMFn3L/eQW/ZSxkTLDdaYTrrt23cAeWzrwOT6K5y72KFGlmEVQxll8MOP0Vu5YhNyZW2XeqogDxmb4xFpmBnenbujC4vv7QMmFhlFnmiFw9LKej9YcUKGCQcqPsalBszLvfYyFZoVLiH3xyfI7fcOY63XQyz3Fb+moSeyyAQ/PMkYZpyIMlRxIrLkOlJd4RR576ZyDf5oQ8oiyy0ldmTipyoewQonyalAjZ8KfHZlme22AUfMjYetAxgBYFSuXOf+l1/V4CvYzuh1/JqEbjjJTN9tHpj76PZ0X4C481+JQywveEWDL38bY9rrw9kukPczpum+e8PWWMRy79piHtJl9YdDpIu+8HnWFEewM9wUmkeZkI7VNrG8I7dIgyu3EKByVrbTmJqvcgqB9IVRzsYIhTzEt1RXnk1NVBLydEuy3EINTgm8u6PUQ/wk05adr+FGdoEu1+kxSSKUp1D5hmQRy69mrdeyYp0uLckjlOM3EssQfg935adrNFxOI6JfGvBzhGWIem5aYEae8NfAkL/PCLw6hPKEP86EfL3JID9g8OoQvqXilz/DXCvYRoK1l8nM6Lj0vn7zK95xYnnDM6uT5qZjFxmnovuhECN4qQGxRMeL5Vd+tlaI989/I3dudaGXrLdDZ86T1vytos+lZ9gj84oGGJke4QmX1GLhLNtFRptaMdSs54P0i6Gr+VtFnxPLa5/MTZqmdZvIwBfnyczIKGvISONVcqPkjUTHi+V1T+WlRP/JKnK3x8+mY7LTwztGLP8ycxUPo1998uoQyy8tz+GBXhmBV4fwbMdBliGSm75t6pB6z4e/rBeB48wNe83j2TySOcnUx/HqEJ9w1Y9lGeJC8ojl53+yQsuPn00b4ut82UoNNY9laag2gXiFy1yloTYzGyS3sDyerYt4kVmWreHispWM4Zo6xlA8WNtRinou/h7u8pN5GhqW52qoX56joe6J58jAf84zaum2DmJ5/RM5Guoyn9NQm7lKwyU6nI1rbaz3F+m2DmJ549OrNVx5+nkNl2NoeCoPYM5R6iGUi2Ux1NNKQfBiA0o9hCdcTOVKz7oOvi8iRbnyuqQdKuWDyVxqpuQg7gN1ETwH30/IVGCQ+I5Vip52BH8Pp8jjR0AH/7HjeKDUHmdEHkE+MH4EEiHl8QCpPS5FeSqwOa9bKjmde2vlbaVvkvE2p/xCiBL7iCNvndz11u8xr1Hh8MUGuSGII2+dnL4IQMbLIY68dXL2F7/rN/NyiFt7wtHKl+5sp6sYXgp5OcSRt05Ol0/0DvOLl0JcWiixj7j55TUi12uAfJnJYB9xay+1mOsdPVdf349OruLRyJN4LV4aOV3hrJXrMdLUav2NRecEtPY6/07fz5dszi2/1NLBd05+conkn2TMPVw4Yv6fFxhn7uH8USpf3B9OQ2VGgTdjdnbeFk5DZYblcwv2DDJFfhB+uFhF+ewRUgXv/wCt7Fv62FZD/QAAAABJRU5ErkJggg==",
 
     FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
 
     loaderImg = "data:image/gif;base64,R0lGODlhEAAQAPIAAKmp/wAAAIGBwisrQgAAAEFBYlZWgmFhkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==",
+
+    subImg = "data:image/png;base64,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",
+    subbedImg = "data:image/png;base64,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",
 
     modIconImgs = {
         //http://puu.sh/n41q9/dd04d2b8b6.png
@@ -87,13 +93,14 @@ var bloodcatBtnImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAACLCAYA
         "9K": "data:image/png;base64,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",
     }
 
-var BEATMAPLISTING = 0,
+var BEATMAP = 0,
     USERPAGE = 1,
-    PPRANKING = 2;
+    PPRANKING = 2,
+    BEATMAPLISTING = 3;
 
 var apikey = null,
     hasKey = false,
-    pageType = BEATMAPLISTING;
+    pageType = BEATMAP;
 
 var modnames = [
     {val: 1, name: "NoFail", short: "NF"},
@@ -225,6 +232,195 @@ var Replayer = (function(){
     return {Replay: Replay};
 })();
 
+//peppy code
+(function($) {
+    $.fn.textWidth = function() {
+        var html_org = $(this).html();
+        var html_calc = '<span>' + html_org + '</span>';
+        $(this).html(html_calc);
+        var width = $(this).find('span:first').width();
+        $(this).html(html_org);
+        return width;
+    }
+    ;
+    $.fn.marquee = function(args) {
+        var that = $(this);
+        var textWidth = that.textWidth()
+          , actualWidth = that.width()
+          , offset = 0
+          , width = 0
+          , css = {
+            'text-indent': that.css('text-indent'),
+            'overflow': that.css('overflow'),
+            'white-space': that.css('white-space')
+        }
+          , marqueeCss = {
+            'text-indent': width,
+            'overflow': 'hidden',
+            'white-space': 'nowrap'
+        }
+          , args = $.extend(true, {
+            count: -1,
+            speed: 1e1,
+            leftToRight: false
+        }, args)
+          , i = 0
+          , stop = (actualWidth - textWidth)
+          , dfd = $.Deferred();
+        if (textWidth < actualWidth || that.attr('stop') == -1)
+            return;
+        that.attr('stop', -1);
+        function go() {
+            if (!that.length)
+                return dfd.reject();
+            if (that.attr('stop') >= 0) {
+                that.css(css);
+                that.attr('stop', 0);
+                return dfd.resolve();
+            }
+            if (width == stop) {
+                i++;
+                if (i >= args.count) {
+                    setTimeout(go, args.speed);
+                    return;
+                }
+                if (args.leftToRight) {
+                    width = textWidth * -1;
+                } else {
+                    width = offset;
+                }
+            }
+            that.css('text-indent', width + 'px');
+            if (args.leftToRight) {
+                width++;
+            } else {
+                width--;
+            }
+            setTimeout(go, args.speed);
+        }
+        if (args.leftToRight) {
+            width = textWidth * -1;
+            width++;
+            stop = offset;
+        } else {
+            width--;
+        }
+        that.css(marqueeCss);
+        go();
+        return dfd.promise();
+    }
+    ;
+})($);
+
+var subscriberManager = (function(){
+	var MAPPER = 0,
+		MAP = 1;
+
+	function isSubscribed(list, id){
+		if(getIndex(list, id) === -1) return false;
+		else return true;
+	}
+
+	function add(list, params, type){
+		if(getIndex(list, params.id) === -1){
+			var x = {};
+			for(var p in params){
+				x[p] = params[p];
+			}
+			list.push(x);
+			sortList(list, type);
+		}
+		return list;
+	}
+
+	function remove(list, id){
+		var index = getIndex(list, id);
+		if(index === -1) return;
+		else{
+			list.splice(index, 1);
+		}
+	}
+
+	function getIndex(list, id){
+		for(var i=0; i<list.length; i++){
+			if(list[i].id === id){
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	function sortList(list, type){
+		if(type === MAPPER){
+			list.sort(function(a, b){
+				return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+			});
+		}else if(type === MAP){
+			list.sort(function(a, b){
+				if(a.artist.toLowerCase() < b.artist.toLowerCase()) return -1;
+				else if(a.artist.toLowerCase() > b.artist.toLowerCase()) return 1;
+				else if(a.title.toLowerCase() < b.title.toLowerCase()) return -1;
+				else if(a.title.toLowerCase() > b.title.toLowerCase()) return 1;
+				else return a.creator.toLowerCase() < b.creator.toLowerCase() ? -1 : 1;
+			});
+		}
+	}
+
+	function getList(type){
+		if(type === MAPPER){
+			return JSON.parse(GM_getValue("mapperSubList", "[]"));
+		}else{
+			return JSON.parse(GM_getValue("mapSubList", "[]"));
+		}
+	}
+
+	function saveList(list, type){
+		if(type === MAPPER){
+			GM_setValue("mapperSubList", JSON.stringify(list));
+		}else{
+			GM_setValue("mapSubList", JSON.stringify(list));
+		}
+	}
+
+	return {
+		mapper: {
+			isSubscribed: function(id){
+				return isSubscribed(getList(MAPPER), id);
+			},
+			add: function(id, username){
+				var list = getList(MAPPER);
+				add(list, {id: id, name: username}, MAPPER);
+				saveList(list, MAPPER);
+			},
+			remove: function(id){
+				var list = getList(MAPPER);
+				remove(list, id);
+				saveList(list, MAPPER);
+			},
+			getList: function(){
+				return getList(MAPPER);
+			}
+		},
+		map: {
+			isSubscribed: function(id){
+				return isSubscribed(getList(MAP), id);
+			},
+			add: function(id, artist, title, creator, creator_id){
+				var list = getList(MAP);
+				add(list, {id: id, artist: artist, title: title, creator: creator, creator_id: creator_id}, MAP);
+				saveList(list, MAP);
+			},
+			remove: function(id){
+				var list = getList(MAP);
+				remove(list, id);
+				saveList(list, MAP);
+			},
+			getList: function(){
+				return getList(MAP);
+			}
+		}
+	};
+})();
 
 $(document).ready(function(){
     //GM_setValue("apikey", null);
@@ -234,11 +430,14 @@ $(document).ready(function(){
         pageType = USERPAGE;
         osuplusUserpage.init();
     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/([bs]\/|p\/beatmap\?)/)){
-        pageType = BEATMAPLISTING;
-        osuplusBeatmapListing.init();
+        pageType = BEATMAP;
+        osuplusBeatmap.init();
     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/pp/)){
     	pageType = PPRANKING;
     	osuplusPpRanking.init();
+    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/beatmaplist/)){
+    	pageType = BEATMAPLISTING;
+    	osuplusBeatmapListing.init();
     }
 });
 
@@ -251,6 +450,448 @@ function init(){
         displayGetKey();
     }
 }
+
+var osuplusBeatmapListing = (function(){
+	var subsTitle = null,
+		subsContent = null,
+		beatmaplistingTitle = null,
+		loadingNotice = null,
+		beatmaplistingContent = null,
+		mappersSelect = null,
+		mappersRemoveBtn = null,
+		mapsSelect = null,
+		mapsRemoveBtn = null,
+		subsTxtbox = null,
+		subsAddBtn = null,
+		pageLeft = null,
+		pageRight = null,
+		pageDisplay = null,
+		subsBeatmaplist = null,
+		beatmapList = [],
+		pages = 1,
+		curPage = 1,
+		pageSize = 40,
+		refreshBtn = null;
+
+	//0: unloaded
+	//1: loading
+	//2: loaded
+	var subLoadingStatus = 0;
+
+	function addCss(){
+		$(document.head).append($("<style></style>").html(
+			".small-content-with-bg {background-image: url(//s.ppy.sh/images/main-bg-new.png);}\n" +
+			".maintitlediv {font-size: 160%; padding-left: 20px;}\n" +
+			".maintitle {padding: 4px; margin-right: 10px;}\n" +
+            ".maintitle:hover, .maintitle.selected {background-color: #A9A9FF; color: white; text-decoration: none;}\n" +
+            "#subsControl {padding: 20px;}\n" +
+            "#subsControl th {width: 80px; padding-right: 10px; float: left; text-align: right;}\n" +
+            "#mappersSelect {width: 140px;}\n" +
+            "#subsTxtbox {width: 100px;}\n" +
+            "#mapsSelect {width: 450px;}\n" +
+            ".subsBtn {font-size: 100%;}\n" +
+            ".subsTxt, #mappersSelect option, #mapsSelect option {font-size: 110%;}\n" +
+            "#pageDisplay {padding-left: 15px; padding-right: 15px;}\n" +
+            ".centered {display: block; margin-left: auto; margin-right: auto;}\n"
+        ));
+	}
+
+	function init(){
+		addCss();
+		beatmaplistingContent = $(".content-with-bg");
+		subsTitle = $("<a class='maintitle'>Subscriptions</a>");
+		subsContent = $("<div class='subContent content-with-bg'></div>").hide();
+		beatmaplistingTitle = $("<a class='maintitle selected'>Beatmap Listing</a>");
+		loadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
+		subsTitle.click(function(){
+			subsTitle.addClass("selected");
+			subsContent.show();
+			beatmaplistingTitle.removeClass("selected");
+			beatmaplistingContent.hide();
+			if(subLoadingStatus === 0){
+				loadSubs();
+			}
+		});
+		beatmaplistingTitle.click(function(){
+			beatmaplistingTitle.addClass("selected");
+			beatmaplistingContent.show();
+			subsTitle.removeClass("selected");
+			subsContent.hide();
+		});
+		beatmaplistingContent.before($("<div class='maintitlediv small-content-with-bg'>").append(beatmaplistingTitle, subsTitle));
+		beatmaplistingContent.after(subsContent);
+		$(".newHeader").remove();
+
+		mappersSelect = $("<select id='mappersSelect' multiple size=5>");
+		mappersRemoveBtn = $("<button id='mappersRemoveBtn' class='subsBtn'>Remove</button>");
+		mapsSelect = $("<select id='mapsSelect' multiple size=5>");
+		mapsRemoveBtn = $("<button id='mapsRemoveBtn' class='subsBtn'>Remove</button>");
+		subsTxtbox = $("<input id='subsTxtbox' class='subsTxt'>");
+		subsAddBtn = $("<button id='subsAddBtn' class='subsBtn'>Add</button>");
+		pageLeft = $("<button class='subsBtn'>&lt;</button>");
+		pageRight = $("<button class='subsBtn'>&gt;</button>");
+		pageDisplay = $("<span id='pageDisplay'>Page 1/1</span>");
+		subsBeatmaplist = $("<div class='beatmapListing'>");
+		refreshBtn = $("<button class='subsBtn'>Refresh</button>");
+
+		pageLeft.click(function(){
+			if(curPage > 1){
+				curPage--;
+				refreshPage();
+			}
+		});
+		pageRight.click(function(){
+			if(curPage < pages){
+				curPage++;
+				refreshPage();
+			}
+		});
+		refreshBtn.click(function(){
+			if(subLoadingStatus !== 1){
+				loadSubs();
+			}
+		});
+
+		subsContent.append(
+			$("<div id='subsControl'>").append(
+				$("<table style='width:100%;'>").append(
+					$("<tr>").append(
+						$("<th>Subscribed mappers:</th>"),
+						$("<td>").append(
+							mappersSelect, "<br>", mappersRemoveBtn
+						),
+						$("<th>Subscribed maps:</th>"),
+						$("<td>").append(
+							mapsSelect, "<br>", mapsRemoveBtn
+						)
+					),
+					$("<tr>").append(
+						$("<th>Add mapper:</th>"),
+						$("<td>").append(
+							subsTxtbox, "&nbsp;", subsAddBtn
+						)
+					)
+				)
+			),
+			$("<div class='pagination'>").append(
+				refreshBtn, "<br>", 
+				pageLeft, pageDisplay, pageRight
+			),
+			loadingNotice,
+			subsBeatmaplist
+		);
+		refreshMappersSub();
+		refreshMapsSub();
+
+		subsAddBtn.click(function(){
+			addSub(subsTxtbox.val());
+		});
+		mappersRemoveBtn.click(function(){
+			var selected = mappersSelect.find(":selected");
+			var toRemove = [];
+			selected.each(function(i, ele){
+				toRemove.push(ele.value);
+			});
+			removeMappers(toRemove);
+		});
+		mapsRemoveBtn.click(function(){
+			var selected = mapsSelect.find(":selected");
+			var toRemove = [];
+			selected.each(function(i, ele){
+				toRemove.push(ele.value);
+			});
+			removeMaps(toRemove);
+		});
+	}
+
+	function refreshPage(){
+		subsBeatmaplist.children().hide();
+		subsBeatmaplist.children().eq(curPage - 1).show();
+		pageDisplay.text("Page "+curPage+"/"+pages);
+	}
+
+	function loadSubs(){
+		subLoadingStatus = 1;
+		subsBeatmaplist.empty();
+		loadingNotice.show();
+		retrieveBeatmaps(function(result){
+			beatmapList = mergeBeatmaps(result);
+			if(beatmapList.length === 0) pages = 1;
+			else{
+				pages = (((beatmapList.length-1) / pageSize) >> 0) + 1;
+			}
+			curPage = 1;
+			var pageContainer = $("<div class='beatmapListing'>").hide();
+			beatmapList.forEach(function(beatmapset, index){
+				if(index % pageSize === 0){
+					if(index > 0){
+						subsBeatmaplist.append(pageContainer);
+						pageContainer = $("<div class='beatmapListing'>").hide();
+					}
+				}
+				pageContainer.append(makeBeatmapBox(beatmapset));
+			});
+			subsBeatmaplist.append(pageContainer);
+			refreshPage();
+
+			$(".timeago").timeago();
+			$(".sub-beatmap").hover(function() {
+		        $(this).find(".maintext").marquee({
+		            speed: 60
+		        });
+		        $(this).find(".initiallyHidden").stop().fadeTo(1, 100);
+		        $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
+		            width: 'show'
+		        }, 100);
+		    }, function() {
+		        $(this).find(".initiallyHidden").fadeOut(400);
+		        $(this).find(".maintext").attr('stop', 1);
+		        $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
+		            width: 'hide'
+		        }, 100);
+		    }).click(function(event) {
+		        return load(this.id, event);
+		    });
+		    $(".sub-beatmap .bmlist-options .icon-heart").click(function() {
+		        $.ajax({
+		            url: "/web/favourite.php?localUserCheck=" + localUserCheck + "&a=" + $(this).parent().parent().parent().attr('id')
+		        }).done(function() {
+		            alert("Added as favourite!");
+		        });
+		        return false;
+		    });
+		    $(".sub-beatmap .bmlistt").click(function() {
+		        $('.sub-beatmap .bmlistt>.icon-pause').removeClass("icon-pause").addClass("icon-play");
+		        if (playBeatmapPreview($(this).parent().attr('id')))
+		            $(this).find('i').removeClass("icon-play").addClass("icon-pause");
+		        return false;
+		    });
+		    subLoadingStatus = 2;
+		    loadingNotice.hide();
+		});
+	}
+
+	function makeBeatmapBox(beatmapset){
+		var id = beatmapset.beatmapset_id;
+		var lastupdate = new Date(beatmapset.last_update.replace(' ','T') + "+0800");
+		var approved = "?";
+		switch(beatmapset.approved){
+			case "-2":
+				approved = "Graveyard"; break;
+			case "-1":
+				approved = "WIP"; break;
+			case "0":
+				approved = "Pending"; break;
+			case "1":
+				approved = "Ranked"; break;
+			case "2":
+				approved = "Approved"; break;
+			case "3":
+				approved = "Qualified"; break;
+			case "4":
+				approved = "Loved";
+		}
+		var source = "";
+		if(beatmapset.source !== ""){
+			source = "<div class='initiallyHidden'><span class='light'>from</span> "+beatmapset.source+"</div>";
+		}
+		var difficulties = "";
+		beatmapset.difficulties.forEach(function(beatmap){
+			difficulties += "<div class='diffIcon "+getDifficultyClass(beatmap.mode, beatmap.difficultyrating)+"'></div> ";
+		});
+
+		return $("<div class='beatmap sub-beatmap' id='"+id+"' style='width:420px;'>\
+			      <div class='bmlistt' style='background: url(//b.ppy.sh/thumb/"+id+".jpg)'>\
+				  <i class='icon-play'></i>\
+				  </div>\
+				  <div class='bmlist-options'>\
+				  <a href='#'><i class='icon-heart'></i></a>\
+				  <a class='require-login beatmap_download_link' href='/d/"+id+"'><i class='icon-download-alt'></i></a>\
+				  </div>\
+				  <div class='maintext'>\
+				  <span class='artist'>"+beatmapset.artist+"</span> - <a href='/s/"+id+"' class='title'>"+beatmapset.title+"</span></a>\
+				  </div>\
+				  <div class='left-aligned'>\
+				  <div><span class='light'>mapped by</span> <a href='/u/"+beatmapset.creator_id+"'>"+beatmapset.creator+"</a></div>\
+				  "+source+"\
+				  <div class='difficulties initiallyHidden'>"+difficulties+" </div>\
+				  </div>\
+				  <div class='right-aligned'>\
+				  <div class='status'><b>"+approved+"</b></div>\
+				  <div class='small-details'>\
+				  <div><time class='timeago' datetime='"+lastupdate.toISOString()+"'>"+lastupdate.toLocaleString()+"</time></div>\
+				  <i class='icon-heart'></i> "+beatmapset.favourite_count+"\
+				  </div>\
+				  </div>");
+	}
+
+	function mergeBeatmaps(beatmaps){
+		function addDifficulty(difficulties, beatmap){
+			for(var i=0; i<difficulties.length; i++){
+				if(difficulties[i].beatmap_id === beatmap.beatmap_id){
+					return;
+				}
+			}
+			difficulties.push({
+				beatmap_id: beatmap.beatmap_id,
+				version: beatmap.version,
+				mode: beatmap.mode,
+				playcount: beatmap.playcount,
+				difficultyrating: beatmap.difficultyrating
+			});
+		}
+
+		var merged = [];
+		beatmaps.forEach(function(beatmap){
+			var mergedlen = merged.length;
+			var index = -1;
+			for(var i=0; i<mergedlen; i++){
+				if(beatmap.beatmapset_id === merged[i].beatmapset_id){
+					index = i;
+					break;
+				}
+			}
+			if(index === -1){
+				merged.push({
+					beatmapset_id: beatmap.beatmapset_id,
+					approved: beatmap.approved,
+					last_update: beatmap.last_update,
+					artist: beatmap.artist,
+					title: beatmap.title,
+					creator: beatmap.creator,
+					creator_id: beatmap.creator_id,
+					source: beatmap.source,
+					favourite_count: beatmap.favourite_count,
+					difficulties: []
+				});
+				addDifficulty(merged[mergedlen].difficulties, beatmap);
+			}else{
+				addDifficulty(merged[index].difficulties, beatmap);
+			}
+		});
+
+		//Sort
+		merged.forEach(function(map){
+			map.difficulties.sort(function(a, b){
+				if(a.mode < b.mode) return -1;
+				if(a.mode > b.mode) return 1;
+				if(parseFloat(a.difficultyrating) < parseFloat(b.difficultyrating)) return -1;
+				else return 1;
+			});
+		});
+		merged.sort(function(a, b){
+			var date1 = new Date(a.last_update.replace(' ','T') + "+0800");
+			var date2 = new Date(b.last_update.replace(' ','T') + "+0800");
+			if(date1 > date2) return -1;
+			else return 1;
+		});
+		return merged;
+	}
+
+	function retrieveBeatmaps(callback){
+		var result = [];
+		var mapperList = subscriberManager.mapper.getList();
+		var mapList = subscriberManager.map.getList();
+		var funs = [];
+		mapperList.forEach(function(sub, index){
+			funs.push(function(donecb){
+				getBeatmaps({u: sub.id, type: "id"}, function(beatmaps){
+					beatmaps.forEach(function(beatmap){
+						beatmap.creator_id = sub.id;
+					});
+					result = result.concat(beatmaps);
+					donecb();
+				});
+			});
+		});
+		mapList.forEach(function(map, index){
+			funs.push(function(donecb){
+				getBeatmaps({s: map.id}, function(beatmaps){
+					beatmaps.forEach(function(beatmap){
+						beatmap.creator_id = map.creator_id;
+					});
+					result = result.concat(beatmaps);
+					donecb();
+				});
+			});
+		});
+		doManyFunc(funs, function(){
+			callback(result);
+		});
+	}
+
+	function addSub(mapper){
+		getUser({u: mapper, type: "string"}, function(result){
+			if(result.length === 0){
+				alert("User does not exist!");
+			}else{
+				var id = result[0].user_id;
+				subscriberManager.mapper.add(id, result[0].username);
+				refreshMappersSub(id);
+			}
+		});
+	}
+
+	function removeMappers(ls){
+		ls.forEach(function(id){
+			subscriberManager.mapper.remove(id);
+		});
+		refreshMappersSub();
+	}
+	function removeMaps(ls){
+		ls.forEach(function(id){
+			subscriberManager.map.remove(id);
+		});
+		refreshMapsSub();
+	}
+
+	function refreshMappersSub(id){
+		mappersSelect.find("option").remove();
+		var optionsls = [];
+		var subscribedList = subscriberManager.mapper.getList();
+		var sublen = subscribedList.length;
+		var focus = null;
+		for(var i=0; i<sublen; i++){
+			var option = $("<option value='" + subscribedList[i].id + "'>" + subscribedList[i].name + "</option>");
+			if(subscribedList[i].id === id) focus = option;
+			optionsls.push(option);
+		}
+		mappersSelect.append(optionsls);
+		if(focus !== null){
+			focus.prop("selected", true);
+		}
+	}
+
+	function refreshMapsSub(){
+		mapsSelect.find("option").remove();
+		var optionsls = [];
+		var subscribedList = subscriberManager.map.getList();
+		var sublen = subscribedList.length;
+		for(var i=0; i<sublen; i++){
+			var map = subscribedList[i];
+			var option = $("<option value='" + map.id + "'>" + 
+				map.artist+" - "+map.title+"  ("+map.creator+")</option>");
+			optionsls.push(option);
+		}
+		mapsSelect.append(optionsls);
+	}
+
+	function getDifficultyClass(mode, difficultyrating){
+		var diff = "?";
+		var rating = parseFloat(difficultyrating);
+		if(rating < 1.5) diff = "easy";
+		else if(rating < 2.25) diff = "normal";
+		else if(rating < 3.75) diff = "hard";
+		else if (rating < 5.25) diff = "insane";
+		else diff = "expert";
+		if(mode === "1") diff += "-t";
+		else if(mode === "2") diff += "-f";
+		else if(mode === "3") diff += "-m";
+		return diff;
+	}
+
+	return {init: init};
+})();
 
 var osuplusPpRanking = (function(){
 	var country = null,
@@ -344,7 +985,7 @@ var osuplusPpRanking = (function(){
 		    			var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
 		    			row.children().first().after("<td class='rank2col'>#" + newRank + "</td>");
 		    		});
-		    	})
+		    	});
 			}else{
 				$(".rank2col").show();
 			}
@@ -369,6 +1010,7 @@ var osuplusPpRanking = (function(){
 
 var osuplusUserpage = (function(){
     var userId = null,
+    	username = null,
         gameMode = null,
         userInfo = [],
         mainTableBody = null,
@@ -382,7 +1024,12 @@ var osuplusUserpage = (function(){
         topSlider = null,
         topSliderLbl = null,
         topSliderCB = null,
-        loadingTop = false;
+        loadingTop = false,
+        subscribeBtn = null,
+        subscribed = false,
+        subscribedColour = "#ef77af",
+        unsubscribedColour = "#5db8ef",
+        opModalContent = null;
 
     function addCss(){
         $(document.head).append($("<style></style>").html(
@@ -391,11 +1038,17 @@ var osuplusUserpage = (function(){
             ".pc-imgcol {width: 90px;}\n" +
             "#opslider {width: 250px;}\n" +
             ".recentscore {background-color: greenyellow;}\n" +
-            ".star-display {text-align: right; color: #444444; padding-right: 5px;}"
+            ".star-display {text-align: right; color: #444444; padding-right: 5px;}\n" +
+            ".prof-beatmap {position: relative;}\n" +
+            ".modalBtn {position: absolute; right: -1px; top: -1px; background: white; padding: 3px; width: 10px; text-align: center; border-style: solid; border-width: 1px;}\n" +
+            ".opModalCloseBtnDiv {position: absolute; right: 10px;}\n" +
+            ".opModal {width:700px;position: fixed; display: none;z-index: 10000;padding: 15px 20px 10px;-webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px;background: #fff; left: 50%; top:50%; transform: translate(-50%, -50%);}\n" +
+        	".opModalOverlay {position: fixed;top: 0;left: 0;bottom:0;right:0;width: 100%;height: 100%;z-index: 9999;background: #000;display: none;-ms-filter: 'alpha(Opacity=50)';-moz-opacity: .5;-khtml-opacity: .5;opacity: .5;}\n" +
+        	".tableAttr {width: 50px;}\n"
         ));
     }
 
-    var getBeatmapsCache = function(){
+    var getBeatmapsCache = (function(){
         var callbacks = {},
             beatmapsCache = {};
 
@@ -418,11 +1071,12 @@ var osuplusUserpage = (function(){
         }
 
         return getBeatmapsCache;
-    }();
+    })();
 
     function init(){
         addCss();
         userId = getUserId();
+        username = $(".profile-username").text().trim();
         gameMode = getGameMode();
         mainTableBody = $(".beatmapListing").children();
         profileTabs = $(".profile-tabs").children().children();
@@ -444,10 +1098,50 @@ var osuplusUserpage = (function(){
         addMostPlayed();
         addRecent();
 
+        //Subscribe button
+        subscribed = subscriberManager.mapper.isSubscribed(userId);
+        subscribeBtn = $("<a class='btn'>");
+        updateSubscribeBtn(subscribed);
+        $(".playstyle-container").after($("<div class='centrep'>").append(subscribeBtn));
+
+        subscribeBtn.click(function(){
+        	if(subscribed){
+        		subscriberManager.mapper.remove(userId);
+        		subscribed = false;
+        	}else{
+        		subscriberManager.mapper.add(userId, username);
+        		subscribed = true;
+        	}
+        	updateSubscribeBtn(subscribed);
+        });
+
+        // Add modal
+	    $("body").append('<div class="opModalOverlay opModalOverride" id="opModalOverlay" style="display:none;"></div>');
+	    $("body").append('<div class="opModal" id="opModal" style="display:none;"></div>');
+	    opModalContent = $("<div id='opModalContent'>");
+	    $("#opModal").append(
+	    	'<div class="opModalCloseBtnDiv" style="display: block;"><button class="opModalCloseBtn">x</button></div>', 
+	    	opModalContent);
+	    $("#opModalOverlay, .opModalCloseBtn").click(function(){
+	        closeModal();
+	    });
+
         // :)
         if(userId === "1843447"){
         	$(".profile-username").parent().after("<div><b>osuplus creator</b></div>");
         }
+    }
+
+    function updateSubscribeBtn(subscribed){
+    	if(subscribed){
+    		subscribeBtn.empty();
+    		subscribeBtn.css("background", subscribedColour);
+    		subscribeBtn.append("<i class='icon-heart'></i> Subscribed</a>");
+    	}else{
+    		subscribeBtn.empty();
+    		subscribeBtn.css("background", unsubscribedColour);
+    		subscribeBtn.append("<i class='icon-plus-sign'></i> Subscribe mapper</a>");
+    	}
     }
 
     function getGameMode(){
@@ -467,6 +1161,8 @@ var osuplusUserpage = (function(){
         }
     }
 
+    var topScores = [],
+    	topScoresStatus = 0;
     function detailedTop(){
         //Put slider
         if($("#leader").find("#opslider").length === 0){
@@ -493,15 +1189,18 @@ var osuplusUserpage = (function(){
         }
 
         //Update tops
-        var tops = $("#leader").find(".prof-beatmap").filter(":not(.oploading,.oploaded)");
-    	tops.each(function(index, top){
+        var topsBest = $("#leader h2").last().prevAll().find(".prof-beatmap").addBack(".prof-beatmap").filter(":not(.oploading,.oploaded)");
+        var topsFirst = $("#leader h2").last().nextAll().find(".prof-beatmap").addBack(".prof-beatmap").filter(":not(.oploading,.oploaded)");
+    	topsBest.each(function(index, top){
 	        $(top).addClass("oploading");
 	    });
-	    if(tops.length > 0){
+	    topsFirst.each(function(index, top){
+	        $(top).addClass("oploading");
+	    });
+	    if(topsBest.length > 0){
 	        getUserBest({u: userId, m: gameMode, type: "id", limit: 100}, function(scores){
-	        	tops.each(function(index, top){
+	        	topsBest.each(function(index, top){
 		            top = $(top);
-		            top.addClass("oploading");
 		            var mapId = top.attr("id");
 		            if(!mapId) return;
 		            mapId = mapId.split("-")[1];
@@ -509,43 +1208,115 @@ var osuplusUserpage = (function(){
 		            for(var i in scores){
 		            	if(scores[i].beatmap_id == mapId){
 		            		score = scores[i];
+		            		break;
 		            	}
 		            }
 		            if(score !== null){
 		                getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
-		                    top.removeClass("oploading").addClass("oploaded");
 		                    if(beatmap.length < 1) return;
-		                    else beatmap = beatmap[0];
-
-		                    var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
-		                    if(beatmap.max_combo !== null){
-		                    	maxmapcombo.text("(" + beatmap.max_combo + "x)");
-		                    }
-		                    var h = top.find(".h");
-		                    if(score.perfect === "1"){
-		                        h.append("(FC)");
-		                    }
-		                    h.append(
-		                        $("<div></div>").append(
-		                            $("<b></b>").append(
-		                                commarise(score.score) + " / " + 
-		                                score.maxcombo + "x",
-		                                maxmapcombo
-		                            ),
-		                            gameMode <= 1 ? // Standard/Taiko
-		                            " { " + score.count300 + " / " + score.count100 + " / " + score.count50 + " / " + score.countmiss + " }" :
-		                            gameMode == 2 ? // CTB
-		                            " { " + score.count300 + " / " + score.count100 + " / " + score.count50 + " / " + score.countkatu + " / " + score.countmiss + " }" :
-		                            // Mania
-		                            " { " + score.countgeki + " / " + score.count300 + " / " + score.countkatu + " / " + score.count100 + " / " + score.count50 + " / " + score.countmiss + " }"
-		                        )
-		                    );
+		                    else detailify(top, score, beatmap[0]);
 		                });
 		            }
 		        });
 	        });
 	    }
+	    topsFirst.each(function(index, top){
+		    var mapId = $(top).attr("id");
+            if(!mapId) return;
+            mapId = mapId.split("-")[1];
+	    	getScores({b: mapId, m: gameMode, a: 1, limit: 1}, function(scores){
+	    		if(scores.length < 1) return;
+	    		getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
+                    if(beatmap.length < 1) return;
+                    else detailify($(top), scores[0], beatmap[0]);
+                });
+	    	});
+	    });
+	    topsBest.hover(function(){
+	    	$(this).find(".modalBtn").show();
+	    }, function(){
+	    	$(this).find(".modalBtn").hide();
+	    });
+	    topsFirst.hover(function(){
+	    	$(this).find(".modalBtn").show();
+	    }, function(){
+	    	$(this).find(".modalBtn").hide();
+	    });
         
+    }
+
+    function detailify(top, score, beatmap){
+	    var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
+	    if(beatmap.max_combo !== null){
+	    	maxmapcombo.text("(" + beatmap.max_combo + "x)");
+	    }
+	    var h = top.find(".h");
+	    if(score.perfect === "1"){
+	        h.append("(FC)");
+	    }
+	    h.append(
+	        $("<div>").append(
+	            $("<b>").append(
+	                commarise(score.score) + " / " + 
+	                score.maxcombo + "x",
+	                maxmapcombo
+	            ),
+	            gameMode <= 1 ? // Standard/Taiko
+	            " { "+score.count300+" / "+score.count100+" / "+score.count50+" / "+score.countmiss+" }" :
+	            gameMode == 2 ? // CTB
+	            " { "+score.count300+" / "+score.count100+" / "+score.count50+" / "+score.countkatu+" / "+score.countmiss+" }" :
+	            // Mania
+	            " { "+score.countgeki+" / "+score.count300+" / "+score.countkatu+" / "+score.count100+" / "+score.count50+" / "+score.countmiss+" }"
+	        )
+	    );
+	    var modalBtn = $("<a class='modalBtn'>?</a>").hide();
+	    modalBtn.click(function(){
+	    	openModal($(this).parent().find("input:hidden").val());
+	    });
+	    top.append(modalBtn, $("<input type=hidden class='identifier' value='"+beatmap.beatmap_id+"'>"));
+    	top.removeClass("oploading").addClass("oploaded");
+    }
+
+    function openModal(id){
+    	if(id === undefined) return;
+        var opModalContent = $("#opModalContent");
+        opModalContent.empty();
+       	getBeatmapsCache({b: id, m: gameMode, a: 1}, function(beatmap){
+            beatmap = beatmap[0];
+            opModalContent.append(
+            	"<h1>"+beatmap.artist+" - <a href=/s/"+beatmap.beatmapset_id+">"+beatmap.title+"</a> [<a href=/b/"+beatmap.beatmap_id+">"+beatmap.version+"</a>]</h1>",
+            	$("<table id='songinfo' style='width:100%;'>").append(
+            		$("<tr>").append(
+            			"<td rowspan=5 style='width:1%'><a onclick='playBeatmapPreview("+beatmap.beatmapset_id+")'><img class='bmt' src=//b.ppy.sh/thumb/"+beatmap.beatmapset_id+"l.jpg></a></td>",
+            			"<td class='tableAttr'>CS:</td><td>"+beatmap.diff_size+"</td>",
+            			"<td class='tableAttr'>AR:</td><td>"+beatmap.diff_approach+"</td>"
+            		),
+            		$("<tr>").append(
+            			"<td class='tableAttr'>HP:</td><td>"+beatmap.diff_drain+"</td>",
+            			"<td class='tableAttr'>Stars:</td><td>"+beatmap.difficultyrating+"</td>"
+            		),
+            		$("<tr>").append(
+            			"<td class='tableAttr'>OD:</td><td>"+beatmap.diff_overall+"</td>",
+            			"<td class='tableAttr'>Length:</td><td>"+secsToMins(parseInt(beatmap.total_length))+" ("+secsToMins(parseInt(beatmap.hit_length))+" drain)" +
+            			(beatmap.max_combo === null ? "" : "<br>"+beatmap.max_combo+"x combo") + "</td>"
+            		),
+            		$("<tr>").append(
+            			"<td class='tableAttr'>Creator:</td><td>"+beatmap.creator+"</td>",
+            			"<td class='tableAttr'>BPM:</td><td>"+beatmap.bpm+"</td>"
+            		),
+            		$("<tr>").append(
+            			"<td colspan=4><a href=/d/"+beatmap.beatmapset_id+">Download</a><br><a href='http://bloodcat.com/osu/s/"+beatmap.beatmapset_id+"'>Bloodcat mirror</a></td>"
+            		)
+            	)
+            );
+        });
+        $("#opModalOverlay").fadeIn(200);
+        $("#opModal").fadeIn(200);
+    }
+    
+    function closeModal(){
+        $("#opModalOverlay").fadeOut(200);
+        $("#opModal").fadeOut(200);
     }
 
     function doGeneral(){
@@ -728,6 +1499,47 @@ var osuplusUserpage = (function(){
                     maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                     //starrating = $("<b>...&#9733;</b>"),
                     failClass = play.rank === "F" ? "failedScore" : "passScore";
+
+                var modalBtn = $("<a class='modalBtn'>?</a>").hide();
+
+                var profbeatmap = $("<div class='prof-beatmap'>").addClass(failClass).append(
+                    $("<table>").append($("<tr>").append(
+                        $("<td>").append(
+                            $("<div class='h'>").append(
+                                getRankImg(play.rank), "\n",
+                                $("<b>").append(
+                                    maplink,
+                                    modstr === "None" ? " " : " +" + modstr
+                                ),
+                                " (" + acc.toFixed(2) + "%)" + (play.perfect === '1' ? " (FC)" : "") + "\n"
+                            ),
+                            $("<div>").append(
+                                $("<b>").append(
+                                    commarise(play.score) + " / " + 
+                                    play.maxcombo + "x",
+                                    maxmapcombo
+                                ),
+                                " { " + play.count300 + " / " + play.count100 + " / " + play.count50 + " / " + play.countmiss + " }"
+                            ),
+                            $("<div class='c'>").append(
+                                $("<time class='timeago'>").attr("datetime", dateset.toISOString())
+                                                                  .text(dateset.toLocaleString())
+                            )
+                        )
+                    )),
+					modalBtn,
+					$("<input type=hidden class='identifier'>")
+                );
+			    profbeatmap.hover(function(){
+			    	$(this).find(".modalBtn").show();
+			    }, function(){
+			    	$(this).find(".modalBtn").hide();
+			    });
+			    modalBtn.click(function(){
+			    	openModal($(this).parent().find("input:hidden").val());
+			    });
+
+                container.append(profbeatmap);
                 
                 getBeatmapsCache({b: play.beatmap_id, m: gameMode, a: 1}, function(response){
                     var r = response[0];
@@ -736,34 +1548,8 @@ var osuplusUserpage = (function(){
                     	maxmapcombo.text("(" + r.max_combo + "x)");
                     }
                     //starrating.html(parseFloat(r.difficultyrating).toFixed(2) + "&#9733;");
+                    profbeatmap.find(".identifier").val(r.beatmap_id);
                 });
-
-                container.append($("<div class='prof-beatmap'></div>").addClass(failClass).append(
-                    $("<table></table>").append($("<tr></tr>").append(
-                        $("<td></td>").append(
-                            $("<div class='h'></div>").append(
-                                getRankImg(play.rank), "\n",
-                                $("<b></b>").append(
-                                    maplink,
-                                    modstr === "None" ? " " : " +" + modstr
-                                ),
-                                " (" + acc.toFixed(2) + "%)" + (play.perfect === '1' ? " (FC)" : "") + "\n"
-                            ),
-                            $("<div></div>").append(
-                                $("<b></b>").append(
-                                    commarise(play.score) + " / " + 
-                                    play.maxcombo + "x",
-                                    maxmapcombo
-                                ),
-                                " { " + play.count300 + " / " + play.count100 + " / " + play.count50 + " / " + play.countmiss + " }"
-                            ),
-                            $("<div class='c'></div>").append(
-                                $("<time class='timeago'></time>").attr("datetime", dateset.toISOString())
-                                                                  .text(dateset.toLocaleString())
-                            )
-                        )
-                    ))
-                ));
             });
             $(".timeago").timeago();
             if(failedChecked){
@@ -780,7 +1566,7 @@ var osuplusUserpage = (function(){
 })();
 
 
-var osuplusBeatmapListing = (function(){
+var osuplusBeatmap = (function(){
     var result = null,
         mapID = null,
         mapsetID = null,
@@ -802,7 +1588,8 @@ var osuplusBeatmapListing = (function(){
         modsEnabled = true,
         osupreviewLoaded = false,
         scoreReqs = [],
-        maxcomboSpan = null;
+        maxcomboSpan = null,
+        subscribed = false;
 
 
     function addCss(){
@@ -863,6 +1650,7 @@ var osuplusBeatmapListing = (function(){
         songInfoRef.children().children().eq(2).children().eq(5).append("<br>", maxcomboSpan);
 
         addBloodcatMirror();
+        addSubBtn();
         showMapValues();
         addOsuPreview();
 
@@ -882,6 +1670,7 @@ var osuplusBeatmapListing = (function(){
                             maxcomboSpan.text(beatmapInfo.max_combo + "x combo");
                             maxcomboSpan.show();
                         }
+
                         callback();
                     });
                 },
@@ -1213,15 +2002,50 @@ var osuplusBeatmapListing = (function(){
     function addBloodcatMirror(){
         if(mapsetID !== null){
             $(".beatmapDownloadButton").first().before(
-                $("<div></div>").addClass("beatmapDownloadButton").append(
-                    $("<a></a>").addClass("beatmap_download_link")
+                $("<div>").addClass("beatmapDownloadButton").append(
+                    $("<a>").addClass("beatmap_download_link")
                     .attr("href", "http://bloodcat.com/osu/s/" + mapsetID)
-                    .append($("<img>").attr("src", bloodcatBtnImg))
+                    .append($("<img src='"+bloodcatBtnImg+"'>"))
                 )
             );
             // old mirror
             //$(".beatmap_download_link").last().after("<br>",$("<a></a>").text("Bloodcat mirror").attr("href", "http://bloodcat.com/osu/s/" + mapsetID))
         }
+    }
+
+    function addSubBtn(){
+		subscribed = subscriberManager.map.isSubscribed(mapsetID);
+        var artist = songInfoRef.find("tr").first().children().eq(1).children().text();
+        var title = songInfoRef.find("tr").eq(1).children().eq(1).children().text();
+        var creator = songInfoRef.find("tr").eq(2).children().eq(1).children().text();
+        var temp = songInfoRef.find("tr").eq(2).children().eq(1).children().attr("href").split("/");
+        var creator_id = temp[temp.length-1];
+    	$(".beatmapDownloadButton").first().before(
+            $("<div>").addClass("beatmapDownloadButton").append(
+                $("<a>").addClass("beatmap_download_link")
+                .append($("<img class='subImg'>"))
+                .click(function(){
+	            	if(subscribed){
+	            		subscriberManager.map.remove(mapsetID);
+	            		subscribed = false;
+	            		refreshSubImg(subscribed);
+	            	}else{
+	            		subscriberManager.map.add(mapsetID, artist, title, creator, creator_id);
+	            		subscribed = true;
+	            		refreshSubImg(subscribed);
+	            	}
+                })
+            )
+        );
+        refreshSubImg();
+    }
+
+    function refreshSubImg(){
+    	if(subscribed){
+    		$(".subImg").attr("src", subbedImg);
+    	}else{
+    		$(".subImg").attr("src", subImg);
+    	}
     }
 
     function putModButtons(){
@@ -1272,138 +2096,58 @@ var osuplusBeatmapListing = (function(){
         }
 
         $(".content-with-bg").children("h2").next().empty().append(
-            genModBtns([{
-                mods: ["NM"],
-                selection: 0
-            },{
-                mods: ["NM"],
-                selection: 1
-            }]),
+            genModBtns([
+            	{mods: ["NM"], selection: 0},
+            	{mods: ["NM"], selection: 1}]),
             mapMode < 3 ? // HD for non-mania
-            genModBtns([{
-                mods: ["HD"],
-                selection: 0
-            },{
-                mods: ["HD"],
-                selection: 1
-            },{
-                mods: ["HD"],
-                selection: 2
-            }]) : // FI, HD for mania
-            genModBtns([{
-                mods: ["FI"],
-                selection: 0
-            },{
-                mods: ["FI"],
-                selection: 1
-            },{
-                mods: ["HD"],
-                selection: 1
-            },{
-                mods: ["FI", "HD"],
-                selection: 1
-            },{
-                mods: ["FI", "HD"],
-                selection: 2
-            }]),
-            genModBtns([{
-                mods: ["HR"],
-                selection: 0
-            },{
-                mods: ["HR"],
-                selection: 1
-            },{
-                mods: ["HR"],
-                selection: 2
-            },{
-                mods: ["EZ"],
-                selection: 1
-            },{
-                mods: ["EZ"],
-                selection: 2
-            }]),
-            genModBtns([{
-                mods: ["DT"],
-                selection: 0
-            },{
-                mods: ["DT"],
-                selection: 1
-            },{
-                mods: ["NC"],
-                selection: 1
-            },{
-                mods: ["DT", "NC"],
-                selection: 1
-            },{
-                mods: ["HT"],
-                selection: 1
-            }]),
-            genModBtns([{
-                mods: ["SD"],
-                selection: 0
-            },{
-                mods: ["SD"],
-                selection: 1
-            },{
-                mods: ["PF"],
-                selection: 1
-            },{
-                mods: ["SD", "PF"],
-                selection: 1
-            },{
-                mods: ["SD", "PF"],
-                selection: 2
-            },{
-                mods: ["NF"],
-                selection: 1
-            },{
-                mods: ["NF"],
-                selection: 2
-            }]),
-            genModBtns([{
-                mods: ["FL"],
-                selection: 0
-            },{
-                mods: ["FL"],
-                selection: 1
-            },{
-                mods: ["FL"],
-                selection: 2
-            }]),
+            genModBtns([
+            	{mods: ["HD"], selection: 0},
+            	{mods: ["HD"], selection: 1},
+            	{mods: ["HD"], selection: 2}]) : 
+            genModBtns([ // FI, HD for mania
+            	{mods: ["FI"], selection: 0},
+            	{mods: ["FI"], selection: 1},
+            	{mods: ["HD"], selection: 1},
+            	{mods: ["FI", "HD"], selection: 1},
+            	{mods: ["FI", "HD"], selection: 2}]),
+            genModBtns([
+            	{mods: ["HR"], selection: 0},
+            	{mods: ["HR"], selection: 1},
+            	{mods: ["HR"], selection: 2},
+            	{mods: ["EZ"], selection: 1},
+            	{mods: ["EZ"], selection: 2}]),
+            genModBtns([
+            	{mods: ["DT"], selection: 0},
+            	{mods: ["DT"], selection: 1},
+            	{mods: ["NC"], selection: 1},
+            	{mods: ["DT", "NC"], selection: 1},
+            	{mods: ["HT"], selection: 1}]),
+            genModBtns([
+            	{mods: ["SD"], selection: 0},
+            	{mods: ["SD"], selection: 1},
+            	{mods: ["PF"], selection: 1},
+            	{mods: ["SD", "PF"], selection: 1},
+            	{mods: ["SD", "PF"], selection: 2},
+            	{mods: ["NF"], selection: 1},
+            	{mods: ["NF"], selection: 2}]),
+            genModBtns([
+            	{mods: ["FL"], selection: 0},
+            	{mods: ["FL"], selection: 1},
+            	{mods: ["FL"], selection: 2}]),
             mapMode < 3 ? [] : //mania keys
-            genModBtns([{
-                mods: ["4K"],
-                selection: 0
-            },{
-                mods: ["4K"],
-                selection: 1
-            },{
-                mods: ["5K"],
-                selection: 1
-            },{
-                mods: ["6K"],
-                selection: 1
-            },{
-                mods: ["7K"],
-                selection: 1
-            },{
-                mods: ["8K"],
-                selection: 1
-            },{
-                mods: ["9K"],
-                selection: 1
-            }]),
+            genModBtns([
+            	{mods: ["4K"], selection: 0},
+            	{mods: ["4K"], selection: 1},
+            	{mods: ["5K"], selection: 1},
+            	{mods: ["6K"], selection: 1},
+            	{mods: ["7K"], selection: 1},
+            	{mods: ["8K"], selection: 1},
+            	{mods: ["9K"], selection: 1}]),
             mapMode > 0 ? [] : //SO only for standard
-            genModBtns([{
-                mods: ["SO"],
-                selection: 0
-            },{
-                mods: ["SO"],
-                selection: 1
-            },{
-                mods: ["SO"],
-                selection: 2
-            }])
+            genModBtns([
+            	{mods: ["SO"], selection: 0},
+            	{mods: ["SO"], selection: 1},
+            	{mods: ["SO"], selection: 2}])
         );
     }
 
@@ -1712,6 +2456,7 @@ var osuplusBeatmapListing = (function(){
 
 
 
+
 function getPlayerCountry(playerid, callback){
     if(playerid in playerCountries){
         callback(playerCountries[playerid]);
@@ -1861,6 +2606,11 @@ function commarise(num){
     return numarray.reverse().join(",");
 }
 
+function secsToMins(secs){
+	var s = "00"+(secs % 60); 
+	return (secs/60>>0) + ":" + s.substr(s.length-2);
+}
+
 function getRankImg(rank){
     var ranksrc;
     if(rank === "F"){
@@ -2002,7 +2752,7 @@ function getUrl(url, params){
         for(var k in params){
             paramarray.push(k + "=" + encodeURIComponent(params[k]));
         }
-        //p(url + "?" + paramarray.join("&"));
+        if(debug) console.log(url + "?" + paramarray.join("&"));
         return url + "?" + paramarray.join("&");
     }else{
         return url;
@@ -2113,5 +2863,3 @@ function downloadFile(data, filename){
     link.href = "data:application/octet-stream;base64," + btoa(data);
     link.dispatchEvent(new MouseEvent("click"));
 }
-
-var p = console.log.bind(console);
