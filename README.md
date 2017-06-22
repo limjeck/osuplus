@@ -23,6 +23,8 @@ A userscript to add features to your boring osu! web pages.
 - Detailed top ranks
 - Slider to highlight recent scores in beatmap listing and top ranks
 - Display global and country rank in performance ranking
+- Subscription to mappers and maps
+- Beatmap information in userpage top ranks/recent plays
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
