@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      1.6.0
+// @version      1.7.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http*://osu.ppy.sh/b/*
@@ -15,6 +15,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_listValues
 // @grant        GM_getResourceURL
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js
 // @require      http://timeago.yarp.com/jquery.timeago.js
@@ -34,6 +35,8 @@ var bloodcatBtnImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAACLCAYA
     subImg = "data:image/png;base64,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",
     subbedImg = "data:image/png;base64,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",
 
+    settingsImg = "data:image/png;base64,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",
+
     modIconImgs = {
         //http://puu.sh/n41q9/dd04d2b8b6.png
         "NM": "data:image/png;base64,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",
@@ -48,7 +51,7 @@ var bloodcatBtnImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAACLCAYA
         "HD": "data:image/png;base64,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",
         
         //http://w.ppy.sh/2/28/Hard_Rock.png
-        "HR": "data:i3mage/png;base64,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",
+        "HR": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAYAAACM/rhtAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAadEVYdFNvZnR3YXJlAFBhaW50Lk5FVCB2My41LjEwMPRyoQAADe5JREFUWEfNWGdUlMca/gy7FA2oi4klJmJ0qSKgIMESTa4mKlcwRRF7RUlERaOIjaYIKIiI0gQFbFhRlCgxhtiNsYJRBOQKijEqICAgZZ/7vrO7SjzenHuO+ZE55znfznwzzzzzlpn5VuKiJ72l924LvfcIJn8XOugYmHTWM/wT2r+l/9q+r8F7rEmIayvJ9b7R6bp2uczs2QqZGf4u+BH8CQEycwQS+Ml1bn9d/+ZgLayJtUmWbxl2WS4zrSXQC1PqYCpIAghM3JxcTaDu91fgPjxmpcwCITJLhGmwmsBtzPlS6Os5CDWsjQUqm79Qk5thFRGFaoj5GUz1II1QJm8+5lUwB/flsdEt7RArt0EcYaO8J9bJe4h25meh6oW/noe1CYHLqKIFT76SBobrWSOhXV/E69oK8mi5NcLlVkIsk/Mi1O54ObY5By8oisbc3JSG+xk/47zbYhxq9wlS5b0QT3wbNHxsYZ7vdXwvBC6lCoMbeUUsYrPCCeW5+SjenYVzI+cjXTEQyUTO1uCJ18qsyGUvraolZh4WyBwJclsUJR5A05NKqKpr8bz0MYpj9+HMIA8ceLsfUoiPFx9JfFqrcmiwUOay0VMoJYtmAhncgVe2U9EfNcUP0JBXAtXzBtQWlaIocidOOU3GPn1HEmuHGI3LWEwQkauFqpNjDXFspT7FiQdRF5uBeisPYGkyVFcLoWpoRPX1AhSsiMMJy1HYqWtPi7HBehIaSgvnRbPIvsYfmAqBvjIlGEsITM6T7lEMQG3x76h2XY4G65lQBe2A6s4DqOobUHU5D7cWReHoB8OEy1hoBAlit/J4dpdWYAkJRM1zIPMiMH4N8O4YoP93QMljoLEJTTV1eHLiIi5NC0AaGWUTcYXKLQXP5yZW5n8SyNAK3Kf4WAgEEWDXz8AIf6jauaknqW8EKmugqqvHw4PZODdqIbYTObtem0wsMIlcfDcxHbUXfsOzE5ehYqGPnwIbjwDFJHBWLPGFQ0XiOQQaKqqQu2YLog1sRVy69x5gKQQuJmEMFsjxE0EC08iCNSSwPCEDNaevCzG4Q4K3ZQNlVYCTDzAjCqrjV6B6Voea+38ge7zvC5czR6KIwXSUbtiNM3oDcMVqLO6tSEBdTiHQ1ATcvAcsSYWqhycqzaegMuYgnt4oRJKRo0gej0+ce0gWOkZKH43AJZoY5Em0MXhtiBdOGnyMK70m4X5wMupvlxC5CrhYACxIQoPpdDy2nobak9eQtyaZrGYntpM4EreDYostWBS1C/t1+2CvrgMydB1xwfBTPL9RhIbzN9H04AnA1sv6FdVbjqLyZhFSWzshjNw8e+iXPSVbg3ami2XdRYKog9tSbAMHjAcKC54d4ondNBHjMJHn2EyAqqoGdYfOQlX5DKDfzw+fQ/2l27gXvkP02a8R8qNuX/yeeAiFUTuxnWKVXZ5CCzhEYquu3cbdiUG4+s4wFLovR9nh0yIZK2/eeSHQe4SbjfRxh25mS3SUCNAxF1tHkswWGXJHnFF8hjoSeGqwJ7bI7JBI7dtkvZBt/jUaHlXgWtevccmYyD1C8PRncjORl4Wn4Yb+YBSPXoEnG/ahfFEc6vadwl2yYJqsN/GQQOI6IHNAJQnMmeSPg/I+BEcx57UJfnj62x1sMXREqI4l5ruMsZH+bWpnvkLHFGtIXNr7n6EwNBnlu46jcnECmn4vwy+Dv0UqCWOR22mSH82/Qv3jCvzYbST2E/kBwve6Tni0IwvPwvegZnyoOgS0hX4/itqL4/K+OCRzRKb8I2TL+6H6Wj4uTwkQnMzPz3OjFqGCBG4mgatJoDcLHGP/sVWAjhk26dviHu34LwrPQcgbMk+Q8gqPyZ1w0dxNCMzs7oJkEs1g69xPPiIENib/oB7frHB7vsIZ9xdEoyzpCMrmRaPxVjFypgRi1wuBvXCWBVKSxBs6YJWOhVrgxL6DSaA5Eo37ofYBpf4r5Y+B3ii0m4YnWzNRuf8kqvyT0cAW7D5SuDyFkCazFwKfrk1D9aJ4zUh1UdU+R6XzUtRE7qeKxrJi8SoUT1iJE2TZo2SAo7T466N9UZ6Tj/i31QLnsUB3h4FWfmTBaAM7PMg6pybQlIbcIjzu7I7GglJNi7o0VVQjp+so4bYsIv6JXPYo+Xs8DNmGHKOheBCxCxXncvAHBf7NkT64avQZan+9pRn9stSOC8HDAXNRvikd5RSzZau24WlOAZLedhQCvYaP6ik5m/Wy8KUkCaZ9Z0e3YbgdsxsPMk6iMCwFv5h8gVyrceJo+lOhs7XSgqzqE4eqjLN4Gp2O58cvoSQkBYcoFHbI7UVSxROSOAQoq0tSaXNuVlQPyqAaslRs+C8KWbWSBHKSBJFAz89GWksDOnYz+06nGziTV1JjhKwHomXWiJH1xGaaYH+bAaguoL1PW8g9TbuyoVqc9OdkIPLCkK1CEO8GHNf+hCAKn3Cq73h/CPJj9+BR9q8o3XoYefbT8XD8Ks3gl6Xiah652B7s1akDh/WQerZ8x3SezodYQCJ9SORSwnLKau7Ax806Ik+3G438+H24l5aF/HkRyFUMR9XunzSUL8uNoARE0gJX0NiFOt0F5yJ6LiU+vqjy4jeKhduIrM22cUfTczqhmpWc1ZvFZYUNNqpXf0tJ2aKVcg4JnEtgod5EymhOztegcCLfQOTxRL6NNt2cuWuh4uNKU+rpHD3oMEYIWUTkzKflna/hWkJcywhsWb5dR9OJkz1mEe4fOYXSzNO4MDsYmygX+DTjBf6ri4W51IPuXN5EwgTz6eml01UI9aH6QiJmcu7Mccpi/ejE4XtgHLnhvHcY/rPrKAqi03DGcZLY5Nl6vEDm0WIOQWsAhlYwe4q52EtseT7D+S7A77hfH0VnU6l/+w/N/OTm2DNsGlbqWwkiXuXuIZMRZmQnyLhNOwHXWTyHQIhwm5VIiOuu83FysAdNaiYsN5tEffs/wO+4j1boYlo8G4B52XM8F/ex1G2rlJzpJInQ64mCdcmIJavwIL5J5K1OwJ6Onwr3rqI6W+Y7DRl/S7AreSuIpITaS6fJ47EBuOw8lxZnJkTQV9lfQivUi8QwWDA/tQvjPt0p/CRXS3vzKD0bPFy3Dd8bDhBW2S7vjTLKyPOdhuP0OB8U+Mfi/ARfxNH3yQHbL3HV1RvnKXYy6EJxc/5aVARQRq9Mw9XhXiK4v9Ex+VsgBLpoBD7dcghVnuuQOy0Qf0wPAfZk40InZxzsPASFuoOhout6ke1klM0IQ01wCq4bDsGjVUm44jARZw0HoXbzYfw6fLawsCeR/x14ITCSBJZv3I271lOQqXRBjukYNEYfQG4nV7oUuOCJVyQQlwXViECopkci12kGflB8itK1KXQ1sxUhkePui7NDvxEC2T2ehFk0ycz/A9zvdWO6aQVyDJasS8F2OmI4WHmjfrR6Kxpt5+DZ+t142GUMVC4rAZdANE2LQHZPN+xtNxAlESnie4QzMXfsElwaOltsH/yFx7dz3h3YVTN1uvwFTET88U7B/dly2ncfssDhlCShej2Qt24r1r9tJ4KUk6BodSKahgai3icB99s4o5HOydoRy1AxNRQZPb+iPdEa+eHJOG/thhNkzZrNh1A03BunnL/FmfGLkfXFHEQa9xFZ2XxSj2bgOi+AD4eD7vOxqpW12Ja074UF+9NR5ys3RZrrTCzXsxAm5tXsGz4DmYpBuOIVjNv+G3GZPowyrb5Ceh93RHbqJ7aEmA79cXXZeuStiMaNoXPxi6UbKvZm4YrFaFz5fDZuxewUX2jqrUSNeSSARfHeyBx8F42hxd4IjEWckYNo43e8KOtW7yglK32F0lN6H3OkLvCUPsB0qTNmUX2uZIL5Ulcslj7Ecok2aolOF6p7U/ts6juT+njRcwm1r6D3AZISm1tYozRxL461sEdmi94oDtuKPW36IlHxEU7MWI6fZvkhWtFH9I1oaYNjExbizLxgnLZxQ6l/AjJb9UNsawdssB8BrxZd4GBMG3VXyUA5VXoPr2JaM0x/pf5qP37/DQmOkMzwMGEPfpP6Irf7l3gUlowLLQcgPywJR81G4JiZC4pi0uh65oi84Hhk2n6NLe2ckNn+E5T7JeKJsSsK+LOz6yAywvvo3baTWuAUqSPeFDNJ5FqyZHlmNuqCklBHZ2ulwzTcsx6Hi1OXIpzerSPL3aaQgfMyFNL+yf0XkheiJFPasrYA8d/jMlnTjzzlIXWCuV5rpWQi6SsnSe3xpvAgkSFEfDdhJ45L1vipw0BUk4ure02mTZ0SgEJjNb2/OWkJMGoVbnsGYiW1zSEhYdReGpkKBKXixkRfBJJoD6kDLPTbKKUukp5ygtQOb4rp0rvwp/jNSdhGlumC8BYm5K4E3KGNvigqGakGltimb4mSzWm4RUdoSfxObG1lRaI/QBzFeZHfBuQZ9UNhcAySbD8nF3dA/87dzEigrnK8pMCbYrJkTEnVHvs9F+I7Il9Av9NGzUByh95IH/g1roTH4FJoNFLth5GlOyO191BcXhuDCyFR2NvXFZmjPRGp1w1Rxj2QPmshZXJ7DLOwtSCBcuU4qQ3eFBOktpQwCopFhXhOJcwi0d+SdecSfMjCi6R3qG6MGfSO232o7kvtC+g5h+rcn+FJYA6nTiZmUmdJ1tFNMnroLhnhTTBWg3Gv/B6vwUSpNS2i9Yv34+g3t2nbuQ+/044ZQ5q6Gxh2lGSSpDNIMvjKVWp13EVqdf6fANbCmlib+KefylsEXQL/9f9PAGshTZL0X/XNV62aOCOnAAAAAElFTkSuQmCC",
         
         //http://w.ppy.sh/c/c6/Sudden_Death.png
         "SD": "data:image/png;base64,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",
@@ -139,6 +142,29 @@ var modnames = [
     ],
     
     playerCountries = null;
+
+var defaultSettings = {
+    showMirror: true,
+    showSubscribeMap: true,
+    apikey: null,
+    failedChecked: true,
+    showDates: true,
+    showPpRank: false,
+    fetchPlayerCountries: true,
+    showTop100: true,
+    showDetailedHitCount: true,
+    showHitsPerPlay: true,
+    fetchUserpageMaxCombo: true,
+    fetchFirstsInfo: true,
+    rankingVisible: true,
+    forceShowDifficulties: false
+};
+
+var settings = {};
+for(var settingVar in defaultSettings){
+    settings[settingVar] = GM_getValue(settingVar, defaultSettings[settingVar]);
+}
+settings.displayTopNum = settings.showTop100 ? 100 : 50;
 
 //----------------------
 // Replay composer 
@@ -313,113 +339,113 @@ var Replayer = (function(){
 })($);
 
 var subscriberManager = (function(){
-	var MAPPER = 0,
-		MAP = 1;
+    var MAPPER = 0,
+        MAP = 1;
 
-	function isSubscribed(list, id){
-		if(getIndex(list, id) === -1) return false;
-		else return true;
-	}
+    function isSubscribed(list, id){
+        if(getIndex(list, id) === -1) return false;
+        else return true;
+    }
 
-	function add(list, params, type){
-		if(getIndex(list, params.id) === -1){
-			var x = {};
-			for(var p in params){
-				x[p] = params[p];
-			}
-			list.push(x);
-			sortList(list, type);
-		}
-		return list;
-	}
+    function add(list, params, type){
+        if(getIndex(list, params.id) === -1){
+            var x = {};
+            for(var p in params){
+                x[p] = params[p];
+            }
+            list.push(x);
+            sortList(list, type);
+        }
+        return list;
+    }
 
-	function remove(list, id){
-		var index = getIndex(list, id);
-		if(index === -1) return;
-		else{
-			list.splice(index, 1);
-		}
-	}
+    function remove(list, id){
+        var index = getIndex(list, id);
+        if(index === -1) return;
+        else{
+            list.splice(index, 1);
+        }
+    }
 
-	function getIndex(list, id){
-		for(var i=0; i<list.length; i++){
-			if(list[i].id === id){
-				return i;
-			}
-		}
-		return -1;
-	}
+    function getIndex(list, id){
+        for(var i=0; i<list.length; i++){
+            if(list[i].id === id){
+                return i;
+            }
+        }
+        return -1;
+    }
 
-	function sortList(list, type){
-		if(type === MAPPER){
-			list.sort(function(a, b){
-				return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
-			});
-		}else if(type === MAP){
-			list.sort(function(a, b){
-				if(a.artist.toLowerCase() < b.artist.toLowerCase()) return -1;
-				else if(a.artist.toLowerCase() > b.artist.toLowerCase()) return 1;
-				else if(a.title.toLowerCase() < b.title.toLowerCase()) return -1;
-				else if(a.title.toLowerCase() > b.title.toLowerCase()) return 1;
-				else return a.creator.toLowerCase() < b.creator.toLowerCase() ? -1 : 1;
-			});
-		}
-	}
+    function sortList(list, type){
+        if(type === MAPPER){
+            list.sort(function(a, b){
+                return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+            });
+        }else if(type === MAP){
+            list.sort(function(a, b){
+                if(a.artist.toLowerCase() < b.artist.toLowerCase()) return -1;
+                else if(a.artist.toLowerCase() > b.artist.toLowerCase()) return 1;
+                else if(a.title.toLowerCase() < b.title.toLowerCase()) return -1;
+                else if(a.title.toLowerCase() > b.title.toLowerCase()) return 1;
+                else return a.creator.toLowerCase() < b.creator.toLowerCase() ? -1 : 1;
+            });
+        }
+    }
 
-	function getList(type){
-		if(type === MAPPER){
-			return JSON.parse(GM_getValue("mapperSubList", "[]"));
-		}else{
-			return JSON.parse(GM_getValue("mapSubList", "[]"));
-		}
-	}
+    function getList(type){
+        if(type === MAPPER){
+            return JSON.parse(GM_getValue("mapperSubList", "[]"));
+        }else{
+            return JSON.parse(GM_getValue("mapSubList", "[]"));
+        }
+    }
 
-	function saveList(list, type){
-		if(type === MAPPER){
-			GM_setValue("mapperSubList", JSON.stringify(list));
-		}else{
-			GM_setValue("mapSubList", JSON.stringify(list));
-		}
-	}
+    function saveList(list, type){
+        if(type === MAPPER){
+            GM_setValue("mapperSubList", JSON.stringify(list));
+        }else{
+            GM_setValue("mapSubList", JSON.stringify(list));
+        }
+    }
 
-	return {
-		mapper: {
-			isSubscribed: function(id){
-				return isSubscribed(getList(MAPPER), id);
-			},
-			add: function(id, username){
-				var list = getList(MAPPER);
-				add(list, {id: id, name: username}, MAPPER);
-				saveList(list, MAPPER);
-			},
-			remove: function(id){
-				var list = getList(MAPPER);
-				remove(list, id);
-				saveList(list, MAPPER);
-			},
-			getList: function(){
-				return getList(MAPPER);
-			}
-		},
-		map: {
-			isSubscribed: function(id){
-				return isSubscribed(getList(MAP), id);
-			},
-			add: function(id, artist, title, creator, creator_id){
-				var list = getList(MAP);
-				add(list, {id: id, artist: artist, title: title, creator: creator, creator_id: creator_id}, MAP);
-				saveList(list, MAP);
-			},
-			remove: function(id){
-				var list = getList(MAP);
-				remove(list, id);
-				saveList(list, MAP);
-			},
-			getList: function(){
-				return getList(MAP);
-			}
-		}
-	};
+    return {
+        mapper: {
+            isSubscribed: function(id){
+                return isSubscribed(getList(MAPPER), id);
+            },
+            add: function(id, username){
+                var list = getList(MAPPER);
+                add(list, {id: id, name: username}, MAPPER);
+                saveList(list, MAPPER);
+            },
+            remove: function(id){
+                var list = getList(MAPPER);
+                remove(list, id);
+                saveList(list, MAPPER);
+            },
+            getList: function(){
+                return getList(MAPPER);
+            }
+        },
+        map: {
+            isSubscribed: function(id){
+                return isSubscribed(getList(MAP), id);
+            },
+            add: function(id, artist, title, creator, creator_id){
+                var list = getList(MAP);
+                add(list, {id: id, artist: artist, title: title, creator: creator, creator_id: creator_id}, MAP);
+                saveList(list, MAP);
+            },
+            remove: function(id){
+                var list = getList(MAP);
+                remove(list, id);
+                saveList(list, MAP);
+            },
+            getList: function(){
+                return getList(MAP);
+            }
+        }
+    };
 })();
 
 $(document).ready(function(){
@@ -433,56 +459,178 @@ $(document).ready(function(){
         pageType = BEATMAP;
         osuplusBeatmap.init();
     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/pp/)){
-    	pageType = PPRANKING;
-    	osuplusPpRanking.init();
+        pageType = PPRANKING;
+        osuplusPpRanking.init();
     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/beatmaplist/)){
-    	pageType = BEATMAPLISTING;
-    	osuplusBeatmapListing.init();
+        pageType = BEATMAPLISTING;
+        osuplusBeatmapListing.init();
     }
 });
 
 function init(){
-    apikey = GM_getValue("apikey", null);
+    apikey = settings.apikey;
     if(apikey !== null){
         hasKey = true;
     }else{
         hasKey = false;
         displayGetKey();
     }
+    insertSettings();
+}
+
+function insertSettings(){
+    function makeSettingRow(title, description, option){
+        var row = "<tr class='row2'><td><b>" + title + "</b>";
+        if(description){
+            row += "<br>" + description;
+        }
+        row += "</td><td class='settingOption'>" + option + "</td></tr>";
+        return row;
+    }
+
+    function makeCheckboxOption(property){
+        var option = "<input type='checkbox' id='settings-"+property+"'";
+        if(settings[property]){
+            option += " checked";
+        }
+        option += ">";
+        return option;
+    }
+
+    $(document.head).append($("<style></style>").html(
+        "#osuplusSettingsBtn {background:rgba(0,0,0,0.2) url("+settingsImg+") no-repeat 5px 10px; position:fixed; width:42px; height:47px; right:80px; cursor:pointer;}\n" +
+        "#osuplusModalOverlay {position:fixed; top:0px; width:100%; height:100%; z-index:19999; background:rgba(0,0,0,0.5);}\n" +
+        "#osuplusModal {position:fixed; width:400px; z-index:20000; top:30px; background:white; margin-left:-200px; left:50%; border-radius:10px; padding:15px;}\n" +
+        ".osuplusModalClose {position:absolute; right:15px; top:15px;}\n" +
+        ".osuplusSettingsContent {height:400px; overflow:auto; padding:10px; margin-bottom:10px;}\n" +
+        ".osuplusSettingsTable {border-collapse:collapse;}\n" +
+        ".osuplusSettingsTable tr {margin:1px;}\n" +
+        ".settingOption {text-align:right;}\n"
+    ));
+
+    $(document.body).prepend("<div id='osuplusSettingsBtn'></div>");
+    $(document.body).append(
+        $("<div id='osuplusModalOverlay' style='display:none;'></div>"),
+        $("<div id='osuplusModal' style='display:none;'></div>").append(
+            "<button class='osuplusModalClose'>x</button>",
+            "<h1>osuplus settings</h1>",
+            $("<div class='osuplusSettingsContent'>").append(
+                $("<div>").append(
+                    "<h2>General</h2>",
+                    $("<table class='osuplusSettingsTable' width='100%'>").append(
+                        makeSettingRow("API key", "", "<input type='password' id='settings-apikey' value='" + GM_getValue("apikey", defaultSettings.apikey) + "'>" +
+                                                      "<label><input type='checkbox' id='show-apikey'>Show</label>")
+                    )
+                ),
+                $("<div>").append(
+                    "<h2>Beatmaps page</h2>",
+                    $("<table class='osuplusSettingsTable' width='100%'>").append(
+                        makeSettingRow("Show bloodcat mirror", "", makeCheckboxOption("showMirror")),
+                        makeSettingRow("Show subscribe map", "", makeCheckboxOption("showSubscribeMap")),
+                        makeSettingRow("Show dates", "", makeCheckboxOption("showDates")),
+                        makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
+                        makeSettingRow("Fetch player countries outside top 50", "disable to load faster, but some players' countries won't be loaded", makeCheckboxOption("fetchPlayerCountries")),
+                        makeSettingRow("Show top 100", "rather than top 50", makeCheckboxOption("showTop100"))
+                    )
+                ),
+                $("<div>").append(
+                    "<h2>Userpage</h2>",
+                    $("<table class='osuplusSettingsTable' width='100%'>").append(
+                        makeSettingRow("Show failed scores", "", makeCheckboxOption("failedChecked")),
+                        makeSettingRow("Show detailed hit count", "", makeCheckboxOption("showDetailedHitCount")),
+                        makeSettingRow("Show hits per play", "", makeCheckboxOption("showHitsPerPlay")),
+                        makeSettingRow("Show top ranks max possible combo", "may take longer to load", makeCheckboxOption("fetchUserpageMaxCombo")),
+                        makeSettingRow("Show first places detailed info", "may take longer to load", makeCheckboxOption("fetchFirstsInfo"))
+                    )
+                ),
+                $("<div>").append(
+                    "<h2>Performance ranking</h2>",
+                    $("<table class='osuplusSettingsTable' width='100%'>").append(
+                        makeSettingRow("Show global/country ranking", "", makeCheckboxOption("rankingVisible"))
+                    )
+                ),
+                $("<div>").append(
+                    "<h2>Beatmap Listing</h2>",
+                    $("<table class='osuplusSettingsTable' width='100%'>").append(
+                        makeSettingRow("Force show difficulties", "so no need to hover over maps", makeCheckboxOption("forceShowDifficulties"))
+                    )
+                )
+            ),
+            $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
+                GM_setValue("apikey", $("#settings-apikey").val());
+                setBoolProperty("showMirror");
+                setBoolProperty("showSubscribeMap");
+                setBoolProperty("showDates");
+                setBoolProperty("showPpRank");
+                setBoolProperty("fetchPlayerCountries");
+                setBoolProperty("showTop100");
+                setBoolProperty("failedChecked");
+                setBoolProperty("showDetailedHitCount");
+                setBoolProperty("showHitsPerPlay");
+                setBoolProperty("fetchUserpageMaxCombo");
+                setBoolProperty("fetchFirstsInfo");
+                setBoolProperty("rankingVisible");
+                setBoolProperty("forceShowDifficulties");
+            })
+        )
+    );
+
+    function setBoolProperty(property){
+        GM_setValue(property, $("#settings-"+property).prop("checked"));
+    }
+
+    $("#show-apikey").click(function(){
+        if(this.checked){
+            $("#settings-apikey").attr("type", "text");
+        }else{
+            $("#settings-apikey").attr("type", "password");
+        }
+    });
+
+    function openModal(){
+        $("#osuplusModal, #osuplusModalOverlay").fadeIn(200);
+    }
+
+    function closeModal(){
+        $("#osuplusModalOverlay, #osuplusModal").fadeOut(200);
+    }
+
+    $("#osuplusSettingsBtn").click(openModal);
+    $("#osuplusModalOverlay, .osuplusModalClose, #osuplusSettingsSaveBtn").click(closeModal);
 }
 
 var osuplusBeatmapListing = (function(){
-	var subsTitle = null,
-		subsContent = null,
-		beatmaplistingTitle = null,
-		loadingNotice = null,
-		beatmaplistingContent = null,
-		mappersSelect = null,
-		mappersRemoveBtn = null,
-		mapsSelect = null,
-		mapsRemoveBtn = null,
-		subsTxtbox = null,
-		subsAddBtn = null,
-		pageLeft = null,
-		pageRight = null,
-		pageDisplay = null,
-		subsBeatmaplist = null,
-		beatmapList = [],
-		pages = 1,
-		curPage = 1,
-		pageSize = 40,
-		refreshBtn = null;
+    var subsTitle = null,
+        subsContent = null,
+        beatmaplistingTitle = null,
+        loadingNotice = null,
+        beatmaplistingContent = null,
+        mappersSelect = null,
+        mappersRemoveBtn = null,
+        mapsSelect = null,
+        mapsRemoveBtn = null,
+        subsTxtbox = null,
+        subsAddBtn = null,
+        pageLeft = null,
+        pageRight = null,
+        pageDisplay = null,
+        subsBeatmaplist = null,
+        beatmapList = [],
+        pages = 1,
+        curPage = 1,
+        pageSize = 40,
+        refreshBtn = null;
 
-	//0: unloaded
-	//1: loading
-	//2: loaded
-	var subLoadingStatus = 0;
+    //0: unloaded
+    //1: loading
+    //2: loaded
+    var subLoadingStatus = 0;
 
-	function addCss(){
-		$(document.head).append($("<style></style>").html(
-			".small-content-with-bg {background-image: url(//s.ppy.sh/images/main-bg-new.png);}\n" +
-			".maintitlediv {font-size: 160%; padding-left: 20px;}\n" +
-			".maintitle {padding: 4px; margin-right: 10px;}\n" +
+    function addCss(){
+        $(document.head).append($("<style></style>").html(
+            ".small-content-with-bg {background-image: url(//s.ppy.sh/images/main-bg-new.png);}\n" +
+            ".maintitlediv {font-size: 160%; padding-left: 20px;}\n" +
+            ".maintitle {padding: 4px; margin-right: 10px;}\n" +
             ".maintitle:hover, .maintitle.selected {background-color: #A9A9FF; color: white; text-decoration: none;}\n" +
             "#subsControl {padding: 20px;}\n" +
             "#subsControl th {width: 80px; padding-right: 10px; float: left; text-align: right;}\n" +
@@ -494,414 +642,421 @@ var osuplusBeatmapListing = (function(){
             "#pageDisplay {padding-left: 15px; padding-right: 15px;}\n" +
             ".centered {display: block; margin-left: auto; margin-right: auto;}\n"
         ));
-	}
+    }
 
-	function init(){
-		addCss();
-		beatmaplistingContent = $(".content-with-bg");
-		subsTitle = $("<a class='maintitle'>Subscriptions</a>");
-		subsContent = $("<div class='subContent content-with-bg'></div>").hide();
-		beatmaplistingTitle = $("<a class='maintitle selected'>Beatmap Listing</a>");
-		loadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
-		subsTitle.click(function(){
-			subsTitle.addClass("selected");
-			subsContent.show();
-			beatmaplistingTitle.removeClass("selected");
-			beatmaplistingContent.hide();
-			if(subLoadingStatus === 0){
-				loadSubs();
-			}
-		});
-		beatmaplistingTitle.click(function(){
-			beatmaplistingTitle.addClass("selected");
-			beatmaplistingContent.show();
-			subsTitle.removeClass("selected");
-			subsContent.hide();
-		});
-		beatmaplistingContent.before($("<div class='maintitlediv small-content-with-bg'>").append(beatmaplistingTitle, subsTitle));
-		beatmaplistingContent.after(subsContent);
-		$(".newHeader").remove();
+    function init(){
+        addCss();
+        beatmaplistingContent = $(".content-with-bg");
+        subsTitle = $("<a class='maintitle'>Subscriptions</a>");
+        subsContent = $("<div class='subContent content-with-bg'></div>").hide();
+        beatmaplistingTitle = $("<a class='maintitle selected'>Beatmap Listing</a>");
+        loadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
+        subsTitle.click(function(){
+            subsTitle.addClass("selected");
+            subsContent.show();
+            beatmaplistingTitle.removeClass("selected");
+            beatmaplistingContent.hide();
+            if(subLoadingStatus === 0){
+                loadSubs();
+            }
+        });
+        beatmaplistingTitle.click(function(){
+            beatmaplistingTitle.addClass("selected");
+            beatmaplistingContent.show();
+            subsTitle.removeClass("selected");
+            subsContent.hide();
+        });
+        beatmaplistingContent.before($("<div class='maintitlediv small-content-with-bg'>").append(beatmaplistingTitle, subsTitle));
+        beatmaplistingContent.after(subsContent);
+        $(".newHeader").remove();
 
-		mappersSelect = $("<select id='mappersSelect' multiple size=5>");
-		mappersRemoveBtn = $("<button id='mappersRemoveBtn' class='subsBtn'>Remove</button>");
-		mapsSelect = $("<select id='mapsSelect' multiple size=5>");
-		mapsRemoveBtn = $("<button id='mapsRemoveBtn' class='subsBtn'>Remove</button>");
-		subsTxtbox = $("<input id='subsTxtbox' class='subsTxt'>");
-		subsAddBtn = $("<button id='subsAddBtn' class='subsBtn'>Add</button>");
-		pageLeft = $("<button class='subsBtn'>&lt;</button>");
-		pageRight = $("<button class='subsBtn'>&gt;</button>");
-		pageDisplay = $("<span id='pageDisplay'>Page 1/1</span>");
-		subsBeatmaplist = $("<div class='beatmapListing'>");
-		refreshBtn = $("<button class='subsBtn'>Refresh</button>");
+        mappersSelect = $("<select id='mappersSelect' multiple size=5>");
+        mappersRemoveBtn = $("<button id='mappersRemoveBtn' class='subsBtn'>Remove</button>");
+        mapsSelect = $("<select id='mapsSelect' multiple size=5>");
+        mapsRemoveBtn = $("<button id='mapsRemoveBtn' class='subsBtn'>Remove</button>");
+        subsTxtbox = $("<input id='subsTxtbox' class='subsTxt'>");
+        subsAddBtn = $("<button id='subsAddBtn' class='subsBtn'>Add</button>");
+        pageLeft = $("<button class='subsBtn'>&lt;</button>");
+        pageRight = $("<button class='subsBtn'>&gt;</button>");
+        pageDisplay = $("<span id='pageDisplay'>Page 1/1</span>");
+        subsBeatmaplist = $("<div class='beatmapListing'>");
+        refreshBtn = $("<button class='subsBtn'>Refresh</button>");
 
-		pageLeft.click(function(){
-			if(curPage > 1){
-				curPage--;
-				refreshPage();
-			}
-		});
-		pageRight.click(function(){
-			if(curPage < pages){
-				curPage++;
-				refreshPage();
-			}
-		});
-		refreshBtn.click(function(){
-			if(subLoadingStatus !== 1){
-				loadSubs();
-			}
-		});
+        pageLeft.click(function(){
+            if(curPage > 1){
+                curPage--;
+                refreshPage();
+            }
+        });
+        pageRight.click(function(){
+            if(curPage < pages){
+                curPage++;
+                refreshPage();
+            }
+        });
+        refreshBtn.click(function(){
+            if(subLoadingStatus !== 1){
+                loadSubs();
+            }
+        });
 
-		subsContent.append(
-			$("<div id='subsControl'>").append(
-				$("<table style='width:100%;'>").append(
-					$("<tr>").append(
-						$("<th>Subscribed mappers:</th>"),
-						$("<td>").append(
-							mappersSelect, "<br>", mappersRemoveBtn
-						),
-						$("<th>Subscribed maps:</th>"),
-						$("<td>").append(
-							mapsSelect, "<br>", mapsRemoveBtn
-						)
-					),
-					$("<tr>").append(
-						$("<th>Add mapper:</th>"),
-						$("<td>").append(
-							subsTxtbox, "&nbsp;", subsAddBtn
-						)
-					)
-				)
-			),
-			$("<div class='pagination'>").append(
-				refreshBtn, "<br>", 
-				pageLeft, pageDisplay, pageRight
-			),
-			loadingNotice,
-			subsBeatmaplist
-		);
-		refreshMappersSub();
-		refreshMapsSub();
+        subsContent.append(
+            $("<div id='subsControl'>").append(
+                $("<table style='width:100%;'>").append(
+                    $("<tr>").append(
+                        $("<th>Subscribed mappers:</th>"),
+                        $("<td>").append(
+                            mappersSelect, "<br>", mappersRemoveBtn
+                        ),
+                        $("<th>Subscribed maps:</th>"),
+                        $("<td>").append(
+                            mapsSelect, "<br>", mapsRemoveBtn
+                        )
+                    ),
+                    $("<tr>").append(
+                        $("<th>Add mapper:</th>"),
+                        $("<td>").append(
+                            subsTxtbox, "&nbsp;", subsAddBtn
+                        )
+                    )
+                )
+            ),
+            $("<div class='pagination'>").append(
+                refreshBtn, "<br>", 
+                pageLeft, pageDisplay, pageRight
+            ),
+            loadingNotice,
+            subsBeatmaplist
+        );
+        refreshMappersSub();
+        refreshMapsSub();
 
-		subsAddBtn.click(function(){
-			addSub(subsTxtbox.val());
-		});
-		mappersRemoveBtn.click(function(){
-			var selected = mappersSelect.find(":selected");
-			var toRemove = [];
-			selected.each(function(i, ele){
-				toRemove.push(ele.value);
-			});
-			removeMappers(toRemove);
-		});
-		mapsRemoveBtn.click(function(){
-			var selected = mapsSelect.find(":selected");
-			var toRemove = [];
-			selected.each(function(i, ele){
-				toRemove.push(ele.value);
-			});
-			removeMaps(toRemove);
-		});
-	}
+        subsAddBtn.click(function(){
+            addSub(subsTxtbox.val());
+        });
+        mappersRemoveBtn.click(function(){
+            var selected = mappersSelect.find(":selected");
+            var toRemove = [];
+            selected.each(function(i, ele){
+                toRemove.push(ele.value);
+            });
+            removeMappers(toRemove);
+        });
+        mapsRemoveBtn.click(function(){
+            var selected = mapsSelect.find(":selected");
+            var toRemove = [];
+            selected.each(function(i, ele){
+                toRemove.push(ele.value);
+            });
+            removeMaps(toRemove);
+        });
 
-	function refreshPage(){
-		subsBeatmaplist.children().hide();
-		subsBeatmaplist.children().eq(curPage - 1).show();
-		pageDisplay.text("Page "+curPage+"/"+pages);
-	}
+        if(settings.forceShowDifficulties){
+            $(".initiallyHidden").removeClass("initiallyHidden");
+        }
+    }
 
-	function loadSubs(){
-		subLoadingStatus = 1;
-		subsBeatmaplist.empty();
-		loadingNotice.show();
-		retrieveBeatmaps(function(result){
-			beatmapList = mergeBeatmaps(result);
-			if(beatmapList.length === 0) pages = 1;
-			else{
-				pages = (((beatmapList.length-1) / pageSize) >> 0) + 1;
-			}
-			curPage = 1;
-			var pageContainer = $("<div class='beatmapListing'>").hide();
-			beatmapList.forEach(function(beatmapset, index){
-				if(index % pageSize === 0){
-					if(index > 0){
-						subsBeatmaplist.append(pageContainer);
-						pageContainer = $("<div class='beatmapListing'>").hide();
-					}
-				}
-				pageContainer.append(makeBeatmapBox(beatmapset));
-			});
-			subsBeatmaplist.append(pageContainer);
-			refreshPage();
+    function refreshPage(){
+        subsBeatmaplist.children().hide();
+        subsBeatmaplist.children().eq(curPage - 1).show();
+        pageDisplay.text("Page "+curPage+"/"+pages);
+    }
 
-			$(".timeago").timeago();
-			$(".sub-beatmap").hover(function() {
-		        $(this).find(".maintext").marquee({
-		            speed: 60
-		        });
-		        $(this).find(".initiallyHidden").stop().fadeTo(1, 100);
-		        $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
-		            width: 'show'
-		        }, 100);
-		    }, function() {
-		        $(this).find(".initiallyHidden").fadeOut(400);
-		        $(this).find(".maintext").attr('stop', 1);
-		        $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
-		            width: 'hide'
-		        }, 100);
-		    }).click(function(event) {
-		        return load(this.id, event);
-		    });
-		    $(".sub-beatmap .bmlist-options .icon-heart").click(function() {
-		        $.ajax({
-		            url: "/web/favourite.php?localUserCheck=" + localUserCheck + "&a=" + $(this).parent().parent().parent().attr('id')
-		        }).done(function() {
-		            alert("Added as favourite!");
-		        });
-		        return false;
-		    });
-		    $(".sub-beatmap .bmlistt").click(function() {
-		        $('.sub-beatmap .bmlistt>.icon-pause').removeClass("icon-pause").addClass("icon-play");
-		        if (playBeatmapPreview($(this).parent().attr('id')))
-		            $(this).find('i').removeClass("icon-play").addClass("icon-pause");
-		        return false;
-		    });
-		    subLoadingStatus = 2;
-		    loadingNotice.hide();
-		});
-	}
+    function loadSubs(){
+        subLoadingStatus = 1;
+        subsBeatmaplist.empty();
+        loadingNotice.show();
+        retrieveBeatmaps(function(result){
+            beatmapList = mergeBeatmaps(result);
+            if(beatmapList.length === 0) pages = 1;
+            else{
+                pages = (((beatmapList.length-1) / pageSize) >> 0) + 1;
+            }
+            curPage = 1;
+            var pageContainer = $("<div class='beatmapListing'>").hide();
+            beatmapList.forEach(function(beatmapset, index){
+                if(index % pageSize === 0){
+                    if(index > 0){
+                        subsBeatmaplist.append(pageContainer);
+                        pageContainer = $("<div class='beatmapListing'>").hide();
+                    }
+                }
+                pageContainer.append(makeBeatmapBox(beatmapset));
+            });
+            subsBeatmaplist.append(pageContainer);
+            refreshPage();
 
-	function makeBeatmapBox(beatmapset){
-		var id = beatmapset.beatmapset_id;
-		var lastupdate = new Date(beatmapset.last_update.replace(' ','T') + "+0800");
-		var approved = "?";
-		switch(beatmapset.approved){
-			case "-2":
-				approved = "Graveyard"; break;
-			case "-1":
-				approved = "WIP"; break;
-			case "0":
-				approved = "Pending"; break;
-			case "1":
-				approved = "Ranked"; break;
-			case "2":
-				approved = "Approved"; break;
-			case "3":
-				approved = "Qualified"; break;
-			case "4":
-				approved = "Loved";
-		}
-		var source = "";
-		if(beatmapset.source !== ""){
-			source = "<div class='initiallyHidden'><span class='light'>from</span> "+beatmapset.source+"</div>";
-		}
-		var difficulties = "";
-		beatmapset.difficulties.forEach(function(beatmap){
-			difficulties += "<div class='diffIcon "+getDifficultyClass(beatmap.mode, beatmap.difficultyrating)+"'></div> ";
-		});
+            $(".timeago").timeago();
+            $(".sub-beatmap").hover(function() {
+                $(this).find(".maintext").marquee({
+                    speed: 60
+                });
+                $(this).find(".initiallyHidden").stop().fadeTo(1, 100);
+                $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
+                    width: 'show'
+                }, 100);
+            }, function() {
+                $(this).find(".initiallyHidden").fadeOut(400);
+                $(this).find(".maintext").attr('stop', 1);
+                $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
+                    width: 'hide'
+                }, 100);
+            }).click(function(event) {
+                return load(this.id, event);
+            });
+            $(".sub-beatmap .bmlist-options .icon-heart").click(function() {
+                $.ajax({
+                    url: "/web/favourite.php?localUserCheck=" + localUserCheck + "&a=" + $(this).parent().parent().parent().attr('id')
+                }).done(function() {
+                    alert("Added as favourite!");
+                });
+                return false;
+            });
+            $(".sub-beatmap .bmlistt").click(function() {
+                $('.sub-beatmap .bmlistt>.icon-pause').removeClass("icon-pause").addClass("icon-play");
+                if (playBeatmapPreview($(this).parent().attr('id')))
+                    $(this).find('i').removeClass("icon-play").addClass("icon-pause");
+                return false;
+            });
+            subLoadingStatus = 2;
+            loadingNotice.hide();
+        });
+    }
 
-		return $("<div class='beatmap sub-beatmap' id='"+id+"' style='width:420px;'>\
-			      <div class='bmlistt' style='background: url(//b.ppy.sh/thumb/"+id+".jpg)'>\
-				  <i class='icon-play'></i>\
-				  </div>\
-				  <div class='bmlist-options'>\
-				  <a href='#'><i class='icon-heart'></i></a>\
-				  <a class='require-login beatmap_download_link' href='/d/"+id+"'><i class='icon-download-alt'></i></a>\
-				  </div>\
-				  <div class='maintext'>\
-				  <span class='artist'>"+beatmapset.artist+"</span> - <a href='/s/"+id+"' class='title'>"+beatmapset.title+"</span></a>\
-				  </div>\
-				  <div class='left-aligned'>\
-				  <div><span class='light'>mapped by</span> <a href='/u/"+beatmapset.creator_id+"'>"+beatmapset.creator+"</a></div>\
-				  "+source+"\
-				  <div class='difficulties initiallyHidden'>"+difficulties+" </div>\
-				  </div>\
-				  <div class='right-aligned'>\
-				  <div class='status'><b>"+approved+"</b></div>\
-				  <div class='small-details'>\
-				  <div><time class='timeago' datetime='"+lastupdate.toISOString()+"'>"+lastupdate.toLocaleString()+"</time></div>\
-				  <i class='icon-heart'></i> "+beatmapset.favourite_count+"\
-				  </div>\
-				  </div>");
-	}
+    function makeBeatmapBox(beatmapset){
+        var id = beatmapset.beatmapset_id;
+        var lastupdate = new Date(beatmapset.last_update.replace(' ','T') + "+0800");
+        var initiallyHiddenClass = "initiallyHidden";
+        if(settings.forceShowDifficulties) initiallyHiddenClass = "";
+        var approved = "?";
+        switch(beatmapset.approved){
+            case "-2":
+                approved = "Graveyard"; break;
+            case "-1":
+                approved = "WIP"; break;
+            case "0":
+                approved = "Pending"; break;
+            case "1":
+                approved = "Ranked"; break;
+            case "2":
+                approved = "Approved"; break;
+            case "3":
+                approved = "Qualified"; break;
+            case "4":
+                approved = "Loved";
+        }
+        var source = "";
+        if(beatmapset.source !== ""){
+            source = "<div class='"+initiallyHiddenClass+"'><span class='light'>from</span> "+beatmapset.source+"</div>";
+        }
+        var difficulties = "";
+        beatmapset.difficulties.forEach(function(beatmap){
+            difficulties += "<div class='diffIcon "+getDifficultyClass(beatmap.mode, beatmap.difficultyrating)+"'></div> ";
+        });
 
-	function mergeBeatmaps(beatmaps){
-		function addDifficulty(difficulties, beatmap){
-			for(var i=0; i<difficulties.length; i++){
-				if(difficulties[i].beatmap_id === beatmap.beatmap_id){
-					return;
-				}
-			}
-			difficulties.push({
-				beatmap_id: beatmap.beatmap_id,
-				version: beatmap.version,
-				mode: beatmap.mode,
-				playcount: beatmap.playcount,
-				difficultyrating: beatmap.difficultyrating
-			});
-		}
+        return $(
+            "<div class='beatmap sub-beatmap' id='"+id+"' style='width:420px;'>\
+                <div class='bmlistt' style='background: url(//b.ppy.sh/thumb/"+id+".jpg)'>\
+                    <i class='icon-play'></i>\
+                </div>\
+                <div class='bmlist-options'>\
+                    <a href='#'><i class='icon-heart'></i></a>\
+                    <a class='require-login beatmap_download_link' href='/d/"+id+"'><i class='icon-download-alt'></i></a>\
+                </div>\
+                <div class='maintext'>\
+                    <span class='artist'>"+beatmapset.artist+"</span> - <a href='/s/"+id+"' class='title'>"+beatmapset.title+"</span></a>\
+                </div>\
+                <div class='left-aligned'>\
+                    <div><span class='light'>mapped by</span> <a href='/u/"+beatmapset.creator_id+"'>"+beatmapset.creator+"</a></div>\
+                    "+source+"\
+                    <div class='difficulties "+initiallyHiddenClass+"'>"+difficulties+" </div>\
+                </div>\
+                <div class='right-aligned'>\
+                    <div class='status'><b>"+approved+"</b></div>\
+                    <div class='small-details'>\
+                        <div><time class='timeago' datetime='"+lastupdate.toISOString()+"'>"+lastupdate.toLocaleString()+"</time></div>\
+                        <i class='icon-heart'></i> "+beatmapset.favourite_count+"\
+                    </div>\
+                </div>\
+            </div>");
+    }
 
-		var merged = [];
-		beatmaps.forEach(function(beatmap){
-			var mergedlen = merged.length;
-			var index = -1;
-			for(var i=0; i<mergedlen; i++){
-				if(beatmap.beatmapset_id === merged[i].beatmapset_id){
-					index = i;
-					break;
-				}
-			}
-			if(index === -1){
-				merged.push({
-					beatmapset_id: beatmap.beatmapset_id,
-					approved: beatmap.approved,
-					last_update: beatmap.last_update,
-					artist: beatmap.artist,
-					title: beatmap.title,
-					creator: beatmap.creator,
-					creator_id: beatmap.creator_id,
-					source: beatmap.source,
-					favourite_count: beatmap.favourite_count,
-					difficulties: []
-				});
-				addDifficulty(merged[mergedlen].difficulties, beatmap);
-			}else{
-				addDifficulty(merged[index].difficulties, beatmap);
-			}
-		});
+    function mergeBeatmaps(beatmaps){
+        function addDifficulty(difficulties, beatmap){
+            for(var i=0; i<difficulties.length; i++){
+                if(difficulties[i].beatmap_id === beatmap.beatmap_id){
+                    return;
+                }
+            }
+            difficulties.push({
+                beatmap_id: beatmap.beatmap_id,
+                version: beatmap.version,
+                mode: beatmap.mode,
+                playcount: beatmap.playcount,
+                difficultyrating: beatmap.difficultyrating
+            });
+        }
 
-		//Sort
-		merged.forEach(function(map){
-			map.difficulties.sort(function(a, b){
-				if(a.mode < b.mode) return -1;
-				if(a.mode > b.mode) return 1;
-				if(parseFloat(a.difficultyrating) < parseFloat(b.difficultyrating)) return -1;
-				else return 1;
-			});
-		});
-		merged.sort(function(a, b){
-			var date1 = new Date(a.last_update.replace(' ','T') + "+0800");
-			var date2 = new Date(b.last_update.replace(' ','T') + "+0800");
-			if(date1 > date2) return -1;
-			else return 1;
-		});
-		return merged;
-	}
+        var merged = [];
+        beatmaps.forEach(function(beatmap){
+            var mergedlen = merged.length;
+            var index = -1;
+            for(var i=0; i<mergedlen; i++){
+                if(beatmap.beatmapset_id === merged[i].beatmapset_id){
+                    index = i;
+                    break;
+                }
+            }
+            if(index === -1){
+                merged.push({
+                    beatmapset_id: beatmap.beatmapset_id,
+                    approved: beatmap.approved,
+                    last_update: beatmap.last_update,
+                    artist: beatmap.artist,
+                    title: beatmap.title,
+                    creator: beatmap.creator,
+                    creator_id: beatmap.creator_id,
+                    source: beatmap.source,
+                    favourite_count: beatmap.favourite_count,
+                    difficulties: []
+                });
+                addDifficulty(merged[mergedlen].difficulties, beatmap);
+            }else{
+                addDifficulty(merged[index].difficulties, beatmap);
+            }
+        });
 
-	function retrieveBeatmaps(callback){
-		var result = [];
-		var mapperList = subscriberManager.mapper.getList();
-		var mapList = subscriberManager.map.getList();
-		var funs = [];
-		mapperList.forEach(function(sub, index){
-			funs.push(function(donecb){
-				getBeatmaps({u: sub.id, type: "id"}, function(beatmaps){
-					beatmaps.forEach(function(beatmap){
-						beatmap.creator_id = sub.id;
-					});
-					result = result.concat(beatmaps);
-					donecb();
-				});
-			});
-		});
-		mapList.forEach(function(map, index){
-			funs.push(function(donecb){
-				getBeatmaps({s: map.id}, function(beatmaps){
-					beatmaps.forEach(function(beatmap){
-						beatmap.creator_id = map.creator_id;
-					});
-					result = result.concat(beatmaps);
-					donecb();
-				});
-			});
-		});
-		doManyFunc(funs, function(){
-			callback(result);
-		});
-	}
+        //Sort
+        merged.forEach(function(map){
+            map.difficulties.sort(function(a, b){
+                if(a.mode < b.mode) return -1;
+                if(a.mode > b.mode) return 1;
+                if(parseFloat(a.difficultyrating) < parseFloat(b.difficultyrating)) return -1;
+                else return 1;
+            });
+        });
+        merged.sort(function(a, b){
+            var date1 = new Date(a.last_update.replace(' ','T') + "+0800");
+            var date2 = new Date(b.last_update.replace(' ','T') + "+0800");
+            if(date1 > date2) return -1;
+            else return 1;
+        });
+        return merged;
+    }
 
-	function addSub(mapper){
-		getUser({u: mapper, type: "string"}, function(result){
-			if(result.length === 0){
-				alert("User does not exist!");
-			}else{
-				var id = result[0].user_id;
-				subscriberManager.mapper.add(id, result[0].username);
-				refreshMappersSub(id);
-			}
-		});
-	}
+    function retrieveBeatmaps(callback){
+        var result = [];
+        var mapperList = subscriberManager.mapper.getList();
+        var mapList = subscriberManager.map.getList();
+        var funs = [];
+        mapperList.forEach(function(sub, index){
+            funs.push(function(donecb){
+                getBeatmaps({u: sub.id, type: "id"}, function(beatmaps){
+                    beatmaps.forEach(function(beatmap){
+                        beatmap.creator_id = sub.id;
+                    });
+                    result = result.concat(beatmaps);
+                    donecb();
+                });
+            });
+        });
+        mapList.forEach(function(map, index){
+            funs.push(function(donecb){
+                getBeatmaps({s: map.id}, function(beatmaps){
+                    beatmaps.forEach(function(beatmap){
+                        beatmap.creator_id = map.creator_id;
+                    });
+                    result = result.concat(beatmaps);
+                    donecb();
+                });
+            });
+        });
+        doManyFunc(funs, function(){
+            callback(result);
+        });
+    }
 
-	function removeMappers(ls){
-		ls.forEach(function(id){
-			subscriberManager.mapper.remove(id);
-		});
-		refreshMappersSub();
-	}
-	function removeMaps(ls){
-		ls.forEach(function(id){
-			subscriberManager.map.remove(id);
-		});
-		refreshMapsSub();
-	}
+    function addSub(mapper){
+        getUser({u: mapper, type: "string"}, function(result){
+            if(result.length === 0){
+                alert("User does not exist!");
+            }else{
+                var id = result[0].user_id;
+                subscriberManager.mapper.add(id, result[0].username);
+                refreshMappersSub(id);
+            }
+        });
+    }
 
-	function refreshMappersSub(id){
-		mappersSelect.find("option").remove();
-		var optionsls = [];
-		var subscribedList = subscriberManager.mapper.getList();
-		var sublen = subscribedList.length;
-		var focus = null;
-		for(var i=0; i<sublen; i++){
-			var option = $("<option value='" + subscribedList[i].id + "'>" + subscribedList[i].name + "</option>");
-			if(subscribedList[i].id === id) focus = option;
-			optionsls.push(option);
-		}
-		mappersSelect.append(optionsls);
-		if(focus !== null){
-			focus.prop("selected", true);
-		}
-	}
+    function removeMappers(ls){
+        ls.forEach(function(id){
+            subscriberManager.mapper.remove(id);
+        });
+        refreshMappersSub();
+    }
+    function removeMaps(ls){
+        ls.forEach(function(id){
+            subscriberManager.map.remove(id);
+        });
+        refreshMapsSub();
+    }
 
-	function refreshMapsSub(){
-		mapsSelect.find("option").remove();
-		var optionsls = [];
-		var subscribedList = subscriberManager.map.getList();
-		var sublen = subscribedList.length;
-		for(var i=0; i<sublen; i++){
-			var map = subscribedList[i];
-			var option = $("<option value='" + map.id + "'>" + 
-				map.artist+" - "+map.title+"  ("+map.creator+")</option>");
-			optionsls.push(option);
-		}
-		mapsSelect.append(optionsls);
-	}
+    function refreshMappersSub(id){
+        mappersSelect.find("option").remove();
+        var optionsls = [];
+        var subscribedList = subscriberManager.mapper.getList();
+        var sublen = subscribedList.length;
+        var focus = null;
+        for(var i=0; i<sublen; i++){
+            var option = $("<option value='" + subscribedList[i].id + "'>" + subscribedList[i].name + "</option>");
+            if(subscribedList[i].id === id) focus = option;
+            optionsls.push(option);
+        }
+        mappersSelect.append(optionsls);
+        if(focus !== null){
+            focus.prop("selected", true);
+        }
+    }
 
-	function getDifficultyClass(mode, difficultyrating){
-		var diff = "?";
-		var rating = parseFloat(difficultyrating);
-		if(rating < 1.5) diff = "easy";
-		else if(rating < 2.25) diff = "normal";
-		else if(rating < 3.75) diff = "hard";
-		else if (rating < 5.25) diff = "insane";
-		else diff = "expert";
-		if(mode === "1") diff += "-t";
-		else if(mode === "2") diff += "-f";
-		else if(mode === "3") diff += "-m";
-		return diff;
-	}
+    function refreshMapsSub(){
+        mapsSelect.find("option").remove();
+        var optionsls = [];
+        var subscribedList = subscriberManager.map.getList();
+        var sublen = subscribedList.length;
+        for(var i=0; i<sublen; i++){
+            var map = subscribedList[i];
+            var option = $("<option value='" + map.id + "'>" + 
+                map.artist+" - "+map.title+"  ("+map.creator+")</option>");
+            optionsls.push(option);
+        }
+        mapsSelect.append(optionsls);
+    }
 
-	return {init: init};
+    function getDifficultyClass(mode, difficultyrating){
+        var diff = "?";
+        var rating = parseFloat(difficultyrating);
+        if(rating < 1.5) diff = "easy";
+        else if(rating < 2.25) diff = "normal";
+        else if(rating < 3.75) diff = "hard";
+        else if (rating < 5.25) diff = "insane";
+        else diff = "expert";
+        if(mode === "1") diff += "-t";
+        else if(mode === "2") diff += "-f";
+        else if(mode === "3") diff += "-m";
+        return diff;
+    }
+
+    return {init: init};
 })();
 
 var osuplusPpRanking = (function(){
-	var country = null,
-		isGlobal = true,
-		mode = null,
-		tableBody = null,
-		tableLoadingNotice = null,
-		rankingVisible = true,
-		rankingCheckbox = null,
-		playerInfo = [];
+    var country = null,
+        isGlobal = true,
+        mode = null,
+        tableBody = null,
+        tableLoadingNotice = null,
+        rankingCheckbox = null,
+        playerInfo = [];
 
 
     function addCss(){
@@ -910,107 +1065,85 @@ var osuplusPpRanking = (function(){
         ));
     }
 
-	function init(){
-		addCss();
-		if(window.location.search === ""){
-			isGlobal = true;
-			mode = 0;
-		}else{
-			var searchObj = searchParser(window.location.search);
-			if(searchObj.c === undefined){
-				isGlobal = true;
-			}else{
-				isGlobal = false;
-			}
-			if(searchObj.m === undefined){
-				mode = 0;
-			}else{
-				mode = searchObj.m;
-			}
-		}
-		tableBody = $(".beatmapListing > tbody");
-		rankingVisible = GM_getValue("rankingVisible", true);
+    function init(){
+        addCss();
+        if(window.location.search === ""){
+            isGlobal = true;
+            mode = 0;
+        }else{
+            var searchObj = searchParser(window.location.search);
+            if(searchObj.c === undefined){
+                isGlobal = true;
+            }else{
+                isGlobal = false;
+            }
+            if(searchObj.m === undefined){
+                mode = 0;
+            }else{
+                mode = searchObj.m;
+            }
+        }
+        tableBody = $(".beatmapListing > tbody");
 
-		//Add Loader
-		tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>").hide();
+        //Add Loader
+        tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>").hide();
         $("#tablist").before(tableLoadingNotice);
 
-		//Add checkbox
-		rankingCheckbox = $("<label></label>").append($("<input>").attr({type: "checkbox",
-            												   			 id: "rankingbtn"})
-                							  				      .click(rankingClicked)
-                							  				      .prop("checked", rankingVisible),
-                							          "Show global/country ranking");
-		$("#tablist").before(rankingCheckbox);
-		rankingClicked.bind($("#rankingbtn"))();
+        //Add global/country ranking
+        if(settings.rankingVisible){
+            tableLoadingNotice.show();
 
-        
-	}
+            //Get player list
+            var playerList = [];
+            tableBody.children().first().nextAll().each(function(index, ele){
+                var href = $(ele).children().eq(1).children().eq(1).attr("href");
+                playerList[index] = href.split("/")[2];
+            });
+            var funs = [];
+            playerList.forEach(function(id, index){
+                funs.push(function(donecb){
+                    getUser({u: id, m: mode, type: "id"}, function(response){
+                        playerInfo[index] = response[0];
+                        donecb();
+                    });
+                });
+            });
+            doManyFunc(funs, function(){
+                tableLoadingNotice.hide();
+                
+                //Add new headers
+                var newHeader = isGlobal ? "Country" : "Global";
+                tableBody.children().first().children().first().after("<th class='rank2col'>" + newHeader + "</th>");
 
-	function rankingClicked(){
-		var me = $(this);
-		rankingVisible = me.prop("checked");
-		GM_setValue("rankingVisible", rankingVisible);
-		if(!rankingVisible){
-			$(".rank2col").hide();
-		}else{
-			if($(".rank2col").length === 0){
-				tableLoadingNotice.show();
+                //Add new ranks
+                tableBody.children().first().nextAll().each(function(index, row){
+                    row = $(row);
+                    var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
+                    row.children().first().after("<td class='rank2col'>#" + newRank + "</td>");
+                });
+            });
+        }
+    }
 
-				//Get player list
-		        var playerList = [];
-		        tableBody.children().first().nextAll().each(function(index, ele){
-		        	var href = $(ele).children().eq(1).children().eq(1).attr("href");
-		        	playerList[index] = href.split("/")[2];
-		        });
-		        var funs = [];
-		        playerList.forEach(function(id, index){
-		        	funs.push(function(donecb){
-		        		getUser({u: id, m: mode, type: "id"}, function(response){
-		        			playerInfo[index] = response[0];
-		        			donecb();
-		        		});
-		        	});
-		        });
-		    	doManyFunc(funs, function(){
-		    		tableLoadingNotice.hide();
-		    		
-		    		//Add new headers
-		    		var newHeader = isGlobal ? "Country" : "Global";
-		    		tableBody.children().first().children().first().after("<th class='rank2col'>" + newHeader + "</th>");
+    function searchParser(str){
+        if(str[0] === "?") str = str.slice(1);
+        var arr = str.split("&");
+        var rtn = {};
+        arr.forEach(function(x){
+            var xsplit = x.split("=");
+            if(xsplit.length > 1){
+                rtn[xsplit[0]] = xsplit[1];
+            }
+        })
+        return rtn;
+    }
 
-		    		//Add new ranks
-		    		tableBody.children().first().nextAll().each(function(index, row){
-		    			row = $(row);
-		    			var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
-		    			row.children().first().after("<td class='rank2col'>#" + newRank + "</td>");
-		    		});
-		    	});
-			}else{
-				$(".rank2col").show();
-			}
-	    }
-	}
-
-	function searchParser(str){
-		if(str[0] === "?") str = str.slice(1);
-		var arr = str.split("&");
-		var rtn = {};
-		arr.forEach(function(x){
-			var xsplit = x.split("=");
-			if(xsplit.length > 1){
-				rtn[xsplit[0]] = xsplit[1];
-			}
-		})
-		return rtn;
-	}
-
-	return {init: init}
+    return {init: init}
 })();
 
 var osuplusUserpage = (function(){
     var userId = null,
-    	username = null,
+        username = null,
         gameMode = null,
         userInfo = [],
         mainTableBody = null,
@@ -1043,8 +1176,8 @@ var osuplusUserpage = (function(){
             ".modalBtn {position: absolute; right: -1px; top: -1px; background: white; padding: 3px; width: 10px; text-align: center; border-style: solid; border-width: 1px;}\n" +
             ".opModalCloseBtnDiv {position: absolute; right: 10px;}\n" +
             ".opModal {width:700px;position: fixed; display: none;z-index: 10000;padding: 15px 20px 10px;-webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px;background: #fff; left: 50%; top:50%; transform: translate(-50%, -50%);}\n" +
-        	".opModalOverlay {position: fixed;top: 0;left: 0;bottom:0;right:0;width: 100%;height: 100%;z-index: 9999;background: #000;display: none;-ms-filter: 'alpha(Opacity=50)';-moz-opacity: .5;-khtml-opacity: .5;opacity: .5;}\n" +
-        	".tableAttr {width: 50px;}\n"
+            ".opModalOverlay {position: fixed;top: 0;left: 0;bottom:0;right:0;width: 100%;height: 100%;z-index: 9999;background: #000;display: none;-ms-filter: 'alpha(Opacity=50)';-moz-opacity: .5;-khtml-opacity: .5;opacity: .5;}\n" +
+            ".tableAttr {width: 50px;}\n"
         ));
     }
 
@@ -1105,43 +1238,43 @@ var osuplusUserpage = (function(){
         $(".playstyle-container").after($("<div class='centrep'>").append(subscribeBtn));
 
         subscribeBtn.click(function(){
-        	if(subscribed){
-        		subscriberManager.mapper.remove(userId);
-        		subscribed = false;
-        	}else{
-        		subscriberManager.mapper.add(userId, username);
-        		subscribed = true;
-        	}
-        	updateSubscribeBtn(subscribed);
+            if(subscribed){
+                subscriberManager.mapper.remove(userId);
+                subscribed = false;
+            }else{
+                subscriberManager.mapper.add(userId, username);
+                subscribed = true;
+            }
+            updateSubscribeBtn(subscribed);
         });
 
         // Add modal
-	    $("body").append('<div class="opModalOverlay opModalOverride" id="opModalOverlay" style="display:none;"></div>');
-	    $("body").append('<div class="opModal" id="opModal" style="display:none;"></div>');
-	    opModalContent = $("<div id='opModalContent'>");
-	    $("#opModal").append(
-	    	'<div class="opModalCloseBtnDiv" style="display: block;"><button class="opModalCloseBtn">x</button></div>', 
-	    	opModalContent);
-	    $("#opModalOverlay, .opModalCloseBtn").click(function(){
-	        closeModal();
-	    });
+        $("body").append('<div class="opModalOverlay opModalOverride" id="opModalOverlay" style="display:none;"></div>');
+        $("body").append('<div class="opModal" id="opModal" style="display:none;"></div>');
+        opModalContent = $("<div id='opModalContent'>");
+        $("#opModal").append(
+            '<div class="opModalCloseBtnDiv" style="display: block;"><button class="opModalCloseBtn">x</button></div>', 
+            opModalContent);
+        $("#opModalOverlay, .opModalCloseBtn").click(function(){
+            closeModal();
+        });
 
         // :)
         if(userId === "1843447"){
-        	$(".profile-username").parent().after("<div><b>osuplus creator</b></div>");
+            $(".profile-username").parent().after("<div><b>osuplus creator</b></div>");
         }
     }
 
     function updateSubscribeBtn(subscribed){
-    	if(subscribed){
-    		subscribeBtn.empty();
-    		subscribeBtn.css("background", subscribedColour);
-    		subscribeBtn.append("<i class='icon-heart'></i> Subscribed</a>");
-    	}else{
-    		subscribeBtn.empty();
-    		subscribeBtn.css("background", unsubscribedColour);
-    		subscribeBtn.append("<i class='icon-plus-sign'></i> Subscribe mapper</a>");
-    	}
+        if(subscribed){
+            subscribeBtn.empty();
+            subscribeBtn.css("background", subscribedColour);
+            subscribeBtn.append("<i class='icon-heart'></i> Subscribed</a>");
+        }else{
+            subscribeBtn.empty();
+            subscribeBtn.css("background", unsubscribedColour);
+            subscribeBtn.append("<i class='icon-plus-sign'></i> Subscribe mapper</a>");
+        }
     }
 
     function getGameMode(){
@@ -1162,7 +1295,7 @@ var osuplusUserpage = (function(){
     }
 
     var topScores = [],
-    	topScoresStatus = 0;
+        topScoresStatus = 0;
     function detailedTop(){
         //Put slider
         if($("#leader").find("#opslider").length === 0){
@@ -1191,123 +1324,143 @@ var osuplusUserpage = (function(){
         //Update tops
         var topsBest = $("#leader h2").last().prevAll().find(".prof-beatmap").addBack(".prof-beatmap").filter(":not(.oploading,.oploaded)");
         var topsFirst = $("#leader h2").last().nextAll().find(".prof-beatmap").addBack(".prof-beatmap").filter(":not(.oploading,.oploaded)");
-    	topsBest.each(function(index, top){
-	        $(top).addClass("oploading");
-	    });
-	    topsFirst.each(function(index, top){
-	        $(top).addClass("oploading");
-	    });
-	    if(topsBest.length > 0){
-	        getUserBest({u: userId, m: gameMode, type: "id", limit: 100}, function(scores){
-	        	topsBest.each(function(index, top){
-		            top = $(top);
-		            var mapId = top.attr("id");
-		            if(!mapId) return;
-		            mapId = mapId.split("-")[1];
-		            var score = null;
-		            for(var i in scores){
-		            	if(scores[i].beatmap_id == mapId){
-		            		score = scores[i];
-		            		break;
-		            	}
-		            }
-		            if(score !== null){
-		                getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
-		                    if(beatmap.length < 1) return;
-		                    else detailify(top, score, beatmap[0]);
-		                });
-		            }
-		        });
-	        });
-	    }
-	    topsFirst.each(function(index, top){
-		    var mapId = $(top).attr("id");
+        topsBest.each(function(index, top){
+            $(top).addClass("oploading");
+        });
+        topsFirst.each(function(index, top){
+            $(top).addClass("oploading");
+        });
+        if(topsBest.length > 0){
+            getUserBest({u: userId, m: gameMode, type: "id", limit: 100}, function(scores){
+                topsBest.each(function(index, top){
+                    top = $(top);
+                    var mapId = top.attr("id");
+                    if(!mapId) return;
+                    mapId = mapId.split("-")[1];
+                    var score = null;
+                    for(var i in scores){
+                        if(scores[i].beatmap_id == mapId){
+                            score = scores[i];
+                            break;
+                        }
+                    }
+                    if(score !== null){
+                        addModalBtn(top, mapId);
+                        if(settings.fetchUserpageMaxCombo){
+                            getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
+                                if(beatmap.length < 1) return;
+                                else{
+                                    detailify(top, score, beatmap[0]);
+                                }
+                            });
+                        }else{
+                            detailify(top, score);
+                        }
+                    }
+                });
+            });
+        }
+        topsFirst.each(function(index, top){
+            top = $(top);
+            var mapId = top.attr("id");
             if(!mapId) return;
             mapId = mapId.split("-")[1];
-	    	getScores({b: mapId, m: gameMode, a: 1, limit: 1}, function(scores){
-	    		if(scores.length < 1) return;
-	    		getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
-                    if(beatmap.length < 1) return;
-                    else detailify($(top), scores[0], beatmap[0]);
+            addModalBtn(top, mapId);
+            if(settings.fetchFirstsInfo){
+                getScores({b: mapId, u: userId, type: "id", m: gameMode, a: 1, limit: 1}, function(scores){
+                    if(scores.length < 1) return;
+                    if(settings.fetchUserpageMaxCombo){
+                        getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
+                            if(beatmap.length < 1) return;
+                            else detailify($(top), scores[0], beatmap[0]);
+                        });
+                    }else{
+                        scores[0].beatmap_id = mapId;
+                        detailify($(top), scores[0]);
+                    }
                 });
-	    	});
-	    });
-	    topsBest.hover(function(){
-	    	$(this).find(".modalBtn").show();
-	    }, function(){
-	    	$(this).find(".modalBtn").hide();
-	    });
-	    topsFirst.hover(function(){
-	    	$(this).find(".modalBtn").show();
-	    }, function(){
-	    	$(this).find(".modalBtn").hide();
-	    });
+            }
+        });
+
+        topsBest.hover(function(){
+            $(this).find(".modalBtn").show();
+        }, function(){
+            $(this).find(".modalBtn").hide();
+        });
+        topsFirst.hover(function(){
+            $(this).find(".modalBtn").show();
+        }, function(){
+            $(this).find(".modalBtn").hide();
+        });
         
     }
 
     function detailify(top, score, beatmap){
-	    var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
-	    if(beatmap.max_combo !== null){
-	    	maxmapcombo.text("(" + beatmap.max_combo + "x)");
-	    }
-	    var h = top.find(".h");
-	    if(score.perfect === "1"){
-	        h.append("(FC)");
-	    }
-	    h.append(
-	        $("<div>").append(
-	            $("<b>").append(
-	                commarise(score.score) + " / " + 
-	                score.maxcombo + "x",
-	                maxmapcombo
-	            ),
-	            gameMode <= 1 ? // Standard/Taiko
-	            " { "+score.count300+" / "+score.count100+" / "+score.count50+" / "+score.countmiss+" }" :
-	            gameMode == 2 ? // CTB
-	            " { "+score.count300+" / "+score.count100+" / "+score.count50+" / "+score.countkatu+" / "+score.countmiss+" }" :
-	            // Mania
-	            " { "+score.countgeki+" / "+score.count300+" / "+score.countkatu+" / "+score.count100+" / "+score.count50+" / "+score.countmiss+" }"
-	        )
-	    );
-	    var modalBtn = $("<a class='modalBtn'>?</a>").hide();
-	    modalBtn.click(function(){
-	    	openModal($(this).parent().find("input:hidden").val());
-	    });
-	    top.append(modalBtn, $("<input type=hidden class='identifier' value='"+beatmap.beatmap_id+"'>"));
-    	top.removeClass("oploading").addClass("oploaded");
+        var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
+        if(beatmap && beatmap.max_combo !== null){
+            maxmapcombo.text("(" + beatmap.max_combo + "x)");
+        }
+        var h = top.find(".h");
+        if(score.perfect === "1"){
+            h.append("(FC)");
+        }
+        h.append(
+            $("<div>").append(
+                $("<b>").append(
+                    commarise(score.score) + " / " + 
+                    score.maxcombo + "x",
+                    maxmapcombo
+                ),
+                gameMode <= 1 ? // Standard/Taiko
+                " { "+score.count300+" / "+score.count100+" / "+score.count50+" / "+score.countmiss+" }" :
+                gameMode == 2 ? // CTB
+                " { "+score.count300+" / "+score.count100+" / "+score.count50+" / "+score.countkatu+" / "+score.countmiss+" }" :
+                // Mania
+                " { "+score.countgeki+" / "+score.count300+" / "+score.countkatu+" / "+score.count100+" / "+score.count50+" / "+score.countmiss+" }"
+            )
+        );
+    }
+
+    function addModalBtn(top, beatmap_id){
+        var modalBtn = $("<a class='modalBtn'>?</a>").hide();
+        modalBtn.click(function(){
+            openModal($(this).parent().find("input:hidden").val());
+        });
+        top.append(modalBtn, $("<input type=hidden class='identifier' value='"+beatmap_id+"'>"));
+        top.removeClass("oploading").addClass("oploaded");
     }
 
     function openModal(id){
-    	if(id === undefined) return;
+        if(id === undefined) return;
         var opModalContent = $("#opModalContent");
         opModalContent.empty();
-       	getBeatmapsCache({b: id, m: gameMode, a: 1}, function(beatmap){
+           getBeatmapsCache({b: id, m: gameMode, a: 1}, function(beatmap){
             beatmap = beatmap[0];
             opModalContent.append(
-            	"<h1>"+beatmap.artist+" - <a href=/s/"+beatmap.beatmapset_id+">"+beatmap.title+"</a> [<a href=/b/"+beatmap.beatmap_id+">"+beatmap.version+"</a>]</h1>",
-            	$("<table id='songinfo' style='width:100%;'>").append(
-            		$("<tr>").append(
-            			"<td rowspan=5 style='width:1%'><a onclick='playBeatmapPreview("+beatmap.beatmapset_id+")'><img class='bmt' src=//b.ppy.sh/thumb/"+beatmap.beatmapset_id+"l.jpg></a></td>",
-            			"<td class='tableAttr'>CS:</td><td>"+beatmap.diff_size+"</td>",
-            			"<td class='tableAttr'>AR:</td><td>"+beatmap.diff_approach+"</td>"
-            		),
-            		$("<tr>").append(
-            			"<td class='tableAttr'>HP:</td><td>"+beatmap.diff_drain+"</td>",
-            			"<td class='tableAttr'>Stars:</td><td>"+beatmap.difficultyrating+"</td>"
-            		),
-            		$("<tr>").append(
-            			"<td class='tableAttr'>OD:</td><td>"+beatmap.diff_overall+"</td>",
-            			"<td class='tableAttr'>Length:</td><td>"+secsToMins(parseInt(beatmap.total_length))+" ("+secsToMins(parseInt(beatmap.hit_length))+" drain)" +
-            			(beatmap.max_combo === null ? "" : "<br>"+beatmap.max_combo+"x combo") + "</td>"
-            		),
-            		$("<tr>").append(
-            			"<td class='tableAttr'>Creator:</td><td>"+beatmap.creator+"</td>",
-            			"<td class='tableAttr'>BPM:</td><td>"+beatmap.bpm+"</td>"
-            		),
-            		$("<tr>").append(
-            			"<td colspan=4><a href=/d/"+beatmap.beatmapset_id+">Download</a><br><a href='http://bloodcat.com/osu/s/"+beatmap.beatmapset_id+"'>Bloodcat mirror</a></td>"
-            		)
-            	)
+                "<h1>"+beatmap.artist+" - <a href=/s/"+beatmap.beatmapset_id+">"+beatmap.title+"</a> [<a href=/b/"+beatmap.beatmap_id+">"+beatmap.version+"</a>]</h1>",
+                $("<table id='songinfo' style='width:100%;'>").append(
+                    $("<tr>").append(
+                        "<td rowspan=5 style='width:1%'><a onclick='playBeatmapPreview("+beatmap.beatmapset_id+")'><img class='bmt' src=//b.ppy.sh/thumb/"+beatmap.beatmapset_id+"l.jpg></a></td>",
+                        "<td class='tableAttr'>CS:</td><td>"+beatmap.diff_size+"</td>",
+                        "<td class='tableAttr'>AR:</td><td>"+beatmap.diff_approach+"</td>"
+                    ),
+                    $("<tr>").append(
+                        "<td class='tableAttr'>HP:</td><td>"+beatmap.diff_drain+"</td>",
+                        "<td class='tableAttr'>Stars:</td><td>"+beatmap.difficultyrating+"</td>"
+                    ),
+                    $("<tr>").append(
+                        "<td class='tableAttr'>OD:</td><td>"+beatmap.diff_overall+"</td>",
+                        "<td class='tableAttr'>Length:</td><td>"+secsToMins(parseInt(beatmap.total_length))+" ("+secsToMins(parseInt(beatmap.hit_length))+" drain)" +
+                        (beatmap.max_combo === null ? "" : "<br>"+beatmap.max_combo+"x combo") + "</td>"
+                    ),
+                    $("<tr>").append(
+                        "<td class='tableAttr'>Creator:</td><td>"+beatmap.creator+"</td>",
+                        "<td class='tableAttr'>BPM:</td><td>"+beatmap.bpm+"</td>"
+                    ),
+                    $("<tr>").append(
+                        "<td colspan=4><a href=/d/"+beatmap.beatmapset_id+">Download</a><br><a href='http://bloodcat.com/osu/s/"+beatmap.beatmapset_id+"'>Bloodcat mirror</a></td>"
+                    )
+                )
             );
         });
         $("#opModalOverlay").fadeIn(200);
@@ -1329,19 +1482,25 @@ var osuplusUserpage = (function(){
 
     function addGeneral(){
         function useUserInfo(user){
-            var c300 = parseInt(user.count300), c100 = parseInt(user.count100), c50 = parseInt(user.count50),
-                ctotal = c300 + c100 + c50;
-            generalNode.find(".profileStatLine").eq(7).append(
-                $("<span></span>").text(
-                    " (" + commarise(c300) + " x300 / " + commarise(c100) + " x100 / " + commarise(c50) + " x50) (" +
-                        (100*c300/ctotal).toFixed(2) + "% / " + (100*c100/ctotal).toFixed(2) + "% / " + (100*c50/ctotal).toFixed(2) + "%)"
-                )
-            ).after(
-                "<br>",
-                $("<div class='profileStatLine'></div>").append(
-                    "<b>Hits/play</b>: " + (ctotal/parseInt(user.playcount)).toFixed(2)
-                )
-            );
+            if(settings.showDetailedHitCount){
+                var c300 = parseInt(user.count300), c100 = parseInt(user.count100), c50 = parseInt(user.count50),
+                    ctotal = c300 + c100 + c50;
+                generalNode.find(".profileStatLine").eq(7).append(
+                    $("<span></span>").text(
+                        " (" + commarise(c300) + " x300 / " + commarise(c100) + " x100 / " + commarise(c50) + " x50) (" +
+                            (100*c300/ctotal).toFixed(2) + "% / " + (100*c100/ctotal).toFixed(2) + "% / " + (100*c50/ctotal).toFixed(2) + "%)"
+                    )
+                );
+            }
+
+            if(settings.showHitsPerPlay){
+                generalNode.find(".profileStatLine").eq(7).after(
+                    "<br>",
+                    $("<div class='profileStatLine'></div>").append(
+                        "<b>Hits/play</b>: " + (ctotal/parseInt(user.playcount)).toFixed(2)
+                    )
+                );
+            }
         }
 
         if(generalNode.find("#general-check").length === 0 && $(".profileStatLine").length > 0){
@@ -1431,38 +1590,64 @@ var osuplusUserpage = (function(){
         }
 
         gameMode = getGameMode();
-        GetPage("https://osu.ppy.sh/users/" + userId, function(response){
-            var temp = response.match(/json-user.*\n.*\n/);
-            if(temp.length > 0){
-                var userInfo = JSON.parse(temp[0].split("\n")[1].trim());
+        retrieveMostPlayed(0, 50, function(beatmaps){
+            container.append("<h2>Most Played</h2>");
 
-                container.append("<h2>Most Played</h2>");
+            //Put first 50
+            beatmaps.forEach(function(beatmapInfo){
+                container.append(makeItem(beatmapInfo));
+            });
 
-                //Put first 50
-                userInfo.beatmapPlaycounts.slice(0,50).forEach(function(beatmapInfo){
-                    container.append(makeItem(beatmapInfo));
-                });
-
-                //Show more next 50
-                if(userInfo.beatmapPlaycounts.length > 50){
-                    container.append(
-                        $("<div id='more-most'></div>").append(
-                            $("<div class='prof-beatmap'></div>").append(
-                                $("<a></a>").append(
-                                    "<b>Show me more!</b>"
-                                ).click(function(){
-                                    var moremost = $("#more-most").empty();
-                                    userInfo.beatmapPlaycounts.slice(50).forEach(function(beatmapInfo){
-                                        container.append(makeItem(beatmapInfo));
+            //Show more next 50
+            if(beatmaps.length >= 50){
+                container.append(
+                    $("<div id='more-most'></div>").append(
+                        $("<div class='prof-beatmap'></div>").append(
+                            $("<a></a>").append(
+                                "<b>Show me more!</b>"
+                            ).click(function(){
+                                $("#more-most").empty();
+                                retrieveMostPlayed(50, 100, function(beatmaps2){
+                                    beatmaps2.forEach(function(beatmapInfo2){
+                                        container.append(makeItem(beatmapInfo2));
                                     });
-                                })
-                            )
+                                });
+                            })
                         )
-                    );
-                }
-            }else{
-                container.append("<h2>An error has occurred</h2>");
+                    )
+                );
             }
+        });
+    }
+
+    function retrieveMostPlayed(offset, number, callback){
+        var numgrps = (number/5|0); //integer divide
+        var funs = [];
+        var mostPlayedRaw = [];
+        for(var i=0; i<numgrps; i++){
+            funs.push(function(suboffset){
+                return function(donecb){
+                    GetPage("https://osu.ppy.sh/users/" + userId + "/beatmapsets/most_played?offset="+suboffset, function(response){
+                        mostPlayedRaw.push({
+                            offset: suboffset,
+                            response: JSON.parse(response)
+                        });
+                        donecb();
+                    });
+                };
+            }(offset + 5*i));
+        }
+        doManyFunc(funs, function(){
+            mostPlayedRaw.sort(function(a,b){
+                return a.offset - b.offset;
+            });
+            var mostPlayed = [];
+            mostPlayedRaw.forEach(function(responseSet){
+                responseSet.response.forEach(function(beatmap){
+                    mostPlayed.push(beatmap);
+                });
+            });
+            callback(mostPlayed);
         });
     }
 
@@ -1471,12 +1656,11 @@ var osuplusUserpage = (function(){
         getUserRecent({u: userId, m: gameMode, limit: 50, type: "id"}, function(response){
             userRecent = response;
             var failedCheckbox = $("<input type=checkbox id='failedCheckbox'/>"),
-                failedChecked = GM_getValue("failedChecked", true);
+                failedChecked = settings.failedChecked;
 
             failedCheckbox.prop("checked", failedChecked).click(function(){
                 var me = $(this);
                 failedChecked = me.prop("checked");
-                GM_setValue("failedChecked", failedChecked);
                 if(failedChecked){
                     $(".failedScore").show();
                 }else{
@@ -1527,17 +1711,17 @@ var osuplusUserpage = (function(){
                             )
                         )
                     )),
-					modalBtn,
-					$("<input type=hidden class='identifier'>")
+                    modalBtn,
+                    $("<input type=hidden class='identifier'>")
                 );
-			    profbeatmap.hover(function(){
-			    	$(this).find(".modalBtn").show();
-			    }, function(){
-			    	$(this).find(".modalBtn").hide();
-			    });
-			    modalBtn.click(function(){
-			    	openModal($(this).parent().find("input:hidden").val());
-			    });
+                profbeatmap.hover(function(){
+                    $(this).find(".modalBtn").show();
+                }, function(){
+                    $(this).find(".modalBtn").hide();
+                });
+                modalBtn.click(function(){
+                    openModal($(this).parent().find("input:hidden").val());
+                });
 
                 container.append(profbeatmap);
                 
@@ -1545,7 +1729,7 @@ var osuplusUserpage = (function(){
                     var r = response[0];
                     maplink.text(r.artist + " - " + r.title + " [" + r.version + "]");
                     if(r.max_combo !== null){
-                    	maxmapcombo.text("(" + r.max_combo + "x)");
+                        maxmapcombo.text("(" + r.max_combo + "x)");
                     }
                     //starrating.html(parseFloat(r.difficultyrating).toFixed(2) + "&#9733;");
                     profbeatmap.find(".identifier").val(r.beatmap_id);
@@ -1583,8 +1767,6 @@ var osuplusBeatmap = (function(){
         scoreListingTitlerow = null,
         tableLoadingNotice = null,
         showDates = true,
-        showPpRank = true,
-        origShowPpRank = true,
         modsEnabled = true,
         osupreviewLoaded = false,
         scoreReqs = [],
@@ -1629,10 +1811,9 @@ var osuplusBeatmap = (function(){
         //GM_setValue("playerCountries", "{}");
         temp = GM_getValue("playerCountries", "{}");
         playerCountries = typeof(temp) === "string" ? JSON.parse(temp) : {};
+
         minePlayerCountries();
-        showDates = GM_getValue("showDates", true);
-        origShowPpRank = GM_getValue("showPpRank", true);
-        showPpRank = origShowPpRank;
+        showDates = settings.showDates;
         temp = $(".content-infoline").children("div").children("b");
         if(temp.length > 0){
             temp = temp.children("a").attr("href").split("/");
@@ -1649,8 +1830,10 @@ var osuplusBeatmap = (function(){
         maxcomboSpan = $("<span></span>").hide();
         songInfoRef.children().children().eq(2).children().eq(5).append("<br>", maxcomboSpan);
 
-        addBloodcatMirror();
-        addSubBtn();
+        if(settings.showMirror)
+            addBloodcatMirror();
+        if(settings.showSubscribeMap)
+            addSubBtn();
         showMapValues();
         addOsuPreview();
 
@@ -1675,14 +1858,14 @@ var osuplusBeatmap = (function(){
                     });
                 },
                 function(callback){
-                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:100}, showPpRank, function(response){
+                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
                         result = response;
                         callback();
                     });
                 }
             ], function(){
-            	modifyTableHeadersMaxcombo();
-            	addScoreLeaderpp();
+                modifyTableHeadersMaxcombo();
+                addScoreLeaderpp();
                 updateScoresTable();
             });
         }
@@ -1729,7 +1912,10 @@ var osuplusBeatmap = (function(){
                 "<div class='spoiler_body'><div id='osupreview'></div></div>"
             ).click(function(){
                 if(osupreviewLoaded) return;
-                $("#osupreview").html("<iframe class='osupreview' src='https://bloodcat.com/osu/preview.html#" + mapID + "' allowfullscreen></iframe>");
+                $("#osupreview").html(
+                    "If below doesn't work, <a href='http://bloodcat.com/osu/preview.html#" + mapID + "' target='_blank'>open in new tab</a><br>" +
+                    "<iframe class='osupreview' src='https://bloodcat.com/osu/preview.html#" + mapID + "' allowfullscreen></iframe>"
+                );
                 osupreviewLoaded = true;
             })
         );
@@ -1777,13 +1963,13 @@ var osuplusBeatmap = (function(){
         $("#searchuserresult").hide();
         var searchusername = $("#searchusertxt").val();
         
-        getScoresWithPlayerInfo({b:mapID, u:searchusername, m:mapMode, type:"string"}, showPpRank, function(response){
+        getScoresWithPlayerInfo({b:mapID, u:searchusername, m:mapMode, type:"string"}, settings.showPpRank, function(response){
             if(response && response.length > 0){
                 var searchResult = response[0];
                 $("#searchuserresult").find(".titlerow").nextAll().remove();
                 response.forEach(function(score){
-                	var tableRow = makeScoreTableRow(score, 0);
-	                $("#searchuserresult").find(".titlerow").parent().children().last().after(tableRow);
+                    var tableRow = makeScoreTableRow(score, 0);
+                    $("#searchuserresult").find(".titlerow").parent().children().last().after(tableRow);
                 });
                 
                 $(".timeago").timeago();
@@ -1809,12 +1995,6 @@ var osuplusBeatmap = (function(){
                                                                value: "friends"})
                                             .change(rankingTypeChanged),
                                             "Friends"),
-                //Show pp rank button
-                $("<label></label>").append($("<input>").attr({type: "checkbox",
-            												   id: "showpprankbox"})
-                							.change(showPpRankChanged)
-                							.prop("checked", showPpRank),
-                							$("<span id='showppranktxt'>Show pp rank</span>")),
                 //Show date button
                 $("<label></label>").append($("<input>").attr({type: "checkbox",
                                                                id: "showdatebox"})
@@ -1825,25 +2005,8 @@ var osuplusBeatmap = (function(){
         );
     }
 
-    function showPpRankChanged(){
-    	showPpRank = $("#showpprankbox").prop("checked");
-        GM_setValue("showPpRank", showPpRank);
-        if(showPpRank && !origShowPpRank){
-        	$("#showppranktxt").text("Show pp rank (needs refresh)");
-        }else{
-        	$("#showppranktxt").text("Show pp rank");
-        }
-        updateShowPpRank();
-    }
-
-    function updateShowPpRank(){
-    	if(showPpRank) $(".pprank").show();
-    	else $(".pprank").hide();
-    }
-
     function showDateChanged(){
         showDates = $("#showdatebox").prop("checked");
-        GM_setValue("showDates", showDates);
         updateShowDate();
     }
 
@@ -1880,7 +2043,7 @@ var osuplusBeatmap = (function(){
         for(var i=0; i<friends2.length; i++){
             funs.push(function(uid){
                 return function(callback){
-                    getScoresWithPlayerInfo({b:mapID, u:uid, m:mapMode, type:"id"}, showPpRank, function(response){
+                    getScoresWithPlayerInfo({b:mapID, u:uid, m:mapMode, type:"id"}, settings.showPpRank, function(response){
                         if(response.length > 0){
                             result.push(response[0]);
                         }
@@ -1917,14 +2080,14 @@ var osuplusBeatmap = (function(){
                 }else if(ascore > bscore){
                     return -1;
                 }else{
-                	ascore = parseFloat(a.score);
-                	bscore = parseFloat(b.score);
-                	if(ascore < bscore){
-                		return 1;
-                	}else if(ascore > bscore){
-                		return -1;
-                	}else{
-                    	return getTime(a.date) - getTime(b.date);
+                    ascore = parseFloat(a.score);
+                    bscore = parseFloat(b.score);
+                    if(ascore < bscore){
+                        return 1;
+                    }else if(ascore > bscore){
+                        return -1;
+                    }else{
+                        return getTime(a.date) - getTime(b.date);
                     }
                 }
             });
@@ -1954,7 +2117,7 @@ var osuplusBeatmap = (function(){
         var scoreLeaders = $(".scoreLeader");
         if(scoreLeaders.length > 0) updateScoreLeaderpp(scoreLeaders.first(), result[0]);
         if(scoreLeaders.length > 1){
-            getScoresWithPlayerInfo({b:mapID, u:localUser, m:mapMode, type:"id"}, showPpRank, function(response){
+            getScoresWithPlayerInfo({b:mapID, u:localUser, m:mapMode, type:"id"}, settings.showPpRank, function(response){
                 if(response.length > 0){
                     localScore = response[0];
                     updateScoreLeaderpp(scoreLeaders.eq(1), localScore);
@@ -2014,26 +2177,26 @@ var osuplusBeatmap = (function(){
     }
 
     function addSubBtn(){
-		subscribed = subscriberManager.map.isSubscribed(mapsetID);
+        subscribed = subscriberManager.map.isSubscribed(mapsetID);
         var artist = songInfoRef.find("tr").first().children().eq(1).children().text();
         var title = songInfoRef.find("tr").eq(1).children().eq(1).children().text();
         var creator = songInfoRef.find("tr").eq(2).children().eq(1).children().text();
         var temp = songInfoRef.find("tr").eq(2).children().eq(1).children().attr("href").split("/");
         var creator_id = temp[temp.length-1];
-    	$(".beatmapDownloadButton").first().before(
+        $(".beatmapDownloadButton").first().before(
             $("<div>").addClass("beatmapDownloadButton").append(
                 $("<a>").addClass("beatmap_download_link")
                 .append($("<img class='subImg'>"))
                 .click(function(){
-	            	if(subscribed){
-	            		subscriberManager.map.remove(mapsetID);
-	            		subscribed = false;
-	            		refreshSubImg(subscribed);
-	            	}else{
-	            		subscriberManager.map.add(mapsetID, artist, title, creator, creator_id);
-	            		subscribed = true;
-	            		refreshSubImg(subscribed);
-	            	}
+                    if(subscribed){
+                        subscriberManager.map.remove(mapsetID);
+                        subscribed = false;
+                        refreshSubImg(subscribed);
+                    }else{
+                        subscriberManager.map.add(mapsetID, artist, title, creator, creator_id);
+                        subscribed = true;
+                        refreshSubImg(subscribed);
+                    }
                 })
             )
         );
@@ -2041,11 +2204,11 @@ var osuplusBeatmap = (function(){
     }
 
     function refreshSubImg(){
-    	if(subscribed){
-    		$(".subImg").attr("src", subbedImg);
-    	}else{
-    		$(".subImg").attr("src", subImg);
-    	}
+        if(subscribed){
+            $(".subImg").attr("src", subbedImg);
+        }else{
+            $(".subImg").attr("src", subImg);
+        }
     }
 
     function putModButtons(){
@@ -2097,57 +2260,57 @@ var osuplusBeatmap = (function(){
 
         $(".content-with-bg").children("h2").next().empty().append(
             genModBtns([
-            	{mods: ["NM"], selection: 0},
-            	{mods: ["NM"], selection: 1}]),
+                {mods: ["NM"], selection: 0},
+                {mods: ["NM"], selection: 1}]),
             mapMode < 3 ? // HD for non-mania
             genModBtns([
-            	{mods: ["HD"], selection: 0},
-            	{mods: ["HD"], selection: 1},
-            	{mods: ["HD"], selection: 2}]) : 
+                {mods: ["HD"], selection: 0},
+                {mods: ["HD"], selection: 1},
+                {mods: ["HD"], selection: 2}]) : 
             genModBtns([ // FI, HD for mania
-            	{mods: ["FI"], selection: 0},
-            	{mods: ["FI"], selection: 1},
-            	{mods: ["HD"], selection: 1},
-            	{mods: ["FI", "HD"], selection: 1},
-            	{mods: ["FI", "HD"], selection: 2}]),
+                {mods: ["FI"], selection: 0},
+                {mods: ["FI"], selection: 1},
+                {mods: ["HD"], selection: 1},
+                {mods: ["FI", "HD"], selection: 1},
+                {mods: ["FI", "HD"], selection: 2}]),
             genModBtns([
-            	{mods: ["HR"], selection: 0},
-            	{mods: ["HR"], selection: 1},
-            	{mods: ["HR"], selection: 2},
-            	{mods: ["EZ"], selection: 1},
-            	{mods: ["EZ"], selection: 2}]),
+                {mods: ["HR"], selection: 0},
+                {mods: ["HR"], selection: 1},
+                {mods: ["HR"], selection: 2},
+                {mods: ["EZ"], selection: 1},
+                {mods: ["EZ"], selection: 2}]),
             genModBtns([
-            	{mods: ["DT"], selection: 0},
-            	{mods: ["DT"], selection: 1},
-            	{mods: ["NC"], selection: 1},
-            	{mods: ["DT", "NC"], selection: 1},
-            	{mods: ["HT"], selection: 1}]),
+                {mods: ["DT"], selection: 0},
+                {mods: ["DT"], selection: 1},
+                {mods: ["NC"], selection: 1},
+                {mods: ["DT", "NC"], selection: 1},
+                {mods: ["HT"], selection: 1}]),
             genModBtns([
-            	{mods: ["SD"], selection: 0},
-            	{mods: ["SD"], selection: 1},
-            	{mods: ["PF"], selection: 1},
-            	{mods: ["SD", "PF"], selection: 1},
-            	{mods: ["SD", "PF"], selection: 2},
-            	{mods: ["NF"], selection: 1},
-            	{mods: ["NF"], selection: 2}]),
+                {mods: ["SD"], selection: 0},
+                {mods: ["SD"], selection: 1},
+                {mods: ["PF"], selection: 1},
+                {mods: ["SD", "PF"], selection: 1},
+                {mods: ["SD", "PF"], selection: 2},
+                {mods: ["NF"], selection: 1},
+                {mods: ["NF"], selection: 2}]),
             genModBtns([
-            	{mods: ["FL"], selection: 0},
-            	{mods: ["FL"], selection: 1},
-            	{mods: ["FL"], selection: 2}]),
+                {mods: ["FL"], selection: 0},
+                {mods: ["FL"], selection: 1},
+                {mods: ["FL"], selection: 2}]),
             mapMode < 3 ? [] : //mania keys
             genModBtns([
-            	{mods: ["4K"], selection: 0},
-            	{mods: ["4K"], selection: 1},
-            	{mods: ["5K"], selection: 1},
-            	{mods: ["6K"], selection: 1},
-            	{mods: ["7K"], selection: 1},
-            	{mods: ["8K"], selection: 1},
-            	{mods: ["9K"], selection: 1}]),
+                {mods: ["4K"], selection: 0},
+                {mods: ["4K"], selection: 1},
+                {mods: ["5K"], selection: 1},
+                {mods: ["6K"], selection: 1},
+                {mods: ["7K"], selection: 1},
+                {mods: ["8K"], selection: 1},
+                {mods: ["9K"], selection: 1}]),
             mapMode > 0 ? [] : //SO only for standard
             genModBtns([
-            	{mods: ["SO"], selection: 0},
-            	{mods: ["SO"], selection: 1},
-            	{mods: ["SO"], selection: 2}])
+                {mods: ["SO"], selection: 0},
+                {mods: ["SO"], selection: 1},
+                {mods: ["SO"], selection: 2}])
         );
     }
 
@@ -2197,7 +2360,7 @@ var osuplusBeatmap = (function(){
             var modval = modvals[i];
             if(modval < 0){
                 funs.push(function(callback){
-                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:100}, showPpRank, function(response){
+                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
                         result = result.concat(response);
                         callback();
                     }, scoreReqs);
@@ -2205,7 +2368,7 @@ var osuplusBeatmap = (function(){
             }else{
                 funs.push(function(modval){
                     return function(callback){
-                        getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:100, mods:modval}, showPpRank, function(response){
+                        getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum, mods:modval}, settings.showPpRank, function(response){
                             result = result.concat(response);
                             callback();
                         }, scoreReqs);
@@ -2215,7 +2378,7 @@ var osuplusBeatmap = (function(){
         }
         doManyFunc(funs, function(){
             sortResult("score");
-            result.splice(100);
+            result.splice(settings.displayTopNum);
             updateScoresTable();
         });
 
@@ -2303,14 +2466,14 @@ var osuplusBeatmap = (function(){
 
         // Fill empty pp and date
         scoreListingTitlerow.nextAll().each(function(index, row){
-        	row = $(row);
-        	row.children().eq(2).after("<td></td>");
-        	row.children().last().before("<td></td>");
+            row = $(row);
+            row.children().eq(2).after("<td></td>");
+            row.children().last().before("<td></td>");
         });
     }
 
     function modifyTableHeadersMaxcombo(){
-    	scoreListingTitlerow.children().eq(6).html("<strong>Max combo" + (beatmapInfo.max_combo === null ? "" : " (" + beatmapInfo.max_combo + ")") + "</strong>");
+        scoreListingTitlerow.children().eq(6).html("<strong>Max combo" + (beatmapInfo.max_combo === null ? "" : " (" + beatmapInfo.max_combo + ")") + "</strong>");
     }
 
     function clearScoresTable(){
@@ -2327,13 +2490,13 @@ var osuplusBeatmap = (function(){
         var usedUsers = [];
         var rank = 0;
         for(var i=0; i<result.length; i++){
-        	var greyedout = false;
-        	if(inArray(usedUsers, result[i].user_id)){
-        		greyedout = true;
-        	}else{
-        		usedUsers.push(result[i].user_id);
-        		rank += 1;
-        	}
+            var greyedout = false;
+            if(inArray(usedUsers, result[i].user_id)){
+                greyedout = true;
+            }else{
+                usedUsers.push(result[i].user_id);
+                rank += 1;
+            }
             var tableRow = makeScoreTableRow(result[i], rank, greyedout);
             tableRows[i] = tableRow;
         }
@@ -2341,7 +2504,6 @@ var osuplusBeatmap = (function(){
         scoreListingTitlerow.nextAll().remove();
         tableRef.append(tableRows);
         $(".timeago").timeago();
-        updateShowPpRank();
         updateShowDate();
         tableLoadingNotice.hide();
         if(callback) callback();
@@ -2363,18 +2525,18 @@ var osuplusBeatmap = (function(){
         }
 
         if(greyedout){
-        	rowclass += " greyedout";
+            rowclass += " greyedout";
         }
 
-        var countryImg = "<img src=" + getCountryUrl(country) + ">";
+        var countryImg = "";
+        if(country !== "")
+            countryImg = "<img src=" + getCountryUrl(country) + ">";
         var userhref = "<a href='/u/" + score.user_id +"''>" + score.username + "</a>";
-        var pprank;
+        var pprank = "";
         if(score.user.pp_rank === undefined){
-        	origShowPpRank = false;
-        	pprank = " <span class='pprank'></span>";
+            pprank = " <span class='pprank'></span>";
         }else{
-        	origShowPpRank = true;
-        	pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
+            pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
         }
         
         var tableRow = ["<tr class='" + rowclass + "'>",
@@ -2442,7 +2604,7 @@ var osuplusBeatmap = (function(){
             var data = $(ele).children().eq(4).children();
             if(data.length > 1){ 
                 var temp = data.first().attr("src").split("/");
-                var country = temp[temp.length-1].split(".")[0];
+                var country = temp[temp.length-1].split(".")[0].toLowerCase();
                 temp = data.last().attr("href").split("/");
                 var uid = temp[temp.length-1];
                 savePlayerCountry(uid, country);
@@ -2461,11 +2623,15 @@ function getPlayerCountry(playerid, callback){
     if(playerid in playerCountries){
         callback(playerCountries[playerid]);
     }else{
-        getUser({u:playerid, type:"id"}, function(response){
-            var country = response[0].country.toLowerCase();
-            savePlayerCountry(playerid, country);
-            callback(country);
-        });
+        if(settings.fetchPlayerCountries){
+            getUser({u:playerid, type:"id"}, function(response){
+                var country = response[0].country.toLowerCase();
+                savePlayerCountry(playerid, country);
+                callback(country);
+            });
+        }else{
+            callback("");
+        }
     }
 }
 
@@ -2607,8 +2773,8 @@ function commarise(num){
 }
 
 function secsToMins(secs){
-	var s = "00"+(secs % 60); 
-	return (secs/60>>0) + ":" + s.substr(s.length-2);
+    var s = "00"+(secs % 60); 
+    return (secs/60>>0) + ":" + s.substr(s.length-2);
 }
 
 function getRankImg(rank){
@@ -2635,31 +2801,31 @@ function getRequest(url, callback, reqTracker){
 }
 
 function getScoresWithPlayerInfo(params, showPpRank, callback, reqTracker){
-	var mode = params.m || 0;
-	getScores(params, function(response){
-		var funs = [];
-		response.forEach(function(score, index){
-			if(showPpRank){
-				funs.push(function(donecb){
-					getUser({u: score.user_id, type: "id", m: mode}, function(userInfo){
-						response[index].user = userInfo[0];
-						savePlayerCountry(score.user_id, userInfo[0].country)
-						donecb();
-					}, reqTracker);
-				});
-			}else{
-				funs.push(function(donecb){
-					getPlayerCountry(score.user_id, function(country){
-						response[index].user = {country: country};
-						donecb();
-					});
-				});
-			}
-		});
-		doManyFunc(funs, function(){
-			callback(response);
-		})
-	}, reqTracker);
+    var mode = params.m || 0;
+    getScores(params, function(response){
+        var funs = [];
+        response.forEach(function(score, index){
+            if(showPpRank){
+                funs.push(function(donecb){
+                    getUser({u: score.user_id, type: "id", m: mode}, function(userInfo){
+                        response[index].user = userInfo[0];
+                        savePlayerCountry(score.user_id, userInfo[0].country)
+                        donecb();
+                    }, reqTracker);
+                });
+            }else{
+                funs.push(function(donecb){
+                    getPlayerCountry(score.user_id, function(country){
+                        response[index].user = {country: country};
+                        donecb();
+                    });
+                });
+            }
+        });
+        doManyFunc(funs, function(){
+            callback(response);
+        })
+    }, reqTracker);
 }
 
 function getUserRecent(params, callback, reqTracker){
@@ -2734,13 +2900,13 @@ function getUser(params, callback, reqTracker){
 }
 
 function getUserBest(params, callback, reqTracker){
-	/*
-	k - api key (required).
-	u - specify a user_id or a username to return best scores from (required).
-	m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, default value is 0.
-	limit - amount of results (range between 1 and 100 - defaults to 10).
-	type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behavior is automatic recognition (may be problematic for usernames made up of digits only).
-	*/
+    /*
+    k - api key (required).
+    u - specify a user_id or a username to return best scores from (required).
+    m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, default value is 0.
+    limit - amount of results (range between 1 and 100 - defaults to 10).
+    type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behavior is automatic recognition (may be problematic for usernames made up of digits only).
+    */
     var url = "https://osu.ppy.sh/api/get_user_best";
     params.k = apikey;
     getRequest(getUrl(url, params), callback, reqTracker);
@@ -2752,7 +2918,6 @@ function getUrl(url, params){
         for(var k in params){
             paramarray.push(k + "=" + encodeURIComponent(params[k]));
         }
-        if(debug) console.log(url + "?" + paramarray.join("&"));
         return url + "?" + paramarray.join("&");
     }else{
         return url;
@@ -2781,23 +2946,8 @@ function persistGetPageJSON(url, callback){
     return rtn;
 }
 
-function persistGetPage(url, callback){
-    var rtn = {};
-    function repeatGetPage(url, callback){
-        var reqobj = GetPage(url, function(response){
-            if(response === null){
-                repeatGetPage(url, callback);
-            }else{
-                callback(response);
-            }
-        });
-        rtn.abort = reqobj.abort.bind(reqobj);
-    }
-    repeatGetPage(url, callback);
-    return rtn;
-}
-
 function GetPage(url, callback) {
+    if(debug) console.log(url);
     return GM_xmlhttpRequest({
         method: "GET",
         url: url,
