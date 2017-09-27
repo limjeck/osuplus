@@ -1,3 +1,13 @@
+## 1.7.0 (27 Sept 2017)
+
+#### Features
+- Settings tab on top right to enable/disable osuplus features
+- Added link in osu!preview to open in new tab
+- Added setting to force show difficulties in beatmap listing
+
+#### Bugfixes
+- Fixed Most Played tab
+
 ## 1.6.0 (22 June 2017)
 
 #### Features
