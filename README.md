@@ -25,6 +25,8 @@ A userscript to add features to your boring osu! web pages.
 - Display global and country rank in performance ranking
 - Subscription to mappers and maps
 - Beatmap information in userpage top ranks/recent plays
+- Settings tab to enable/disable osuplus features
+- Force show difficulties in beatmap listing
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
