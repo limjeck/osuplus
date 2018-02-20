@@ -1404,9 +1404,6 @@ var osuplusUserpage = (function(){
         var modstr = getMods(score.enabled_mods);
         h.html(getRankImg(score.rank) + "\n" +
                                 "<b><a href='/b/" + score.beatmap_id + "?m=" + gameMode + "'>"+beatmap.artist + " - " + beatmap.title + " [" + beatmap.version + "]</a>" + (modstr === "None" ? " " : " +" + modstr) + "</b> (" + calcAcc(score, gameMode).toFixed(2) + "%)" + (score.perfect === '1' ? " (FC)" : "") + "\n");
-        if(score.perfect === "1"){
-            h.append("(FC)");
-        }
         h.append(
             $("<div>").append(
                 $("<b>").append(
