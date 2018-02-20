@@ -108,7 +108,7 @@ var apikey = null,
 var modnames = [
     {val: 1, name: "NoFail", short: "NF"},
     {val: 2, name: "Easy", short: "EZ"},
-    {val: 4, name: "NoVideo", short: ""},
+    {val: 4, name: "TouchDevice", short: "TD"},
     {val: 8, name: "Hidden", short: "HD"},
     {val: 16, name: "HardRock", short: "HR"},
     {val: 32, name: "SuddenDeath", short: "SD"},
