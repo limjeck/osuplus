@@ -35,6 +35,6 @@ A userscript to add features to your boring osu! web pages.
 ## How to install
 Ensure you have Tampermonkey/Greasemonkey installed and enabled. 
 
-Click [here](https://github.com/Poliwrath/osuplus/raw/master/osuplus.user.js) to install.
+Click [here](https://github.com/limjeck/osuplus/raw/master/osuplus.user.js) to install.
 
 Now go to any osu! beatmap listing page. It should prompt you for your API key at the top of the page. Simply paste your API key and done!
