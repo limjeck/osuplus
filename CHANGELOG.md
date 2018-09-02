@@ -1,3 +1,21 @@
+## 2.0.0 (2 Sept 2018)
+
+#### Features
+- Added the following features on the new site:
+  - Beatmap page:
+    - top 100 scores
+    - pp 2 decimal places
+    - sort by pp
+    - selected mods scores
+    - friends' scores
+    - score date
+    - search scores of any user
+    - download replay of any score (if available)
+    - Bloodcat mirror
+    - max combo value
+- Added setting to display pp in 0 or 2 dp
+- Beatmap score rank will not link to replay if replay is unavailable
+
 ## 1.7.0 (27 Sept 2017)
 
 #### Features
