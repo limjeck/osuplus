@@ -5,6 +5,7 @@ A userscript to add features to your boring osu! web pages.
 ## [Changelog](CHANGELOG.md)
 
 ## Features
+(o) denotes the feature is only available on the old site
 - Display up to top 100 scores
 - Display pp for each score
 - Sort by pp
@@ -15,18 +16,18 @@ A userscript to add features to your boring osu! web pages.
 - Search scores of any user
 - Download replay of any score (if available)
 - Bloodcat mirror
-- Display numerical value of CS, AR, HP, OD
+- Display numerical value of CS, AR, HP, OD (o)
 - [osu!preview](https://osu.ppy.sh/forum/t/383371)
 - Display max combo value
-- Display recent plays (including failed scores) in userpage
-- Display top 100 most played maps in userpage
-- Detailed top ranks
-- Slider to highlight recent scores in beatmap listing and top ranks
-- Display global and country rank in performance ranking
-- Subscription to mappers and maps
-- Beatmap information in userpage top ranks/recent plays
+- Display recent plays (including failed scores) in userpage (o)
+- Display top 100 most played maps in userpage (o)
+- Detailed top ranks (o)
+- Slider to highlight recent scores in beatmap listing and top ranks (o)
+- Display global and country rank in performance ranking (o)
+- Subscription to mappers and maps (o)
+- Beatmap information in userpage top ranks/recent plays (o)
 - Settings tab to enable/disable osuplus features
-- Force show difficulties in beatmap listing
+- Force show difficulties in beatmap listing (o)
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
