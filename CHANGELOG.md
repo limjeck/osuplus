@@ -1,3 +1,8 @@
+## 2.0.1 (3 Sept 2018)
+
+#### Bugfixes
+- Fixed recent scores displaying incorrect date
+
 ## 2.0.0 (2 Sept 2018)
 
 #### Features
