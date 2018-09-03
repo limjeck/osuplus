@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.0.0
+// @version      2.0.1
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -1632,7 +1632,7 @@ var osuplusUserpage = (function(){
             userRecent.forEach(function(play){
                 var modstr = getMods(play.enabled_mods),
                     acc = calcAcc(play, gameMode),
-                    dateset = new Date(play.date.replace(' ','T') + "+0000"), // dates from API in GMT+0
+                    dateset = new Date(play.date.replace(' ','T') + "+0800"), // dates from API in GMT+8
                     maplink = $("<a href='/b/" + play.beatmap_id + "?m=" + gameMode + "'></a>").text("Loading..."),
                     maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                     //starrating = $("<b>...&#9733;</b>"),
