@@ -1,3 +1,11 @@
+## 2.0.2 (4 Sept 2018)
+
+#### Features
+- Added support for Touch Device mod
+
+#### Bugfixes
+- Fixed osuplus failing when there's banned player on leaderboard
+
 ## 2.0.1 (3 Sept 2018)
 
 #### Bugfixes
