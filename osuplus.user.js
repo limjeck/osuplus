@@ -3093,7 +3093,7 @@ var osuplusNewBeatmap = (function(){
     
     function addBloodcatMirror(){
         $(".beatmapset-header__buttons").append(
-            `<a href="http://bloodcat.com/osu/s/${jsonBeatmapset.id}" data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
+            `<a href="http://bloodcat.com/osu/s/${jsonBeatmapset.id}" data-turbolinks="false" style="background-image: url(https://i.imgur.com/3IE8Mx3.png)" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
             <span class="btn-osu-big__content ">
             <span class="btn-osu-big__left">
             <span class="btn-osu-big__text-top">Bloodcat mirror</span>
