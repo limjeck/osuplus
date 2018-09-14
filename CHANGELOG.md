@@ -1,3 +1,26 @@
+## 2.1.0 (14 Sept 2018)
+
+#### Features
+- Added the following features on the new site:
+  - Beatmap page:
+    - slider to highlight recent scores
+    - subscribe map
+  - Userpage:
+    - display recent plays (including failed scores)
+    - detailed top ranks
+    - slider to highlight recent top scores
+    - beatmaps information on top ranks/recent plays
+    - subscribe mapper
+  - Performance ranking page:
+    - display global and country ranks
+  - Beatmaplisting:
+    - tab for subscribed maps and mappers
+
+#### Bugfixes
+- Fixed userpage not displaying correct stats on recent plays for ctb/mania
+- Fixed osuplus not running on unranked beatmaps
+- Now works with Firefox Greasemonkey
+
 ## 2.0.2 (4 Sept 2018)
 
 #### Features
