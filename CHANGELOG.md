@@ -1,3 +1,8 @@
+## 2.1.1 (25 Sept 2018)
+
+#### Bugfixes
+- Fixed beatmap scores displaying incorrect date
+
 ## 2.1.0 (14 Sept 2018)
 
 #### Features
