@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.1.0
+// @version      2.1.1
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -3350,7 +3350,7 @@
             var country = score.user.country.toLowerCase();
             var acc = calcAcc(score, mapMode);
             var rowclass, dateset;
-            dateset = new Date(score.date.replace(' ','T') + "+0000"); // dates from API in GMT+0
+            dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
 
             // handle colour of the row, depending on you, friend, odd/even row etc
             if(localUser !== null && localUser.toString() === score.user_id){
@@ -3613,7 +3613,7 @@
             var countryUpper = country.toUpperCase();
             var acc = calcAcc(score, mapMode);
             var rowclass, dateset;
-            dateset = new Date(score.date.replace(' ','T') + "+0000"); // dates from API in GMT+0
+            dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
 
             rowclass = "beatmap-scoreboard-table__body-row";
             if(currentUser !== null && currentUser.id.toString() === score.user_id){ // self
