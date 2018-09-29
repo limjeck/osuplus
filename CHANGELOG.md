@@ -1,3 +1,13 @@
+## 2.1.2 (29 Sept 2018)
+
+#### Bugfixes
+- Fixed beatmap scores displaying incorrect date again
+- Fixed user recent scores displaying incorrect date
+- Fixed user "show more" top scores not giving full details
+- Fixed osuplus overwriting scoreboard country ranking/friend ranking/mod ranking for supporters
+- Fixed compatibility with Opera tampermonkey
+- Adjusted Beatmaplisting/Subscription tabs in old site
+
 ## 2.1.1 (25 Sept 2018)
 
 #### Bugfixes
