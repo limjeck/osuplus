@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.1.1
+// @version      2.1.2
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -11,6 +11,9 @@
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
 // @grant        GM.getValue
+// @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js
 // @require      http://timeago.yarp.com/jquery.timeago.js
 // ==/UserScript==
@@ -19,6 +22,22 @@
     "use strict";
 
     var debug = false;
+
+    // backwards compatible
+    var GMX;
+    if(typeof GM == 'undefined'){
+        GMX = {
+            xmlHttpRequest: GM_xmlhttpRequest,
+            setValue: function(name, value){
+                return Promise.resolve(GM_setValue(name, value));
+            },
+            getValue: function(name, def){
+                return Promise.resolve(GM_getValue(name, def));
+            }
+        };
+    }else{
+        GMX = GM;
+    }
 
     //https://i.imgur.com/87WeqCL.png
     var bloodcatBtnImg = "data:image/png;base64,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",
@@ -166,17 +185,17 @@
     var settings = {};
     function initSettings(){
         var promises = [];
-        //promises.push(GM.setValue("apikey", null));
-        //promises.push(GM.setValue("playerCountries", "{}"));
-        //promises.push(GM.setValue("mapperSubList", "[]"));
-        //promises.push(GM.setValue("mapSubList", "[]"));
+        //promises.push(GMX.setValue("apikey", null));
+        //promises.push(GMX.setValue("playerCountries", "{}"));
+        //promises.push(GMX.setValue("mapperSubList", "[]"));
+        //promises.push(GMX.setValue("mapSubList", "[]"));
         var settings = {};
         for(let settingVar in defaultSettings){
-            promises.push(GM.getValue(settingVar, defaultSettings[settingVar]).then((result) => {
+            promises.push(GMX.getValue(settingVar, defaultSettings[settingVar]).then((result) => {
                 settings[settingVar] = result;
             }));
         }
-        promises.push(GM.getValue("playerCountries", "{}").then((result) => {
+        promises.push(GMX.getValue("playerCountries", "{}").then((result) => {
             playerCountries = typeof(result) === "string" ? JSON.parse(result) : {};
         }));
         return Promise.all(promises).then(() => {
@@ -322,17 +341,17 @@
 
         async function getList(type){
             if(type === MAPPER){
-                return JSON.parse(await GM.getValue("mapperSubList", "[]"));
+                return JSON.parse(await GMX.getValue("mapperSubList", "[]"));
             }else{
-                return JSON.parse(await GM.getValue("mapSubList", "[]"));
+                return JSON.parse(await GMX.getValue("mapSubList", "[]"));
             }
         }
 
         async function saveList(list, type){
             if(type === MAPPER){
-                await GM.setValue("mapperSubList", JSON.stringify(list));
+                await GMX.setValue("mapperSubList", JSON.stringify(list));
             }else{
-                await GM.setValue("mapSubList", JSON.stringify(list));
+                await GMX.setValue("mapSubList", JSON.stringify(list));
             }
         }
 
@@ -624,7 +643,7 @@
                     )
                 ),
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
-                    GM.setValue("apikey", $("#settings-apikey").val());
+                    GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = ["showMirror", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
                                       "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties"];
                     for(let property of properties){
@@ -635,7 +654,7 @@
         );
 
         function setBoolProperty(property){
-            GM.setValue(property, $(`#settings-${property}`).prop("checked"));
+            GMX.setValue(property, $(`#settings-${property}`).prop("checked"));
         }
 
         $("#show-apikey").click(function(){
@@ -732,7 +751,7 @@
         function addCss(){
             $(document.head).append($("<style></style>").html(
                 ".small-content-with-bg {background-image: url(//s.ppy.sh/images/main-bg-new.png);}\n" +
-                ".maintitlediv {font-size: 160%; padding-left: 20px;}\n" +
+                ".maintitlediv {font-size: 160%; padding-left: 20px; padding-bottom: 30px;}\n" +
                 ".maintitle {padding: 4px; margin-right: 10px;}\n" +
                 ".maintitle:hover, .maintitle.selected {background-color: #A9A9FF; color: white; text-decoration: none;}\n" +
                 "#subsControl {padding: 20px;}\n" +
@@ -2094,7 +2113,7 @@
                 userRecent.forEach(function(play){
                     var modstr = getMods(play.enabled_mods),
                         acc = calcAcc(play, gameMode),
-                        dateset = new Date(play.date.replace(' ','T') + "+0800"), // dates from API in GMT+8
+                        dateset = new Date(play.date.replace(' ','T') + "+0000"), // dates from API in GMT+0
                         maplink = $("<a href='/b/" + play.beatmap_id + "?m=" + gameMode + "'></a>").text("Loading..."),
                         maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                         //starrating = $("<b>...&#9733;</b>"),
@@ -2295,14 +2314,18 @@
             $("div[data-page-id=top_ranks] .profile-extra-entries").eq(1).find(".detail-row").each(function(i, ele){
                 addFirstDetails(ele);
             });
-            firstObserver.observe($("div[data-page-id=top_ranks] .profile-extra-entries")[1], {childList: true});
+            if($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[1]){
+                firstObserver.observe($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[1], {childList: true});
+            }
 
             getUserBest({u: jsonUser.id, m: gameMode, type: "id", limit: 100}, function(scores){
                 userBest = scores;
                 $("div[data-page-id=top_ranks] .profile-extra-entries").eq(0).find(".detail-row").each(function(i, ele){
                     addBestDetails(ele);
                 });
-                bestObserver.observe($("div[data-page-id=top_ranks] .profile-extra-entries")[0], {childList: true});
+                if($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[0]){
+                    bestObserver.observe($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[0], {childList: true});
+                }
             });
 
             // Add slider
@@ -2520,7 +2543,7 @@
                 userRecent.forEach(function(play){
                     var modstr = getMods(play.enabled_mods),
                         acc = calcAcc(play, gameMode),
-                        dateset = new Date(play.date.replace(' ','T') + "+0800"), // dates from API in GMT+8
+                        dateset = new Date(play.date.replace(' ','T') + "+0000"), // dates from API in GMT+0
                         maplink = $(`<a href='/b/${play.beatmap_id}?m=${gameMode}'></a>`).text("Loading..."),
                         maplink = $(`<a href="https://osu.ppy.sh/beatmaps/${play.beatmap_id}" class="detail-row__text-score detail-row__text-score--title">
                             Loading...<small class="detail-row__text-score detail-row__text-score--artist"></small></a>`),
@@ -2647,11 +2670,11 @@
             if(temp.length > 0){
                 temp = temp.children("a").attr("href").split("/");
                 localUser = temp[temp.length - 1];
-                GM.getValue("friends", []).then((temp) => {
+                GMX.getValue("friends", []).then((temp) => {
                     friends = temp;
                     getFriends(function(response){
                         friends = response;
-                        GM.setValue("friends", friends);
+                        GMX.setValue("friends", friends);
                     });
                 });
             }else{
@@ -2704,7 +2727,7 @@
 
             $(window).unload(function(){
                 // save player's countries
-                GM.setValue("playerCountries", JSON.stringify(playerCountries));
+                GMX.setValue("playerCountries", JSON.stringify(playerCountries));
             });
         }
 
@@ -3350,7 +3373,7 @@
             var country = score.user.country.toLowerCase();
             var acc = calcAcc(score, mapMode);
             var rowclass, dateset;
-            dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
+            dateset = new Date(score.date.replace(' ','T') + "+0000"); // dates from API in GMT+0
 
             // handle colour of the row, depending on you, friend, odd/even row etc
             if(localUser !== null && localUser.toString() === score.user_id){
@@ -3516,7 +3539,7 @@
                 });
                 tableWaiter = waitForEl(".beatmap-scoreboard-table", function(el){
                     refreshTable();
-                    tableObserver = elementChangeObserver($(".beatmapset-scoreboard__main")[0], refreshTable);
+                    tableObserver = whenScoreboardChange(refreshTable);
                 });
             });
         }
@@ -3525,6 +3548,23 @@
             var obs = new MutationObserver(callback);
             obs.observe($(".beatmapset-beatmap-picker")[0], {attributes: true, subtree: true});
             return obs;
+        }
+
+        function whenScoreboardChange(onchange){
+            var observer = new MutationObserver(function(mutationList, observer){
+                for(var mutation of mutationList){
+                    if(mutation.type == "childList" && mutation.addedNodes.length){
+                        var ele = $(":not(.osuplus-table).beatmap-scoreboard-table__table")[0];
+                        if(ele){
+                            observer.observe(ele, {characterData: true, subtree: true});
+                        }
+                    }
+                }
+                onchange();
+            });
+            observer.observe($(":not(.osuplus-table).beatmap-scoreboard-table__table")[0], {characterData: true, subtree: true});
+            observer.observe($(".beatmapset-scoreboard__main")[0], {childList: true});
+            return observer;
         }
 
         function refreshBeatmapsetHeader(){
@@ -3539,20 +3579,24 @@
             maxCombo = getMaxCombo(jsonBeatmapset, mapID, mapMode);
             minePlayerCountries();
 
-            if(hasKey){
-                addSearchUser();
-                putRankingType();
-                putModButtons();
-                addSlider();
-                tableLoadingNotice = addTableLoadingNotice();
-                tableLoadingNotice.show();
-                replicateTable();
-                modifyTableHeaders();
+            if($(".page-tabs__tab--active").text() == "Global Ranking" && ($(".beatmapset-scoreboard__mods--initial").length || $(".beatmapset-scoreboard__mods").length==0)){
+                if(hasKey){
+                    addSearchUser();
+                    putRankingType();
+                    putModButtons();
+                    addSlider();
+                    tableLoadingNotice = addTableLoadingNotice();
+                    tableLoadingNotice.show();
+                    replicateTable();
+                    modifyTableHeaders();
 
-                getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
-                    scoresResult = response;
-                    updateScoresTable();
-                });
+                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
+                        scoresResult = response;
+                        updateScoresTable();
+                    });
+                }
+            }else{
+                $(".beatmap-scoreboard-table__table").show();
             }
         }
 
@@ -3562,7 +3606,7 @@
             if(beatmapObserver) beatmapObserver.disconnect();
             if(beatmapWaiter) beatmapWaiter.abort();
             $(".osuplus-new-beatmap-style").remove();
-            GM.setValue("playerCountries", JSON.stringify(playerCountries));
+            GMX.setValue("playerCountries", JSON.stringify(playerCountries));
         }
 
         function getMaxCombo(jsonBeatmapset, mapID, mapMode){
@@ -3578,7 +3622,6 @@
         }
 
         function replicateTable(){
-            $(".osuplus-table.beatmap-scoreboard-table__table").remove();
             var oldTable = $(".beatmap-scoreboard-table__table");
             var newTable = $("<table class='osuplus-table beatmap-scoreboard-table__table'></table>");
             newTable.html(oldTable.html());
@@ -3613,7 +3656,7 @@
             var countryUpper = country.toUpperCase();
             var acc = calcAcc(score, mapMode);
             var rowclass, dateset;
-            dateset = new Date(score.date.replace(' ','T') + "+0800"); // dates from API in GMT+8
+            dateset = new Date(score.date.replace(' ','T') + "+0000"); // dates from API in GMT+0
 
             rowclass = "beatmap-scoreboard-table__body-row";
             if(currentUser !== null && currentUser.id.toString() === score.user_id){ // self
@@ -3746,7 +3789,7 @@
                 return modgroup;
             }
 
-            $(".beatmap-scoreboard-table").before($("<div id='mod-buttons'></div>").append(
+            $(".beatmap-scoreboard-table").before($("<div class='osuplus-table' id='mod-buttons'></div>").append(
                 genModBtns([
                     {mods: ["NM"], selection: 0},
                     {mods: ["NM"], selection: 1}]),
@@ -4300,7 +4343,7 @@
         if(yourKey !== null){
             testKey(yourKey, function(islegit){
                 if(islegit){
-                    GM.setValue("apikey", yourKey).then(() => {
+                    GMX.setValue("apikey", yourKey).then(() => {
                         apikey = yourKey;
                         hasKey = true;
                         alert("API key worked! Your page will now refresh");
@@ -4641,7 +4684,7 @@
                 details.ontimeout(resp);
             }
         };
-        GM.xmlHttpRequest({
+        GMX.xmlHttpRequest({
             method: details.method,
             url: details.url,
             synchronous: details.synchronous,
@@ -4657,7 +4700,7 @@
     //-------------------------------
 
     function waitForEl(selector, callback){
-        var poller = setInterval(function(){
+        var poller = setInterval(() => {
             var el = $(selector);
             if(el.length){
                 clearInterval(poller);
@@ -4665,14 +4708,6 @@
             }
         }, 100);
         return {abort: () => { clearInterval(poller); }};
-    }
-
-    function elementChangeObserver(element, onchange){
-        var observer = new MutationObserver(function(mutationList, observer){
-            onchange();
-        });
-        observer.observe(element, {characterData: true, subtree: true});
-        return observer;
     }
 
     function inArray(arr, ele){
