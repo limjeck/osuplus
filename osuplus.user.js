@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.1.2
+// @version      2.1.3
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -1102,6 +1102,8 @@
         }
 
         function init(){
+            if($("#osuplusloaded").length) return;
+            $("body").append("<a hidden id='osuplusloaded'></a>");
             addCss();
             subLoadingStatus = 0;
             subsContent = $("<div class='subContent'></div>").hide();
@@ -1132,14 +1134,14 @@
                 subsTitle.addClass("page-mode-link--is-active");
                 subsContent.show();
                 beatmaplistingTitle.removeClass("page-mode-link--is-active");
-                $(".osu-page--beatmapsets-search-header").parent().hide();
+                $(".osu-layout__row--page-compact").hide();
                 if(subLoadingStatus === 0){
                     loadSubs();
                 }
             });
             beatmaplistingTitle.click(function(){
                 beatmaplistingTitle.addClass("page-mode-link--is-active");
-                $(".osu-page--beatmapsets-search-header").parent().show();
+                $(".osu-layout__row--page-compact").show();
                 subsTitle.removeClass("page-mode-link--is-active");
                 subsContent.hide();
             });
@@ -1303,7 +1305,7 @@
                                 <img src="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg" srcset="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg 1x, https://assets.ppy.sh/beatmaps/${id}/covers/card@2x.jpg 2x" class="beatmapset-panel__image">
                                 <div class="beatmapset-panel__image-overlay"></div>
                                 <div class="beatmapset-panel__status-container">
-                                    <div class="beatmapset-panel__status">${approved}</div>
+                                    <div class="beatmapset-status">${approved}</div>
                                 </div>
                                 <div class="beatmapset-panel__title-artist-box">
                                     <div class="u-ellipsis-overflow beatmapset-panel__header-text beatmapset-panel__header-text--title">${beatmapset.title}</div>
@@ -1502,6 +1504,8 @@
         }
 
         function init(){
+            if($("#osuplusloaded").length) return;
+            $("body").append("<a hidden id='osuplusloaded'></a>");
             var path = window.location.pathname.split('/');
             if(path[3] != "performance") return;
 
@@ -2181,7 +2185,8 @@
                     .pc-img {width: 80px;}
                     .pc-imgcol {width: 90px;}
                     #opslider {width: 250px; display: inline-block; margin: 10px;}
-                    .recentscore {background-color: greenyellow;}
+                    .recentscore .play-detail__group--top, .recentscore .play-detail__score-detail, .recentscore .play-detail__pp:before {background-color: #009612;}
+                    .recentscore {background-color: green;}
                     .star-display {text-align: right; color: #444444; padding-right: 5px;}
                     .prof-beatmap {position: relative;}
                     .modalBtn {position: absolute; right: -1px; top: -1px; background: white; padding: 3px; width: 22px; text-align: center; border-style: solid; border-width: 1px;}
@@ -2193,7 +2198,8 @@
                     .opModal-song-info td {padding: 2px 7px;}
                     .tableAttr {width: 70px;}
                     .sub-button {width: 90px; margin-left: 30px;}
-                    .badge-rank--F {background-image: url('${UImg}')}`
+                    .score-rank-v2--F {background-image: url('${UImg}')}
+                    .play-detail__pp.play-detail__recent-pp {min-width: 0px; padding: 0px;}`
                 ));
             }
         }
@@ -2224,6 +2230,8 @@
         })();
 
         function init(){
+            if($("#osuplusloaded").length) return;
+            $("body").append("<a hidden id='osuplusloaded'></a>");
             addCss();
             jsonUser = JSON.parse($("#json-user").text());
             gameMode = getGameMode();
@@ -2291,7 +2299,7 @@
         }
 
         function getGameMode(){
-            var modeStr = $(".page-mode-link--is-active").attr("href").split("/");
+            var modeStr = $(".game-mode-link--active").attr("href").split("/");
             modeStr = modeStr[modeStr.length-1];
             return modeToInt(modeStr);
         }
@@ -2311,7 +2319,7 @@
                     }
                 }
             });
-            $("div[data-page-id=top_ranks] .profile-extra-entries").eq(1).find(".detail-row").each(function(i, ele){
+            $("div[data-page-id=top_ranks] .profile-extra-entries").eq(1).find(".play-detail").each(function(i, ele){
                 addFirstDetails(ele);
             });
             if($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[1]){
@@ -2320,7 +2328,7 @@
 
             getUserBest({u: jsonUser.id, m: gameMode, type: "id", limit: 100}, function(scores){
                 userBest = scores;
-                $("div[data-page-id=top_ranks] .profile-extra-entries").eq(0).find(".detail-row").each(function(i, ele){
+                $("div[data-page-id=top_ranks] .profile-extra-entries").eq(0).find(".play-detail").each(function(i, ele){
                     addBestDetails(ele);
                 });
                 if($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[0]){
@@ -2331,7 +2339,7 @@
             // Add slider
             var sliderDiv = createSlider(function(val, checked){
                 if(checked){
-                    var tops = $("div[data-page-id=top_ranks] .detail-row");
+                    var tops = $("div[data-page-id=top_ranks] .play-detail");
                     var curTime = new Date();
                     tops.each(function(index, top){
                         top = $(top);
@@ -2344,7 +2352,7 @@
                         }
                     });
                 }else{
-                    $("div[data-page-id=top_ranks] .detail-row.recentscore").removeClass("recentscore");
+                    $("div[data-page-id=top_ranks] .play-detail.recentscore").removeClass("recentscore");
                 }
             });
             $("div[data-page-id=top_ranks] .page-extra__title").first().after(sliderDiv);
@@ -2376,7 +2384,7 @@
         }
 
         function beatmapIdOfDetailRow(ele){
-            var href = $(ele).find(".detail-row__text-score").attr("href");
+            var href = $(ele).find(".play-detail__title").attr("href");
             var temp = href.split("/");
             return temp[temp.length - 1];
         }
@@ -2399,15 +2407,18 @@
             if(beatmap && beatmap.max_combo !== null){
                 maxmapcombo.text(` (${beatmap.max_combo}x)`);
             }
-            var mainRow = top.find(".detail-row__detail-column--full .detail-row__detail-row--main");
             if(score.perfect === "1"){
-                mainRow.append("&nbsp;(FC)");
+                if(top.find(".play-detail__pp-weight").length){
+                    top.find(".play-detail__pp-weight").prepend("<span class='play-detail__fc'>(FC) </span>")
+                }else{
+                    top.find(".play-detail__accuracy-and-weighted-pp").after("<div><span class='play-detail__fc'>(FC)</span></div>");
+                }
             }
-            mainRow.after(makeScoreStats(score, maxmapcombo));
+            top.find(".play-detail__title").after(makeScoreStats(score, maxmapcombo));
         }
 
         function makeScoreStats(score, maxmapcombo){
-            return $("<div></div>").append(
+            return $("<div class='play-detail__opstats'></div>").append(
                 $("<b></b>").append(
                     `${commarise(score.score)} / ${score.maxcombo}x`,
                     maxmapcombo
@@ -2544,38 +2555,50 @@
                     var modstr = getMods(play.enabled_mods),
                         acc = calcAcc(play, gameMode),
                         dateset = new Date(play.date.replace(' ','T') + "+0000"), // dates from API in GMT+0
-                        maplink = $(`<a href='/b/${play.beatmap_id}?m=${gameMode}'></a>`).text("Loading..."),
-                        maplink = $(`<a href="https://osu.ppy.sh/beatmaps/${play.beatmap_id}" class="detail-row__text-score detail-row__text-score--title">
-                            Loading...<small class="detail-row__text-score detail-row__text-score--artist"></small></a>`),
+                        maplink = $(`<a href="https://osu.ppy.sh/beatmaps/${play.beatmap_id}" class="play-detail__title u-ellipsis-overflow">
+                            Loading...<small class="play-detail__artist"></small></a>`),
+                        mapver = $(`<span class="play-detail__beatmap">Loading...</span>`),
                         maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                         //starrating = $("<b>...&#9733;</b>"),
                         failClass = play.rank === "F" ? "failedScore" : "passScore";
 
-                    var detailrow = $(`<div class='detail-row ${failClass}'>`).append(
-                        `<div class="detail-row__icon"><div class="badge-rank badge-rank--full badge-rank--${play.rank}"></div></div>`,
-                        $(`<div class="detail-row__detail"></div>`).append(
-                            $(`<div class="detail-row__detail-column detail-row__detail-column--full"></div>`).append(
-                                $(`<div class="detail-row__detail-row detail-row__detail-row--main"></div>`).append(
-                                    maplink,
-                                    ` <span>&nbsp;(${acc.toFixed(2)}%)${play.perfect == '1' ? " (FC)" : ""}</span>`
-                                ),
+                    var detailrow = $(`<div class='play-detail play-detail--highlightable play-detail--compact ${failClass}'>`).append(
+                        $(`<div class="play-detail__group play-detail__group--top"></div>`).append(
+                            `<div class="play-detail__icon play-detail__icon--main">
+                                <div class="score-rank-v2 score-rank-v2--full score-rank-v2--${play.rank}"></div>
+                            </div>`,
+                            $(`<div class="play-detail__detail"></div>`).append(
+                                maplink,
                                 makeScoreStats(play, maxmapcombo),
-                                `<div class="detail-row__detail-row detail-row__detail-row--bottom">
-                                  <span class="detail-row__text-score detail-row__text-score--time">
-                                    <time class="timeago" datetime="${dateset.toISOString()}">${dateset.toLocaleString()}</time>
-                                  </span>
-                                </div>`
-                            ),
-                            `<div class="detail-row__detail-column detail-row__detail-column--score-data">
-                              <div class="detail-row__score-data detail-row__score-data--mods">
-                                <div class="mods">
-                                ${getModsArray(play.enabled_mods).map(function(mod){
-                                    return `<div class="mods__mod"><div class="mods__mod-image"><div class="mod mod--${mod.short}" title="${mod.name}"></div></div></div>`;
-                                }).join("")}
+                                $(`<div class="play-detail__beatmap-and-time"></div>`).append(
+                                    mapver,
+                                    `<span class="play-detail__time">
+                                        <time class="timeago" datetime="${dateset.toISOString()}">${dateset.toLocaleString()}</time>
+                                    </span>`
+                                )
+                            )
+                        ),
+                        `<div class="play-detail__group play-detail__group--bottom">
+                            <div class="play-detail__score-detail play-detail__score-detail--score">
+                                <div class="play-detail__score-detail-top-right">
+                                    <div class="play-detail__accuracy-and-weighted-pp">
+                                        <span class="play-detail__accuracy">${acc.toFixed(2)}%</span>
+                                    </div>
+                                    ${play.perfect == '1' ? 
+                                    `<div><span class="play-detail__fc">(FC)</span></div>` : ""}
+                                </div>
+                            </div>
+                            <div class="play-detail__score-detail play-detail__score-detail--mods">
+                                <div class="mods mods--profile-page">
+                                    ${getModsArray(play.enabled_mods).map(function(mod){
+                                        return `<div class="mods__mod"><div class="mods__mod-image"><div class="mod mod--${mod.short}" title="${mod.name}"></div></div></div>`;
+                                    }).join("")}
                                 </div>
                               </div>
-                            </div>`
-                        )
+                            </div>
+                            <div class="play-detail__pp play-detail__recent-pp"></div>
+                            <div class="play-detail__more"></div>
+                        </div>`
                     );
                     addModalBtn(detailrow, play.beatmap_id);
 
@@ -2584,12 +2607,12 @@
                     getBeatmapsCache({b: play.beatmap_id, m: gameMode, a: 1}, function(response){
                         var r = response[0];
                         maplink.html(
-                            `${r.title} [${r.version}] <small class="detail-row__text-score detail-row__text-score--artist">${r.artist}</small>`
+                            `${r.title} <small class="play-detail__artist">by ${r.artist}</small>`
                         );
-                        maplink.attr("title", `${r.artist} - ${r.title}`);
                         if(r.max_combo !== null){
                             maxmapcombo.text(` (${r.max_combo}x)`);
                         }
+                        mapver.text(r.version);
                         detailrow.find(".identifier").val(r.beatmap_id);
                     });
                 });
@@ -3279,13 +3302,7 @@
         }
 
         function getMapmode(){
-            var ls = $(".paddingboth").first().next().children().children();
-            var mapmode = 0;
-            for(var i=1; i<ls.length; i++){
-                if(ls[i].children[0].className == "active")
-                    mapmode = i;
-            }
-            return mapmode;
+            return parseInt($(".beatmapTab.active").attr("href").slice(-1));
         }
 
         function modifyTableHeaders(){
@@ -3521,6 +3538,8 @@
         }
 
         function init(){
+            if($("#osuplusloaded").length) return;
+            $("body").append("<a hidden id='osuplusloaded'></a>");
             addCss();
             jsonCountries = JSON.parse($("#json-countries").text());
             jsonBeatmapset = JSON.parse($("#json-beatmapset").text());
@@ -3648,7 +3667,8 @@
         }
 
         function makeZeroableEntry(num){
-            return `<td${num === "0" ? " class='beatmap-scoreboard-table__zero'" : ""}>${commarise(num)}</td>`;
+            var cellClass = "beatmap-scoreboard-table__cell";
+            return `<td class='${cellClass} ${num === "0" ? `${cellClass}--zero` : ""}'>${commarise(num)}</td>`;
         }
 
         function makeScoreTableRow(score, rankno, greyedout){
@@ -3658,7 +3678,7 @@
             var rowclass, dateset;
             dateset = new Date(score.date.replace(' ','T') + "+0000"); // dates from API in GMT+0
 
-            rowclass = "beatmap-scoreboard-table__body-row";
+            rowclass = "beatmap-scoreboard-table__body-row beatmap-scoreboard-table__body-row--highlightable";
             if(currentUser !== null && currentUser.id.toString() === score.user_id){ // self
                 rowclass += " beatmap-scoreboard-table__body-row--self";
             }else if(isFriend(score.user_id)){
@@ -3685,15 +3705,16 @@
                 pprank = ` <span class='pprank'>(#${score.user.pp_rank})</span>`;
             }
 
-            return `<tr class='${rowclass}'>
-                    <td class='beatmap-scoreboard-table__rank'>
-                    ${score.replay_available == "1" ? `<a class='require-login' href='/web/osu-getreplay.php?c=${score.score_id}&amp;m=${mapMode}'>#${rankno}</a>` : `#${rankno}`}</td>
-                    <td class='beatmap-scoreboard-table__grade'><div class='badge-rank badge-rank--tiny badge-rank--${score.rank}'></div></td>
-                    <td class='beatmap-scoreboard-table__score'>${commarise(score.score)}</td>
-                    <td${acc==100 ? " class='beatmap-scoreboard-table__perfect'" : ""}>${acc.toFixed(2)}%</td>
-                    <td>${countryImg}</td>
-                    <td>${userhref}${pprank}</td>
-                    <td${score.perfect=="1" ? " class='beatmap-scoreboard-table__perfect'" : ""}>${commarise(score.maxcombo)}x</td>
+            var cellClass = "beatmap-scoreboard-table__cell";
+            var row = $(`<tr class='${rowclass}'>
+                    <td class='${cellClass} ${cellClass}--rank'>
+                    ${score.replay_available == "1" ? `<a class='require-login' href='/scores/${intToMode(mapMode)}/${score.score_id}/download'>#${rankno}</a>` : `#${rankno}`}</td>
+                    <td class='${cellClass} ${cellClass}--grade'><div class='badge-rank badge-rank--tiny badge-rank--${score.rank}'></div></td>
+                    <td class='${cellClass} ${cellClass}--score'>${commarise(score.score)}</td>
+                    <td class='${cellClass} ${acc==100 ? `${cellClass}--perfect'` : ""}'>${acc.toFixed(2)}%</td>
+                    <td class='${cellClass}'>${countryImg}</td>
+                    <td class='${cellClass}'>${userhref}${pprank}</td>
+                    <td class='${cellClass} ${score.perfect=="1" ? `${cellClass}--perfect` : ""}'>${commarise(score.maxcombo)}x</td>
                     ${mapMode == 3 ?
                     // Mania
                     [makeZeroableEntry(score.countgeki),
@@ -3710,11 +3731,23 @@
                      makeZeroableEntry(score.count100),
                      makeZeroableEntry(score.count50)].join("")}
                     ${makeZeroableEntry(score.countmiss)}
-                    <td>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)}</td>
-                    <td class='beatmap-scoreboard-table__mods'><div class='mods mods--scoreboard'>${getNewMods(score.enabled_mods)}</div></td>
-                    <td class='datecol'>
-                        <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time>
-                    </td></tr>`;
+                    <td class='${cellClass}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)}</td>
+                    <td class='${cellClass} ${cellClass}--mods'><div class='mods mods--scoreboard'>${getNewMods(score.enabled_mods)}</div></td>
+                    <td class='${cellClass} datecol'>
+                        <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time></td>
+                    <td class="beatmap-scoreboard-table__play-detail-menu"></td>
+                    </tr>`);
+            //doesn't work on greasemonkey, unfixable?
+            //ReactDOM.render(React.createElement(_exported.PlayDetailMenu, {score: newify(score)}), row.find(".beatmap-scoreboard-table__play-detail-menu")[0]);
+            return row;
+        }
+
+        function newify(score){
+            score.replay = (score.replay_available == '1');
+            score.user = {username: score.username};
+            score.beatmap = {mode: intToMode(mapMode)};
+            score.id = score.score_id;
+            return score;
         }
 
         function updateScoresTable(callback){
@@ -4187,8 +4220,8 @@
             );
 
             // Add date column
-            $(".osuplus-table.beatmap-scoreboard-table__table thead tr").append("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
-            $(".search-beatmap-scoreboard-table__table thead tr").append("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
+            $(".osuplus-table.beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
+            $(".search-beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
 
             // Add max combo
             $(".osuplus-table .beatmap-scoreboard-table__header--maxcombo").text(`Max Combo${maxCombo ? ` (${maxCombo})` : ""}`);
