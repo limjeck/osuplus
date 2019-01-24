@@ -1,3 +1,12 @@
+## 2.1.3 (24 Jan 2019)
+
+#### Bugfixes
+- Fixed beatmap page on new site
+- Fixed userpage on new site
+- Fixed beatmap page for unranked maps on old site
+- Fixed repeated loads on new site if you go back
+- Fixed new site subscriptions tab
+
 ## 2.1.2 (29 Sept 2018)
 
 #### Bugfixes
