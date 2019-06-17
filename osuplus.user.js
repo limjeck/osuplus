@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.1.3
+// @version      2.1.4
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
 // @include      https://osu.ppy.sh*
+// @include      http://old.ppy.sh*
+// @include      https://old.ppy.sh*
 
 // @noframes
 // @grant        GM.xmlHttpRequest
@@ -43,7 +45,8 @@
     var bloodcatBtnImg = "data:image/png;base64,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",
 
         FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
-        UImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAA1VBMVEUAAACioqKbm5vy8vLX19fv7+/Ozs6ioqK0tLTR0dHJycmqqqqzs7Ojo6Oamprb29vT09Ourq6mpqb///8mJiYzMzMxMTEsLCwpKSkvLy81NTUjIyMgICAeHh5JSUlISEhRUVFFRUUZGRkcHBympqZaWlqrq6s6Ojo+Pj5WVlbExMSjo6NCQkI3NzfY2Ni4uLivr695eXlycnJMTEze3t66urqoqKj8/Pz4+Pjg4ODa2tq+vr60tLSbm5t+fn5ra2vk5OTj4+OTk5OMjIyFhYVpaWlmZmaYnrJ3AAAAE3RSTlMAUlL+8f7nQ6np562iS0jy8aRXW3S7rwAAAbZJREFUSMft1dlymzAYhuGmxnaapOtnLLGvNjgBL+DsW/f7v6T+mrrIbQXKccJzAqPROyAxGl71er2X4PhoiH8N3hw+JX33AWrGWNu+vsLykeV+npDc9/0gEhbfvmA41rXA3E0YRSxJLJ9QSQI/PIWhbc88z+OMMb67TISsYMzc4qO2/VssOEFgekmFI01blpYrsdoScR4EgRNbGHa3bv25cqUFampZQKZxDHS2jnOPrSMNcZYkXkT7VmQOx6CjTWn6HJCtC6zixPZJlpk/MOpoJ4TiScOhOOEhifK8WOK4qyVriiWKvUzEtOgVjI5WGZ/zvA6FFS7ftrb8N4q5RLFZZgG5Az4p2wPZ8jlgNa0F3NEHm3CeAgfqc3SFC/bHV2DDdngF3DuEX6hbYmDNGj9Btc0EuxL3Ik5b20PcTK1GucW+JaNta2vJCBtLqh9v9tuIhlrfmQyQyzabzWbf0/NT4TatTBqat7YEmEohxdF0n2zVTy6amcVMKPWtXPODuWOHC8E3G7JVO8F1ZqroW2LgNrNVyrWmJeMhrh+i/9Jis8QltbragNp7Okd6J6OB8g/T6/WevV831F5ngplDwwAAAABJRU5ErkJggg==",
+        //UImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAA1VBMVEUAAACioqKbm5vy8vLX19fv7+/Ozs6ioqK0tLTR0dHJycmqqqqzs7Ojo6Oamprb29vT09Ourq6mpqb///8mJiYzMzMxMTEsLCwpKSkvLy81NTUjIyMgICAeHh5JSUlISEhRUVFFRUUZGRkcHBympqZaWlqrq6s6Ojo+Pj5WVlbExMSjo6NCQkI3NzfY2Ni4uLivr695eXlycnJMTEze3t66urqoqKj8/Pz4+Pjg4ODa2tq+vr60tLSbm5t+fn5ra2vk5OTj4+OTk5OMjIyFhYVpaWlmZmaYnrJ3AAAAE3RSTlMAUlL+8f7nQ6np562iS0jy8aRXW3S7rwAAAbZJREFUSMft1dlymzAYhuGmxnaapOtnLLGvNjgBL+DsW/f7v6T+mrrIbQXKccJzAqPROyAxGl71er2X4PhoiH8N3hw+JX33AWrGWNu+vsLykeV+npDc9/0gEhbfvmA41rXA3E0YRSxJLJ9QSQI/PIWhbc88z+OMMb67TISsYMzc4qO2/VssOEFgekmFI01blpYrsdoScR4EgRNbGHa3bv25cqUFampZQKZxDHS2jnOPrSMNcZYkXkT7VmQOx6CjTWn6HJCtC6zixPZJlpk/MOpoJ4TiScOhOOEhifK8WOK4qyVriiWKvUzEtOgVjI5WGZ/zvA6FFS7ftrb8N4q5RLFZZgG5Az4p2wPZ8jlgNa0F3NEHm3CeAgfqc3SFC/bHV2DDdngF3DuEX6hbYmDNGj9Btc0EuxL3Ik5b20PcTK1GucW+JaNta2vJCBtLqh9v9tuIhlrfmQyQyzabzWbf0/NT4TatTBqat7YEmEohxdF0n2zVTy6amcVMKPWtXPODuWOHC8E3G7JVO8F1ZqroW2LgNrNVyrWmJeMhrh+i/9Jis8QltbragNp7Okd6J6OB8g/T6/WevV831F5ngplDwwAAAABJRU5ErkJggg==",
+        FImgNew = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMywgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAzMiAxNiIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzIgMTY7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojQjlCOUI5O30KCS5zdDF7ZmlsbDojRkY1QTVBO2ZpbHRlcjp1cmwoI0Fkb2JlX09wYWNpdHlNYXNrRmlsdGVyKTt9Cgkuc3Qye21hc2s6dXJsKCNtYXNrMF8xXyk7fQoJLnN0M3tmaWxsOiNDNEM0QzQ7fQoJLnN0NHtmaWxsOiNBRkFGQUY7fQoJLnN0NXtmaWxsOiNBNEE0QTQ7fQoJLnN0NntmaWxsOiMzMzMzMzM7fQo8L3N0eWxlPgo8cGF0aCBjbGFzcz0ic3QwIiBkPSJNOCwwaDE2YzQuNCwwLDgsMy42LDgsOGwwLDBjMCw0LjQtMy42LDgtOCw4SDhjLTQuNCwwLTgtMy42LTgtOGwwLDBDMCwzLjYsMy42LDAsOCwweiIvPgo8ZGVmcz4KCTxmaWx0ZXIgaWQ9IkFkb2JlX09wYWNpdHlNYXNrRmlsdGVyIiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCI+CgkJPGZlQ29sb3JNYXRyaXggIHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIxIDAgMCAwIDAgIDAgMSAwIDAgMCAgMCAwIDEgMCAwICAwIDAgMCAxIDAiLz4KCTwvZmlsdGVyPgo8L2RlZnM+CjxtYXNrIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCIgaWQ9Im1hc2swXzFfIj4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik04LDBoMTZjNC40LDAsOCwzLjYsOCw4bDAsMGMwLDQuNC0zLjYsOC04LDhIOGMtNC40LDAtOC0zLjYtOC04bDAsMEMwLDMuNiwzLjYsMCw4LDB6Ii8+CjwvbWFzaz4KPGcgY2xhc3M9InN0MiI+Cgk8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTYtOWwxNy4zLDMwSC0xLjNMMTYtOXoiLz4KCTxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0yNy41LDNMMzQsMTQuMkgyMUwyNy41LDN6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNNy41LTJsMy45LDYuOEgzLjZMNy41LTJ6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNOS41LDEzbDMuOSw2LjhINS42TDkuNSwxM3oiLz4KPC9nPgo8Zz4KCTxwb2x5Z29uIGNsYXNzPSJzdDYiIHBvaW50cz0iMTEsMy45IDIxLjMsMy45IDIxLjMsNS4yIDEyLjUsNS4yIDEyLjUsNy41IDIwLjgsNy41IDIwLjgsOC44IDEyLjUsOC44IDEyLjUsMTIuMyAxMSwxMi4zIAkiLz4KPC9nPgo8L3N2Zz4K",
 
         loaderImg = "data:image/gif;base64,R0lGODlhEAAQAPIAAKmp/wAAAIGBwisrQgAAAEFBYlZWgmFhkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==",
 
@@ -203,7 +206,6 @@
             return settings;
         });
     }
-
 
     //peppy code
     (function($) {
@@ -526,16 +528,16 @@
             }
             if(siteType === OLDSITE){
                 mainInit();
-                if(url.match(/^https?:\/\/osu\.ppy\.sh\/u\//)){ 
+                if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/u\//)){ 
                     pageType = USERPAGE;
                     osuplusUserpage().init();
-                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/([bs]\/|p\/beatmap\?)/)){
+                }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/([bs]\/|p\/beatmap\?)/)){
                     pageType = BEATMAP;
                     osuplusBeatmap().init();
-                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/pp/)){
+                }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/pp/)){
                     pageType = PPRANKING;
                     osuplusPpRanking().init();
-                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/p\/beatmaplist/)){
+                }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/beatmaplist/)){
                     pageType = BEATMAPLISTING;
                     osuplusBeatmapListing().init();
                 }
@@ -546,10 +548,10 @@
     });
 
     function isOldSite(url){
-        if(url.match(/^https?:\/\/osu\.ppy\.sh\/u\//) ||
-           url.match(/^https?:\/\/osu\.ppy\.sh\/([bs]\/|p\/beatmap\?)/) ||
-           url.match(/^https?:\/\/osu\.ppy\.sh\/p\/pp/) ||
-           url.match(/^https?:\/\/osu\.ppy\.sh\/p\/beatmaplist/)){
+        if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/u\//) ||
+           url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/([bs]\/|p\/beatmap\?)/) ||
+           url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/pp/) ||
+           url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/beatmaplist/)){
             return true;
         }else{
             return false;
@@ -2198,7 +2200,7 @@
                     .opModal-song-info td {padding: 2px 7px;}
                     .tableAttr {width: 70px;}
                     .sub-button {width: 90px; margin-left: 30px;}
-                    .score-rank-v2--F {background-image: url('${UImg}')}
+                    .score-rank--F {background-image: url('${FImgNew}')}
                     .play-detail__pp.play-detail__recent-pp {min-width: 0px; padding: 0px;}`
                 ));
             }
@@ -2565,7 +2567,7 @@
                     var detailrow = $(`<div class='play-detail play-detail--highlightable play-detail--compact ${failClass}'>`).append(
                         $(`<div class="play-detail__group play-detail__group--top"></div>`).append(
                             `<div class="play-detail__icon play-detail__icon--main">
-                                <div class="score-rank-v2 score-rank-v2--full score-rank-v2--${play.rank}"></div>
+                                <div class="score-rank score-rank--full score-rank--${play.rank}"></div>
                             </div>`,
                             $(`<div class="play-detail__detail"></div>`).append(
                                 maplink,
@@ -3709,7 +3711,7 @@
             var row = $(`<tr class='${rowclass}'>
                     <td class='${cellClass} ${cellClass}--rank'>
                     ${score.replay_available == "1" ? `<a class='require-login' href='/scores/${intToMode(mapMode)}/${score.score_id}/download'>#${rankno}</a>` : `#${rankno}`}</td>
-                    <td class='${cellClass} ${cellClass}--grade'><div class='badge-rank badge-rank--tiny badge-rank--${score.rank}'></div></td>
+                    <td class='${cellClass} ${cellClass}--grade'><div class='score-rank score-rank--tiny score-rank--${score.rank}'></div></td>
                     <td class='${cellClass} ${cellClass}--score'>${commarise(score.score)}</td>
                     <td class='${cellClass} ${acc==100 ? `${cellClass}--perfect'` : ""}'>${acc.toFixed(2)}%</td>
                     <td class='${cellClass}'>${countryImg}</td>
