@@ -1,3 +1,9 @@
+## 2.1.4 (17 June 2019)
+
+#### Bugfixes
+- Now loads on old.ppy.sh/*
+- Update rank images
+
 ## 2.1.3 (24 Jan 2019)
 
 #### Bugfixes
