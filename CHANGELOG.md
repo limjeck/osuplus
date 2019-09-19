@@ -1,3 +1,15 @@
+## 2.1.5 (19 Sept 2019)
+
+#### Bugfixes
+- Fix Mirror mod not displaying properly
+- Search user textbox text in new site's beatmap page is now black (instead of invisible white)
+
+#### Features
+- Search user textbox in beatmap page:
+  - Now autofills to your username
+  - Accepts multiple usernames, separated by commas (e.g. "Vaxei,Rafis,xasuma")
+  - Now displays rank #1 onwards instead of all rank #0
+
 ## 2.1.4 (17 June 2019)
 
 #### Bugfixes
