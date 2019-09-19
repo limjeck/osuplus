@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.1.4
+// @version      2.1.5
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -158,6 +158,7 @@
         {val: 67108864, name: "Key1", short: "1K"},
         {val: 134217728, name: "Key3", short: "3K"},
         {val: 268435456, name: "Key2", short: "2K"},
+        {val: 1073741824, name: "Mirror", short: "MR"}
     ],
         // if the first is set, the second has to be set also
         doublemods = [
@@ -2641,6 +2642,7 @@
             songInfoRef = null,
             modBtns = [],
             localUser = null,
+            localUsername = null,
             localScore = null,
             friends = null,
             scoreListing = null,
@@ -2693,7 +2695,9 @@
             showDates = settings.showDates;
             temp = $(".content-infoline").children("div").children("b");
             if(temp.length > 0){
-                temp = temp.children("a").attr("href").split("/");
+                temp = temp.children("a");
+                localUsername = temp.text();
+                temp = temp.attr("href").split("/");
                 localUser = temp[temp.length - 1];
                 GMX.getValue("friends", []).then((temp) => {
                     friends = temp;
@@ -2818,6 +2822,7 @@
                 .append(
                     $("<strong>Search user: </strong>"),
                     $("<input type='text' id='searchusertxt' name='searchusertxt'>")
+                    .val(localUsername)
                     .bind("enterKey", searchUserEnter)
                     .keyup(function(e){
                         if(e.keyCode == 13)
@@ -2840,14 +2845,20 @@
         function searchUserEnter(){
             $("#searchuserinfo").text("Searching...").show();
             $("#searchuserresult").hide();
-            var searchusername = $("#searchusertxt").val();
-            
-            getScoresWithPlayerInfo({b:mapID, u:searchusername, m:mapMode, type:"string"}, settings.showPpRank, function(response){
-                if(response && response.length > 0){
-                    var searchResult = response[0];
+            var searchusernames = $("#searchusertxt").val().split(',');
+            var promises = searchusernames.map((username) => new Promise(function(resolve, reject){
+                getScoresWithPlayerInfo({b:mapID, u:username, m:mapMode, type:"string"}, settings.showPpRank, resolve);
+            }));
+            Promise.all(promises).then((responses) => {
+                var response = [];
+                for(let r of responses){
+                    response = response.concat(r);
+                }
+                response.sort((a,b) => parseInt(b.score) - parseInt(a.score));
+                if(response.length > 0){
                     $("#searchuserresult").find(".titlerow").nextAll().remove();
-                    response.forEach(function(score){
-                        var tableRow = makeScoreTableRow(score, 0);
+                    response.forEach(function(score, index){
+                        var tableRow = makeScoreTableRow(score, index+1);
                         $("#searchuserresult").find(".titlerow").parent().children().last().after(tableRow);
                     });
                     
@@ -3534,7 +3545,8 @@
                      .beatmap-scoreboard-table__header--miss {max-width: 45px; min-width: 30px; width: auto;}
                      .beatmap-scoreboard-table__header a {cursor: pointer;}
                      .sub-button {background-color: #29b; background-image: none;}
-                     .subbed {background-color: #ef77af;}`
+                     .subbed {background-color: #ef77af;}
+                     #searchusertxt {color: black;}`
                 ));
             }
         }
@@ -4243,6 +4255,7 @@
                     $("<strong>Search user: </strong>"),
                     $("<input>").attr({type: "text",
                                        id: "searchusertxt"})
+                    .val(currentUser.username)
                     .bind("enterKey", searchUserEnter)
                     .keyup(function(e){
                         if(e.keyCode == 13)
@@ -4267,14 +4280,20 @@
         function searchUserEnter(){
             $("#searchuserinfo").text("Searching...").show();
             $("#searchuserresult").hide();
-            var searchusername = $("#searchusertxt").val();
-            
-            getScoresWithPlayerInfo({b:mapID, u:searchusername, m:mapMode, type:"string"}, settings.showPpRank, function(response){
-                if(response && response.length > 0){
-                    var searchResult = response[0];
+            var searchusernames = $("#searchusertxt").val().split(',');
+            var promises = searchusernames.map((username) => new Promise(function(resolve, reject){
+                getScoresWithPlayerInfo({b:mapID, u:username, m:mapMode, type:"string"}, settings.showPpRank, resolve);
+            }));
+            Promise.all(promises).then((responses) => {
+                var response = [];
+                for(let r of responses){
+                    response = response.concat(r);
+                }
+                response.sort((a,b) => parseInt(b.score) - parseInt(a.score));
+                if(response.length > 0){
                     $("#searchuserresult .beatmap-scoreboard-table__body").children().remove();
-                    response.forEach(function(score){
-                        var tableRow = makeScoreTableRow(score, 0);
+                    response.forEach(function(score, index){
+                        var tableRow = makeScoreTableRow(score, index+1);
                         $("#searchuserresult .beatmap-scoreboard-table__body").append(tableRow);
                     });
                     
@@ -4406,12 +4425,9 @@
     function getModsArray(modnum){
         modnum = parseInt(modnum);
         var mods = [];
-        for(var i=modnames.length-1; i>=0; i--){
-            if(modnames[i].val <= modnum){
-                if(modnames[i].short !== ""){
-                    mods.push(modnames[i]);
-                }
-                modnum -= modnames[i].val;
+        for(let mod of modnames){
+            if(mod.val & modnum){
+                mods.push(mod)
             }
         }
         // handle doublemods
@@ -4428,7 +4444,7 @@
                 }
             }
         }
-        return mods.reverse();
+        return mods;
     }
 
     function getMods(modnum){
