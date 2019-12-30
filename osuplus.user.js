@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.1.5
+// @version      2.2.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -183,7 +183,7 @@
         fetchFirstsInfo: true,
         rankingVisible: true,
         forceShowDifficulties: false,
-        pp2dp: true
+        pp2dp: true,
     };
 
     var settings = {};
@@ -736,9 +736,9 @@
             mapsRemoveBtn = null,
             subsTxtbox = null,
             subsAddBtn = null,
-            pageLeft = null,
-            pageRight = null,
-            pageDisplay = null,
+            pageLefts = null,
+            pageRights = null,
+            pageDisplays = null,
             subsBeatmaplist = null,
             beatmapList = [],
             pages = 1,
@@ -801,19 +801,25 @@
             mapsRemoveBtn = $("<button id='mapsRemoveBtn' class='subsBtn'>Remove</button>");
             subsTxtbox = $("<input id='subsTxtbox' class='subsTxt'>");
             subsAddBtn = $("<button id='subsAddBtn' class='subsBtn'>Add</button>");
-            pageLeft = $("<button class='subsBtn'>&lt;</button>");
-            pageRight = $("<button class='subsBtn'>&gt;</button>");
-            pageDisplay = $("<span id='pageDisplay'>Page 1/1</span>");
+            var pageLeft = $("<button class='subsBtn'>&lt;</button>");
+            var pageRight = $("<button class='subsBtn'>&gt;</button>");
+            var pageDisplay = $("<span class='pageDisplay'>Page 1/1</span>");
+            var pageLeft2 = $("<button class='subsBtn'>&lt;</button>");
+            var pageRight2 = $("<button class='subsBtn'>&gt;</button>");
+            var pageDisplay2 = $("<span class='pageDisplay'>Page 1/1</span>");
+            pageLefts = $.merge(pageLeft, pageLeft2);
+            pageRights = $.merge(pageRight, pageRight2);
+            pageDisplays = $.merge(pageDisplay, pageDisplay2);
             subsBeatmaplist = $("<div class='beatmapListing'>");
             refreshBtn = $("<button class='subsBtn'>Refresh</button>");
 
-            pageLeft.click(function(){
+            pageLefts.click(function(){
                 if(curPage > 1){
                     curPage--;
                     refreshPage();
                 }
             });
-            pageRight.click(function(){
+            pageRights.click(function(){
                 if(curPage < pages){
                     curPage++;
                     refreshPage();
@@ -851,7 +857,10 @@
                     pageLeft, pageDisplay, pageRight
                 ),
                 loadingNotice,
-                subsBeatmaplist
+                subsBeatmaplist,
+                $("<div class='pagination'>").append(
+                    pageLeft2, pageDisplay2, pageRight2
+                )
             );
             refreshMappersSub();
             refreshMapsSub();
@@ -887,7 +896,7 @@
         function refreshPage(){
             subsBeatmaplist.children().hide();
             subsBeatmaplist.children().eq(curPage - 1).show();
-            pageDisplay.text("Page "+curPage+"/"+pages);
+            pageDisplays.text("Page "+curPage+"/"+pages);
         }
 
         function loadSubs(){
@@ -1068,9 +1077,9 @@
             mapsRemoveBtn = null,
             subsTxtbox = null,
             subsAddBtn = null,
-            pageLeft = null,
-            pageRight = null,
-            pageDisplay = null,
+            pageLefts = null,
+            pageRights = null,
+            pageDisplays = null,
             subsBeatmaplist = null,
             beatmapList = [],
             pages = 1,
@@ -1096,10 +1105,11 @@
                     #mapsSelect {width: 500px;}
                     .subsBtn {font-size: 100%;}
                     .subsTxt, #mappersSelect option, #mapsSelect option {font-size: 110%;}
-                    #pageDisplay {padding-left: 15px; padding-right: 15px;}
+                    .pageDisplay {padding-left: 15px; padding-right: 15px;}
                     .centered {display: block; margin-left: auto; margin-right: auto;}
                     .subs-pagination {text-align: center; padding: 10px 0px;}
-                    .beatmapset-panel__date {bottom: 10px; right: 10px; text-align: right; position: absolute;}`
+                    .beatmapset-panel__date {bottom: 10px; right: 10px; text-align: right; position: absolute;}
+                    .op-sub-txt {color: white;}`
                 ));
             }
         }
@@ -1159,19 +1169,25 @@
             mapsRemoveBtn = $("<button id='mapsRemoveBtn' class='subsBtn'>Remove</button>");
             subsTxtbox = $("<input id='subsTxtbox' class='subsTxt'>");
             subsAddBtn = $("<button id='subsAddBtn' class='subsBtn'>Add</button>");
-            pageLeft = $("<button class='subsBtn'>&lt;</button>");
-            pageRight = $("<button class='subsBtn'>&gt;</button>");
-            pageDisplay = $("<span id='pageDisplay'>Page 1/1</span>");
+            var pageLeft = $("<button class='subsBtn'>&lt;</button>");
+            var pageRight = $("<button class='subsBtn'>&gt;</button>");
+            var pageDisplay = $("<span class='pageDisplay op-sub-txt'>Page 1/1</span>");
+            var pageLeft2 = $("<button class='subsBtn'>&lt;</button>");
+            var pageRight2 = $("<button class='subsBtn'>&gt;</button>");
+            var pageDisplay2 = $("<span class='pageDisplay op-sub-txt'>Page 1/1</span>");
+            pageLefts = $.merge(pageLeft, pageLeft2);
+            pageRights = $.merge(pageRight, pageRight2);
+            pageDisplays = $.merge(pageDisplay, pageDisplay2);
             subsBeatmaplist = $("<div class='beatmapsets'>");
             refreshBtn = $("<button class='subsBtn'>Refresh</button>");
 
-            pageLeft.click(function(){
+            pageLefts.click(function(){
                 if(curPage > 1){
                     curPage--;
                     refreshPage();
                 }
             });
-            pageRight.click(function(){
+            pageRights.click(function(){
                 if(curPage < pages){
                     curPage++;
                     refreshPage();
@@ -1187,17 +1203,17 @@
                 $("<div id='subsControl'>").append(
                     $("<table style='width:100%;'>").append(
                         $("<tr>").append(
-                            $("<th>Subscribed mappers:</th>"),
+                            $("<th class='op-sub-txt'>Subscribed mappers:</th>"),
                             $("<td>").append(
                                 mappersSelect, "<br>", mappersRemoveBtn
                             ),
-                            $("<th>Subscribed maps:</th>"),
+                            $("<th class='op-sub-txt'>Subscribed maps:</th>"),
                             $("<td>").append(
                                 mapsSelect, "<br>", mapsRemoveBtn
                             )
                         ),
                         $("<tr>").append(
-                            $("<th>Add mapper:</th>"),
+                            $("<th class='op-sub-txt'>Add mapper:</th>"),
                             $("<td>").append(
                                 subsTxtbox, "&nbsp;", subsAddBtn
                             )
@@ -1209,7 +1225,10 @@
                     pageLeft, pageDisplay, pageRight
                 ),
                 loadingNotice,
-                subsBeatmaplist
+                subsBeatmaplist,
+                $("<div class='subs-pagination'>").append(
+                    pageLeft2, pageDisplay2, pageRight2
+                )
             );
             refreshMappersSub();
             refreshMapsSub();
@@ -1241,7 +1260,7 @@
         function refreshPage(){
             subsBeatmaplist.children().hide();
             subsBeatmaplist.children().eq(curPage - 1).show();
-            pageDisplay.text("Page "+curPage+"/"+pages);
+            pageDisplays.text("Page "+curPage+"/"+pages);
         }
 
         function loadSubs(){
@@ -1619,7 +1638,9 @@
                 .opModalCloseBtnDiv {position: absolute; right: 10px;}
                 .opModal {width:700px;position: fixed; display: none;z-index: 10000;padding: 15px 20px 10px;-webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px;background: #fff; left: 50%; top:50%; transform: translate(-50%, -50%);}
                 .opModalOverlay {position: fixed;top: 0;left: 0;bottom:0;right:0;width: 100%;height: 100%;z-index: 9999;background: #000;display: none;-ms-filter: 'alpha(Opacity=50)';-moz-opacity: .5;-khtml-opacity: .5;opacity: .5;}
-                .tableAttr {width: 50px;}`
+                .tableAttr {width: 50px;}
+                .modal-hr {color: red;}
+                .modal-ez {color: green;}`
             ));
         }
 
@@ -1880,18 +1901,21 @@
                 beatmap = beatmap[0];
                 opModalContent.append(
                     `<h1>${beatmap.artist} - <a href=/s/${beatmap.beatmapset_id}>${beatmap.title}</a> [<a href=/b/${beatmap.beatmap_id}>${beatmap.version}</a>]</h1>
+                    <input type="radio" name="mods" value="none" checked="">Nomod
+                    <input type="radio" name="mods" value="hr">HR
+                    <input type="radio" name="mods" value="ez">EZ
                     <table id='songinfo' style='width:100%;'>
                         <tr>
                             <td rowspan=5 style='width:1%'><a onclick='playBeatmapPreview(${beatmap.beatmapset_id})'><img class='bmt' src=//b.ppy.sh/thumb/${beatmap.beatmapset_id}l.jpg></a></td>
-                            <td class='tableAttr'>CS:</td><td>${beatmap.diff_size}</td>
-                            <td class='tableAttr'>AR:</td><td>${beatmap.diff_approach}</td>
+                            <td class='tableAttr'>CS:</td><td>${beatmap.diff_size} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_size)*1.3, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_size)/2).toFixed(2)})</span></td>
+                            <td class='tableAttr'>AR:</td><td>${beatmap.diff_approach} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_approach)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_approach)/2).toFixed(2)})</span></td>
                         </tr>
                         <tr>
-                            <td class='tableAttr'>HP:</td><td>${beatmap.diff_drain}</td>
+                            <td class='tableAttr'>HP:</td><td>${beatmap.diff_drain} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_drain)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_drain)/2).toFixed(2)})</span></td>
                             <td class='tableAttr'>Stars:</td><td>${beatmap.difficultyrating}</td>
                         </tr>
                         <tr>
-                            <td class='tableAttr'>OD:</td><td>${beatmap.diff_overall}</td>
+                            <td class='tableAttr'>OD:</td><td>${beatmap.diff_overall} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_overall)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_overall)/2).toFixed(2)})</span></td>
                             <td class='tableAttr'>Length:</td>
                             <td>${secsToMins(parseInt(beatmap.total_length))} (${secsToMins(parseInt(beatmap.hit_length))} drain)${beatmap.max_combo === null ? "" : `<br>${beatmap.max_combo}x combo`}</td>
                         </tr>
@@ -1904,6 +1928,18 @@
                         </tr>
                     </table>`
                 );
+                opModalContent.find("input[type=radio][name=mods]").change(function(){
+                    if(this.value == "none"){
+                        $(".modal-hr").hide();
+                        $(".modal-ez").hide();
+                    }else if(this.value == "hr"){
+                        $(".modal-hr").css("display", "inline");
+                        $(".modal-ez").hide();
+                    }else{
+                        $(".modal-hr").hide();
+                        $(".modal-ez").css("display", "inline");
+                    }
+                });
             });
             $("#opModalOverlay").fadeIn(200);
             $("#opModal").fadeIn(200);
@@ -2195,14 +2231,17 @@
                     .modalBtn {position: absolute; right: -1px; top: -1px; background: white; padding: 3px; width: 22px; text-align: center; border-style: solid; border-width: 1px;}
                     .modalBtn:hover {cursor: pointer;}
                     .opModalCloseBtnDiv {position: absolute; right: 15px; top: 15px;}
-                    .opModal {width:700px;position: fixed; display: none;z-index: 10000;padding: 15px 20px 10px;-webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px;background: #fff; left: 50%; top:50%; transform: translate(-50%, -50%);}
+                    .opModal {width: 800px; position: fixed; display: none;z-index: 10000;padding: 15px 20px 10px;-webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px;background: #fff; left: 50%; top:50%; transform: translate(-50%, -50%);}
                     .opModalOverlay {position: fixed;top: 0;left: 0;bottom:0;right:0;width: 100%;height: 100%;z-index: 9999;background: #000;display: none;-ms-filter: 'alpha(Opacity=50)';-moz-opacity: .5;-khtml-opacity: .5;opacity: .5;}
                     .opModal-song-info {}
                     .opModal-song-info td {padding: 2px 7px;}
                     .tableAttr {width: 70px;}
                     .sub-button {width: 90px; margin-left: 30px;}
                     .score-rank--F {background-image: url('${FImgNew}')}
-                    .play-detail__pp.play-detail__recent-pp {min-width: 0px; padding: 0px;}`
+                    .play-detail__pp.play-detail__recent-pp {min-width: 0px; padding: 0px;}
+                    .div-24h {margin-top: 50px;}
+                    .modal-hr {color: red;}
+                    .modal-ez {color: green;}`
                 ));
             }
         }
@@ -2277,7 +2316,6 @@
                     p.then(updateSubscribeBtn);
                 });
             });
-            
 
             // :)
             if(jsonUser.id == 1843447){
@@ -2358,7 +2396,7 @@
                     $("div[data-page-id=top_ranks] .play-detail.recentscore").removeClass("recentscore");
                 }
             });
-            $("div[data-page-id=top_ranks] .page-extra__title").first().after(sliderDiv);
+            $("div[data-page-id=top_ranks] .title.title--page-extra-small").first().after(sliderDiv);
         }
 
         function addBestDetails(ele){
@@ -2460,6 +2498,9 @@
                 beatmap = beatmap[0];
                 opModalContent.html(
                     `<h1>${beatmap.artist} - <a href=/beatmapsets/${beatmap.beatmapset_id}>${beatmap.title}</a> [<a href=/beatmaps/${beatmap.beatmap_id}>${beatmap.version}</a>]</h1>
+                    <input type="radio" name="mods" value="none" checked="">Nomod
+                    <input type="radio" name="mods" value="hr">HR
+                    <input type="radio" name="mods" value="ez">EZ
                       <table class='opModal-song-info' style='width:100%;'>
                         <tr>
                           <td rowspan=5 style='width:1%'>
@@ -2467,15 +2508,15 @@
                               <img class='bmt' src=//b.ppy.sh/thumb/${beatmap.beatmapset_id}l.jpg>
                             </a>
                           </td>
-                          <td class='tableAttr'>CS:</td><td>${beatmap.diff_size}</td>
-                          <td class='tableAttr'>AR:</td><td>${beatmap.diff_approach}</td>
+                          <td class='tableAttr'>CS:</td><td>${beatmap.diff_size} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_size)*1.3, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_size)/2).toFixed(2)})</span></td>
+                          <td class='tableAttr'>AR:</td><td>${beatmap.diff_approach} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_approach)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_approach)/2).toFixed(2)})</span></td>
                         </tr>
                         <tr>
-                          <td class='tableAttr'>HP:</td><td>${beatmap.diff_drain}</td>
+                          <td class='tableAttr'>HP:</td><td>${beatmap.diff_drain} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_drain)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_drain)/2).toFixed(2)})</span></td>
                           <td class='tableAttr'>Stars:</td><td>${beatmap.difficultyrating}</td>
                         </tr>
                         <tr>
-                          <td class='tableAttr'>OD:</td><td>${beatmap.diff_overall}</td>
+                          <td class='tableAttr'>OD:</td><td>${beatmap.diff_overall} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_overall)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_overall)/2).toFixed(2)})</span></td>
                           <td class='tableAttr'>Length:</td>
                           <td>${secsToMins(parseInt(beatmap.total_length))} (${secsToMins(parseInt(beatmap.hit_length))} drain)${(beatmap.max_combo == null ? "" : `<br>${beatmap.max_combo}x combo`)}</td>
                         </tr>
@@ -2486,9 +2527,20 @@
                         <tr>
                           <td colspan=4><a href=/beatmapsets/${beatmap.beatmapset_id}/download>Download</a><br><a href='http://bloodcat.com/osu/s/${beatmap.beatmapset_id}'>Bloodcat mirror</a></td>
                         </tr>
-                      </table>
-                    </h1>`
+                      </table>`
                 );
+                opModalContent.find("input[type=radio][name=mods]").change(function(){
+                    if(this.value == "none"){
+                        $(".modal-hr").hide();
+                        $(".modal-ez").hide();
+                    }else if(this.value == "hr"){
+                        $(".modal-hr").css("display", "inline");
+                        $(".modal-ez").hide();
+                    }else{
+                        $(".modal-hr").hide();
+                        $(".modal-ez").css("display", "inline");
+                    }
+                });
             });
             $("#opModalOverlay").fadeIn(200);
             $("#opModal").fadeIn(200);
@@ -2528,7 +2580,7 @@
 
         function addRecent(){
             $("div[data-page-id=recent_activity] .page-extra").append(
-                `<div><h2 class="page-extra__title">Recent 24h</h2></div>`,
+                `<div class="div-24h"><h2 class="title title--page-extra">Recent 24h</h2></div>`,
                 $("<div id='op-recent'>Loading...</div>")
             );
             var container = $("#op-recent");
@@ -2674,7 +2726,8 @@
                 ".recentscore {background-color: greenyellow;}\n" +
                 ".recentscore:hover {background: #fde1ff; cursor: pointer;}\n" +
                 ".centered {display: block; margin-left: auto; margin-right: auto;}\n" +
-                ".greyedout {opacity: 0.5}\n"
+                ".greyedout {opacity: 0.5;}\n" +
+                ".ppcalc-pp {cursor: pointer;}\n"
             ));
         }
 
@@ -2984,9 +3037,8 @@
             }
         }
 
-
         function getFriends(callback){
-            GetPage("https://osu.ppy.sh/p/friends", function(response){
+            GetPage("https://old.ppy.sh/p/friends", function(response){
                 var friends = [];
                 response = response.replace(/<img[^>]*>/g,"");
                 $(response).find(".paddingboth").children("div").each(function(ind, ele){
@@ -3327,7 +3379,7 @@
             // Add pp column
             scoreListingTitlerow.children().eq(2).after(
                 $("<th></th>")
-                .append($("<a><strong>pp</strong></a>")
+                .append($(`<a><strong>pp</strong></a>`)
                         .click(function(){
                     sortResult("pp");
                     updateScoresTable();
@@ -3428,13 +3480,14 @@
             }else{
                 pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
             }
+            var ppcalcData = {id: mapID, m: score.enabled_mods, c: score.maxcombo, acc: acc, miss: score.countmiss};
             
-            return `<tr class='${rowclass}'>
+            var row = $(`<tr class='${rowclass}'>
                     <td>${score.replay_available == "1" ? `<a class='require-login' href='/web/osu-getreplay.php?c=${score.score_id}&amp;m=${mapMode}'>#${rankno}</a>` :
                      `#${rankno}`}</td>
                     <td>${getRankImg(score.rank)}</td>
                     <td>${rankno == 1 ? `<b>${commarise(score.score)}</b>` : commarise(score.score)}</td>
-                    <td>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)}</td>
+                    <td class='${mapMode == 0 ? "ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
                     <td>${acc == 100 ? `<b>${acc.toFixed(2)}%</b>` : `${acc.toFixed(2)}%`}</td>
                     <td>${countryImg}\n${userhref}${pprank}</td>
                     <td>${score.maxcombo}</td>
@@ -3455,7 +3508,24 @@
                       <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time>
                     </td>
                     <td><a onclick='reportscore(${score.score_id});'>Report</a></td>
-                    </tr>`;
+                    <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
+                    </tr>`);
+            //ppcalc, only for std
+            if(mapMode == 0){
+                row.find(".ppcalc-pp").click(function(event){
+                    var me = $(this);
+                    me.find("span").text("(...)");
+                    var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
+                    getPpCalc(ppcalcData).then((result) => {
+                        if(result.rql == "ranked" || result.rql == "qualified"){
+                            me.find("span").text(`(${result.pp_fc} if FC)`);
+                        }else{
+                            me.html(`<span>${result.pp} (${result.pp_fc} if FC)</span>`);
+                        }
+                    });
+                });
+            }
+            return row;
         }
 
         function dlReplay(score){
@@ -3494,7 +3564,6 @@
                 }
             });
         }
-
 
         return {init: init};
     }
@@ -3546,7 +3615,10 @@
                      .beatmap-scoreboard-table__header a {cursor: pointer;}
                      .sub-button {background-color: #29b; background-image: none;}
                      .subbed {background-color: #ef77af;}
-                     #searchusertxt {color: black;}`
+                     #searchusertxt {color: black;}
+                     .beatmap-scoreboard-table__cell--grade {width: auto; height: auto; display: table-cell;}
+                     .beatmap-scoreboard-table__cell--grade .score-rank {width: 100%;}
+                     .ppcalc-pp {cursor: pointer;}`
                 ));
             }
         }
@@ -3676,7 +3748,7 @@
         }
 
         function getMapmode(){
-            var modeStr = $(".page-mode-link--is-active").attr("data-mode");
+            var modeStr = $(".beatmapset-beatmap-picker__beatmap--active").attr("href").slice(1).split("/")[0];
             return modeToInt(modeStr);
         }
 
@@ -3718,6 +3790,7 @@
             }else{
                 pprank = ` <span class='pprank'>(#${score.user.pp_rank})</span>`;
             }
+            var ppcalcData = {id: mapID, m: score.enabled_mods, c: score.maxcombo, acc: acc, miss: score.countmiss};
 
             var cellClass = "beatmap-scoreboard-table__cell";
             var row = $(`<tr class='${rowclass}'>
@@ -3745,14 +3818,31 @@
                      makeZeroableEntry(score.count100),
                      makeZeroableEntry(score.count50)].join("")}
                     ${makeZeroableEntry(score.countmiss)}
-                    <td class='${cellClass}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)}</td>
+                    <td class='${cellClass}${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
                     <td class='${cellClass} ${cellClass}--mods'><div class='mods mods--scoreboard'>${getNewMods(score.enabled_mods)}</div></td>
                     <td class='${cellClass} datecol'>
                         <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time></td>
                     <td class="beatmap-scoreboard-table__play-detail-menu"></td>
+                    <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
                     </tr>`);
             //doesn't work on greasemonkey, unfixable?
             //ReactDOM.render(React.createElement(_exported.PlayDetailMenu, {score: newify(score)}), row.find(".beatmap-scoreboard-table__play-detail-menu")[0]);
+
+            //ppcalc, only for std
+            if(mapMode == 0){
+                row.find(".ppcalc-pp").click(function(event){
+                    var me = $(this);
+                    me.find("span").text("(...)");
+                    var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
+                    getPpCalc(ppcalcData).then((result) => {
+                        if(result.rql == "ranked" || result.rql == "qualified"){
+                            me.find("span").text(`(${result.pp_fc} if FC)`);
+                        }else{
+                            me.html(`<span>${result.pp} (${result.pp_fc} if FC)</span>`);
+                        }
+                    });
+                });
+            }
             return row;
         }
 
@@ -4546,6 +4636,28 @@
             default:
                 return "osu";
         }
+    }
+
+    function getPpCalc(params){
+        /* see https://osu-pp-calc-api.glitch.me/
+        id - beatmap id
+        m - mods number
+        c - combo
+        acc - accuracy
+        miss - number of misses
+        */
+        var promise = new Promise((resolve, reject) => {
+            var ppcalcurl = getUrl("https://osu-pp-calc-api.glitch.me", params);
+            getRequest(ppcalcurl, function(response){
+                var ans = {
+                    pp: parseFloat(response.pp), 
+                    pp_fc: parseFloat(response.pp_fc),
+                    rql: response.rql // ranked|qualified|loved|pending|graveyard etc
+                };
+                resolve(ans);
+            });
+        });
+        return promise;
     }
 
     function getRequest(url, callback, reqTracker){
