@@ -1,14 +1,27 @@
-## 2.1.5 (19 Sept 2019)
+## 2.2.0 (30 Dec 2019)
+
+#### Features
+- Display "pp if ranked or fc" for maps with scoreboards (click the pp value) (only for standard)
+- Userpage top ranks "?" modal now has options to see map values with HR/EZ
+- Subscriptions page now also has pagination at the bottom
 
 #### Bugfixes
-- Fix Mirror mod not displaying properly
-- Search user textbox text in new site's beatmap page is now black (instead of invisible white)
+- Fixed slider missing in new site's userpage
+- Fixed scoreboards not loading for non-standard scores
+- Fixed beatmap page score row rank icon when the row is more than 1 line tall
+- Fixed old site beatmap page not highlighting friends' scores
+
+## 2.1.5 (19 Sept 2019)
 
 #### Features
 - Search user textbox in beatmap page:
   - Now autofills to your username
   - Accepts multiple usernames, separated by commas (e.g. "Vaxei,Rafis,xasuma")
   - Now displays rank #1 onwards instead of all rank #0
+
+#### Bugfixes
+- Fix Mirror mod not displaying properly
+- Search user textbox text in new site's beatmap page is now black (instead of invisible white)
 
 ## 2.1.4 (17 June 2019)
 
