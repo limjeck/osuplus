@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.0
+// @version      2.2.1
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -114,6 +114,8 @@
             "9K": "data:image/png;base64,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",
             
             "TD": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHwAAAB4CAMAAAAHUWaaAAAC/VBMVEUAUmAAMkMAAAAAMUIAWmgJPUwLb3cAPk8ATFsHPEsJYGsIV2IIRFIITVkJaHEAQFAAQVAJqLsFWXYAXGoIN0UJa3MPU2USRlIIOEcJZ28KZm4EM0IFX2kAMEEXmp8ZmJ0STVsZgIEYfn8bjI0bjI3///8AXH0Ar8oArcgAqsUAp8IAepkAo78AbYwAjKkAnLgAXn8AgqAAf50AZYUArMcAhaMAY4MAkq4AcI8AeJYAn7sAYYIAaYgAob0AnroApcEAc5IAdZQAjqsAiaYAfJsAh6UBaooAYIAAk7AAlbIAmbYAl7QBZ4cAqcQAkK0EaYgHZ4YHepcLeZYReZUDd5UWiKIRd5MRgZ0Nco8JaokMg58JgJ0WfpkJcY8KrcYIo74LbYsNdpMHb47T5OoGfpsMcI0IqcMHbYsKpsAThJ8HfJoLdJEFZYQPqMEWi6T8/v8XjacUe5YQsMkSrMQPhqEQdJEfjKQXgZsSf5rf6u4Kr8kHq8YRjacOf5sOe5gRe5cHc5Hq8vUFsMpyqrsHobsciaL1+PqhxtGgw84Pts4ds8kLq8QQo7xyp7kemLALhqIPsssEbYsXla0QiaQTh6IWr8cIm7chkKiiyNMXutEYt850rr4GmLQXkaoahp8Yg53z+/3h9fgXqsIHdpTU5+0XtMs0i6T3/f7U5usJs8x0tcUKn7kNlbAOkazt+vsborkflKyvztgkm7JgnbAckqrY8/eSusgUn7j1+frT4+hzscJxrsBOn7QbnLQIi6fO8PW+7PKP3ui709tCw9Ukuc6TwMxiprlworQ4lazH7vPI3uRx1eK8199Hydq15eyn5OxgydiCsMAeqb8PmrTo+Pqb4ep/zdqiytU1w9Uhv9W16fDT4eej3OXH2uBUzd0qvtKFucc6m7BMlavS7vLf7PB+2ORuztxOw9Rbv888us0vuMx3uskos8hxrL0upruZ2OIer8WN2OOP095NtshAsMNmrr9iz96evMguscdao7cxgZpRj6VowtE+o7gveZPGizZ7AAAAJXRSTlMICQAeHZaDHR15eXl5eXkUBP7+GVhw8blqVEoyLRrt6Nqups/O+aYxMQAAD5JJREFUaN7E0zGL2mAcx3FzHOVwuJwEB0XuuGsfjHKj04H1FfgW4vaQpQhxS7bQJc2SxSHPFIcgWW5zVtFFxN5ygjrodB36Am7u74lXCqWaaFr7xSExCZ/nn/CkzsKuUiftaqsChyyIknR+siRJFOADhy2IhVz23QnL5gqiAB24IOXvbjLFE5a5uctLAsdTYv7DSemQf58XU8CFwu3Jbei3BeEsdSXmrov/oeuciC0mZTPyQRWLJq9YlJOUyUrYc+eXFfmwTDMIAhN2kirZ8xCXo+PT/uRAW5YVBAn1yy1eiYqDyDRlfmJa1nqwdgOcJSk2bmJW1wIHTw6sJSGPrvV38FJUGHbRnPBh8ZBpuVNCukvLrJSSFBcH+ETIZGkFcqmiW8sBIT3X0uMQyXGAr03iTQFWZN1dNgnBsRwNxMDrUZXepl24jqI77gL4zHUqJVzZVj+iN7wcVd1w3LVHukPX0YEPCfGWlm7U64ahIKNULx9ebJyPPiekM7M43iNk4Dr45IbuIF03/iGODI2NOqT5xDRdY8BnTMPUmsPc9XSUCK/t7NfsiuO+YHczHR/9W6fPHByAng1Is+8r9XLt4GLg1ECUUrzhzao7dRQ+sO9oob2Ye4SQvqOUj8fvd1UrU0VDOidh+pqCheAwXAJ76RD0PNKMcu3+4CJx2OMNYwxqmG3Y/GdTiisrgrwhcxQK+0g8vQfXhqTbe1pvwNsU2YqGFH7kY7d3V0umHWOj9Bav7ui+Zvse4T0PXsYKLVNb8xkb4z3Y1B7Pvd4sXBTs6uHtx6FTZfgc6thlClWp4q8nXa8/8rnexio4zeVj8Yv0w46qVdX+MprOewQNWhSDjwivP/NxRvm3V0E/HFX6Yh8OvaHaLZ+NZ9Ovk++2qrb8RxK2Grep2kChnAj/uKuQ/9Rqo5atNtTWornFH1/9lhq6vz2AJxD/P7L9OAqnh4/UBvAReau/aQP/092qijs/Q4+J/6Ct/lmTB+IAjo8dpC/j1oYORXiGDhahWvAtZM1yZPAtZDqyJlMGzeKQGKeSqf5BF5FqiFpKKY/DQ7VKoNqhOD6/MzFCHy6XQJ/vGJL78Lt4RkgK1lTAlQ744j7CGz1SFX9dC1FUhhS6TxAG/VrgFOPJvAI2Bl3C5E2O9Pu+hpUTrigiBLS2Wn5tNNDT4lw7HEcSsfY8RMejB6NHwDW95XCPRiYNhOpvoKfFy+yoLWGNeMPZDosiJstapM9+w+jA0kQJWK8/GAzm4UtZaZIiCOXEuDjoilQl/S79hZuiIlY34+PoL6QqKaKKIVMjPbihO1o00KEhbAvYafA7ZmXBUs3NvEaxHVYsRdK8WaQ7I1IFVgsIIYMXRKs9yihsRLAilO+S4uCQbmEv/HB6pmrpgoXJPD5uz8DOHVTvPT4f34WDwuoDU0yHl5gBboYfTkJtw9BVsx8ft91iEU48fETf6xFsle9KCfFxw9rXUWMcbDHYsBbo2/i41Y8Ty0P5O95Ym6qeBr9lRrH909o8jF0q0QuWue7Gx+0NhdXQP71sVcuAJ5iFeO42UbdUNaJpJdj4r/jNdhAzeWWqiXguxPPsQDd03aCrRBdADyZHwUHsOkTVS/AUqxT4sdMF2PhVHfGTl6ZlZMP5wejbnoz4dQNV5+OVTFG930H8HM/US/kKqwgvZKqSN1xzlGb0nu8a+QIrBs7Tb6cq/MXzm21VPn6RLar7Xg3x89RpvsBahoFzq9jufoL4zf3/gBfy09bqno93fNfm4TcZA912/R0fb+wBZ62SHQeZ2hV72loPuXht7doXHLyYIdCbTdu2p66/bHB1rwU4YyUGzrEBhlr+mn/cnnj4We4qfTft5tR9/xwvfd/feg4PfwW8yFgqd5YZL9itV7rdnVUQbD5S4O2fw2Hwd3TImawD7tdtDPhVIn5+mTrA3fh81983TzJ/8ivGWufZcKjdbJ2mdca7WjL+0Wq2L38MLzYf/qBTMkru86FZ5OB/Watj1oSBKA7gX6BfI1MnhQ7ZFPwCB5nuxt50iw4Zs3XPQa5rQKEUEVKh0KFKpGsXx0xuKUUQIxgXwaH/U2spbZIT/LuI5L3fvXdC6sbB3oM5RNN8xtFNraDXuTh0GcWrnjGexxPYF8Pxl4vzqaHd3gSVeMs84CeRP0x6ZvgwkrWiVmfjCDbvBfFmZoKvfK9Wr8Cvzwl4Cn44f698r6RxJOutokYFeCXPpIr8bNdrl+58mgWqBvuiOHhO97tfvRTz6TwOFOXXVbiNr6LFT9GntUuC5zmTnuaTAr6XDANPMl7S6Iijm+CMUalDKeO81EaAU6nA+1mSdv/43VnmhxhboI8Jfmimo0oPjBweX24l4oV+Nl+n3V/2Wx7rsTVdjTcxyeNyPBrsMx5vGcqaJbFx59atpAwLUNrP1+nT6bJ3oF1NO82yfOMO4XfWT16ZQGE5rqxb7JUQ3Jer/ecsT1az2TrZ+KB1A3QwwK8aTVtg8sFgYX0sBiNMLggh/5c7jm0TQe89q68NAh4+dVUnDHTCjtI/o7RRkasj3nAcwdxO4FsP+tyUMcY5R4tD0AjqMZgVw3qh1Q+hcyGIjY8+AHURXAXKtGyMQydfrJSxa9tAFMbpH/NG7x4yZPKURSLHgYOHRF1OheMGD/IgIREae6khsQaD8eQQjCc7iCJLWu0a4yWThy42eAsZMwb6nQRNQyjFcT8vOr7j/d739KyzTh/wMbZUC2WqSADltcA2ctmA6Jw3dHsDen6p8E+LyxDq7QVHNLva0XFUqIsv0jTrIAaUV0dgPY0zPeA0nSvdZ3vcT9IsrNrG+6Dlf/xe4eVcp5/rioaqE9bD1CIomEkcpsRtpLE5TTHVMFsRFD8Dfr+O8bhcVO3T4/L+egM/tquSLCWlnFE8SZJuQKu+UhbVXWNguHV4Ss1jWOlsOQJ8FaxHsx1ZoWscDjc0HLiEdlv0oLZL2ozHQwpzeEhWFGVxPFehqEuMPd5tI9XfBpRVD4GXch0bnGlAtKS5DDkPZUa7dntIjAMOb9huryiBZbtCRkSjvgylWtNMeH65tLfew4dRNKadCrmBrGpIL/e3JHO4xEu+jwNY5sCER0EkBRcyoa7wBofCy6YL+Hg8oi7jpu+bnK3pEXAGHA6AP9NEW2V4ErspXM8NC3jpP8Jds1weuKybw6WG58kfCwtX9RvSTXkipSbG/nF4JRdoqPhH8le4Z3pC/YbXSn4Bd3VTvQJe2Vsa/ukVXmz0lhpSuKaJrbJIL9wi5C5nGeAvZMEa+AgsycITunj6OPyThh/lKqFk/l+2aM6E6wjwllE0oY0UgqmZ/qQNKWMCc+CCAe4B7gKOOVWO9tYb+LXvccySsR41Fgy8RYN6Um7QkGRyG2MfoiS3HEfcAQ5m7dy7pJZj1g6FV3zToSnnXDTpatLrNQP6LhCxQdYm6cZdjJyxCQXN3mUreGI0dUz/wje/Ucs7v/g4/CRX5eKLST890/SchwZBjUvHw+Fuiuer5lc05nD+EBC0zAp4zT//Qa3z2vXRyTvpPLqnk7+ogP8q3vxBnIajOK4cDjedHIcKIri8mwtClzo3SyHhfhgTSCHpEYKkS4Y0zWIspWmXDp16UEi2Ik6ehaLiVLirHF063XAUzsPVUQ5PEL+/pPW/Qk85v0Pze7/fL+/zXt5LmiWrdxKBXrTtR0U4DKon9Xq/+tCAZW9x4/79KkzD2Aqqg3r9wT3oASZs2zYMu9gRC3d+VOFuvtPp5MW7WPqlVr+DY3ep1IFKtrGFK2A8KnGjaGxxgVEqITzjYRW1gKL71YBPg53/mYBccGqx1BH/CF9ZXWwviPm8iN/kNKA6+QK3rBI3rA4W8yIiY9V+j6t+4lWrgWGX8r8CFESreDqFj9/CVxJ4NtXXeSChQiE1Egu/C592UKe5ZkPQS/Cfnp39Rtg4JipaIl+bL363awH/UenuXxmwxCKr06TXe1dvjULyB4FtiQUIAULzzYiyUzqb7RQXazhwzXP6Fr6UxCIy32lEXhB4Me7KAVMsUVQtVMZSufMULlroDxvw+Vo6sPig8JfwZuQx22ZavEd+lSlJJ6L3FDSHyvGFhM2MImDJ2qJd+Qj4r/DcMsqKCoeDbVlFQ4tGNNWYbLCg3e4HAUYKTw1smcG0FcVO1gayYWDmpD0IZJs3Qu58cF7zlmZbhTuFklzdp1HsVfsjgl70410awDfYLPRjOmIMQL6G8mjVaY0PhqiTdB44JJocHihqNrkKMfmNBv4G8EDexZMfscC3ZRpT2sND0fO8QRju1tvDWTsekr/X2/NpyEyxvIALyygnmaydwHOCUNZlb5u63QPqNRqNyh4ddv1QMxRTYbPwdYW2G9GrMBx4DnO0eJ+2K9j02g/7rvUv4JYB+NP3NKlwv923tad7NA1kWe7TpNsFrTKhuucYrqxFB/QKuyqVYxrKurSAZ5aRUDZlwJki5jJCVncBf3ZI77sJfJc+vKGZ5jhOi/YryLzbfV6LHVfXFSeig243SR2VMf8BHJc9rtXwqnW4s9NsNne26WV3Qn1U2veBARzvnBrylHijPD7EJoiOzp+5zuGInZdAcU5oAvhCqH2PhlG0T8M4igB/Qk3NVcs4qU5fdIQZYXk4lGbuKPAo6bLWomO8XeF6xloiL675lcpuiPTjBVwv88zRjZXIwxaUQcpm5vDNZZRJM9dkRVV11+mHNaBon7t1GDqNIZxX3XDE4wD8DW43pqioeR81R4SOI8umWs79BbwZg67ITt+nehwdJ896uHX5TXZCO8c0YLi7eLdv04nGFMV1Yv/5a8ARocITPwccyqou4EgU7ochDdHaWo32AWfu2Uddd7VZbeI7rusyehFFPfL7GsMF6Q/pIAJcdseoeGbzXPCcqrTpRbPVah3xf1QZycqDkEbT9nQUnqqqKQ+pNpRN03TpCNce75ytdrtVa3ujZHTqE+Cb54RL+pgS+aOx7OqqhNoPjgiqnX6SJNDD8MxUEQba2pVZ+s45++horTAZjdXsAn7rxvpScCErmS5zUDteYlXCI17SFflsPP6IYpazZXQXBlJZknQu05UH4zHvBjcd4ZycsLl+49blS5fWNq4t13ECYKapmKaOrMs5ISPkADQVxdTRxTnEAmXTQRkhYI0vQclpOuJFya9trOG7tcs3ry+XOodJXEgT6DQeMFQgYWcEAWAcMzjyMefzvdksHyFezl6/fvPyVXw4tbZxG/Tl8AJ3DMA3AUGYSa3FfGoI6dI8rCTe9dsba/hwCt/KrWxcvwb8xWn92vWNlctX51/q3byxeuUCtXrj5uJLPU5fu7Vygbq1xtkpnOMvWEAn8P+oz9SYDzZkhUhmAAAAAElFTkSuQmCC",
+
+            "MR": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEVSURBVFhH7ZbrDoMgDEZxD7l33F5Sm3ym1F4YEao/5snigNQeiw3bUj5ruYPX/n05jziJ9b0PGC2mCBVk7wHuulxEKnyW777IOBXboAwOYvm848gCULdEVzy3XGSjq02b3lxRJVXstkAe6RVHhM01t9EsVYx9TvLZtIeKk9xIqBpIv+PpbtdKOM1lg85ByshKaDGiKXRcjyRRHmerx5U9PH99LuMRX8afi3Fs4ZyzU0KOB9EV49higTrFJh5qzlazO/XsrOIeE+8EBnTlgZzymKcExrzoNxc9Qc9DyDA5VWNGrvviHnA/o6agEXNe3IAEKFSWq0gRA1jdnSDq7zFegCVaH+R3xRlWooqTBBGJ77jNTeJSNvGFdJiLza7LAAAAAElFTkSuQmCC",
         };
 
     var BEATMAP = 0,
@@ -127,7 +129,8 @@
     var apikey = null,
         hasKey = false,
         pageType = BEATMAP,
-        siteType = OLDSITE;
+        siteType = OLDSITE,
+        osuPink = "#cc2e8a";
 
     var modnames = [
         {val: 1, name: "NoFail", short: "NF"},
@@ -158,6 +161,7 @@
         {val: 67108864, name: "Key1", short: "1K"},
         {val: 134217728, name: "Key3", short: "3K"},
         {val: 268435456, name: "Key2", short: "2K"},
+        {val: 536870912, name: "ScoreV2", short: "V2"},
         {val: 1073741824, name: "Mirror", short: "MR"}
     ],
         // if the first is set, the second has to be set also
@@ -592,7 +596,9 @@
                 .osuplusSettingsContent {height:400px; overflow:auto; padding:10px; margin-bottom:10px;}
                 .osuplusSettingsTable {border-collapse:collapse;}
                 .osuplusSettingsTable tr {margin:1px;}
-                .settingOption {text-align:right;}`
+                .settingOption {text-align:right;}
+                #osuplusModal {color:black;}
+                #osuplusModal h1, #osuplusModal h2 {color:${osuPink};}`
             ));
         }
 
@@ -1109,7 +1115,8 @@
                     .centered {display: block; margin-left: auto; margin-right: auto;}
                     .subs-pagination {text-align: center; padding: 10px 0px;}
                     .beatmapset-panel__date {bottom: 10px; right: 10px; text-align: right; position: absolute;}
-                    .op-sub-txt {color: white;}`
+                    .op-sub-txt {color: white;}
+                    .subContent {color: black;}`
                 ));
             }
         }
@@ -1318,33 +1325,51 @@
                     approved = "Loved";
             }
             var dateset =  new Date(beatmapset.last_update.replace(' ','T') + "+0000");
-
+            var playcount = 0;
+            for(let diff of beatmapset.difficulties){
+                playcount += parseInt(diff.playcount);
+            }
             return $(
                 `<div class="beatmapsets__item">
-                    <div class="beatmapset-panel">
+                    <div class="beatmapset-panel js-audio--player" data-audio-url="//b.ppy.sh/preview/${id}.mp3">
                         <div class="beatmapset-panel__panel">
-                            <a href="/beatmapsets/${id}" class="beatmapset-panel__header">
+                            <a href="https://osu.ppy.sh/beatmapsets/${id}" class="beatmapset-panel__header">
                                 <img src="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg" srcset="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg 1x, https://assets.ppy.sh/beatmaps/${id}/covers/card@2x.jpg 2x" class="beatmapset-panel__image">
                                 <div class="beatmapset-panel__image-overlay"></div>
                                 <div class="beatmapset-panel__status-container">
                                     <div class="beatmapset-status">${approved}</div>
                                 </div>
                                 <div class="beatmapset-panel__title-artist-box">
-                                    <div class="u-ellipsis-overflow beatmapset-panel__header-text beatmapset-panel__header-text--title">${beatmapset.title}</div>
+                                    <div class="u-ellipsis-overflow beatmapset-panel__header-text beatmapset-panel__header-text--title">
+                                        ${beatmapset.title}
+                                    </div>
                                     <div class="beatmapset-panel__header-text">${beatmapset.artist}</div>
                                 </div>
                                 <div class="beatmapset-panel__counts-box">
-                                    <div class="beatmapset-panel__count"><span class="beatmapset-panel__count-number">${commarise(beatmapset.favourite_count)}</span><i class="fas fa-fw fa-heart"></i></div>
+                                    <div class="beatmapset-panel__count" title="Playcount: ${commarise(playcount)}">
+                                        <span class="beatmapset-panel__count-number">${commarise(playcount)}</span>
+                                        <i class="fas fa-fw fa-play-circle"></i>
+                                    </div>
+                                    <div class="beatmapset-panel__count" title="Favourites: ${commarise(beatmapset.favourite_count)}">
+                                        <span class="beatmapset-panel__count-number">${commarise(beatmapset.favourite_count)}</span>
+                                        <i class="fas fa-fw fa-heart"></i>
+                                    </div>
                                 </div>
-                                <div class="beatmapset-panel__preview-bar" style="transition-duration: 0s; width: 0px;"></div>
+                                <div class="beatmapset-panel__preview-bar"></div>
                             </a>
                             <div class="beatmapset-panel__content">
                                 <div class="beatmapset-panel__row">
                                     <div class="beatmapset-panel__mapper-source-box">
-                                        <div class="u-ellipsis-overflow">mapped by <a href="/users/${beatmapset.creator_id}" class="js-usercard" data-user-id="${beatmapset.creator_id}">${beatmapset.creator}</a></div>
+                                        <div class="u-ellipsis-overflow">
+                                            mapped by <a href="https://osu.ppy.sh/users/${beatmapset.creator_id}" class="js-usercard" data-user-id="${beatmapset.creator_id}"><strong>${beatmapset.creator}</strong></a>
+                                        </div>
                                         <div class="u-ellipsis-overflow">${beatmapset.source}</div>
                                     </div>
-                                    <div class="beatmapset-panel__icons-box"><a href="/beatmapsets/${id}/download" class="beatmapset-panel__icon js-beatmapset-download-link" data-turbolinks="false"><i class="fas fa-download"></i></a></div>
+                                    <div class="beatmapset-panel__icons-box">
+                                        <a href="https://osu.ppy.sh/beatmapsets/${id}/download" title="download" class="beatmapset-panel__icon js-beatmapset-download-link" data-turbolinks="false">
+                                            <i class="fas fa-lg fa-download"></i>
+                                        </a>
+                                    </div>
                                 </div>
                                 <div class="beatmapset-panel__difficulties">
                                     ${beatmapset.difficulties.map(function(beatmap){
@@ -1352,19 +1377,15 @@
                                         var diffrating = parseFloat(beatmap.difficultyrating).toFixed(2);
                                         return `
                                             <div class="beatmapset-panel__difficulty-icon">
-                                                <div class="beatmap-icon beatmap-icon--${difficulty} beatmap-icon--with-hover js-beatmap-tooltip" data-beatmap-title="${beatmap.version}" data-stars="${diffrating}" data-difficulty="${difficulty}">
-                                                    <div class="beatmap-icon__shadow"></div>
+                                                <div class="beatmap-icon beatmap-icon--undefined beatmap-icon--with-hover js-beatmap-tooltip" data-beatmap-title="${beatmap.version}" data-stars="${diffrating}" data-difficulty="${difficulty}" style="--diff:var(--diff-${difficulty});">
                                                     <i class="fal fa-extra-mode-${intToMode(parseInt(beatmap.mode))}"></i>
                                                 </div>
                                             </div>`;
                                     }).join("")}
                                 </div>
-                                <div class="beatmapset-panel__date">
-                                    <time class="timeago" datetime="${dateset.toISOString()}">${dateset.toLocaleString()}</time>
-                                </div>
                             </div>
                         </div>
-                        <a href="#" class="beatmapset-panel__play js-audio--play" data-audio-url="//b.ppy.sh/preview/${id}.mp3"><i class="fas fa-play"></i></a>
+                        <button type="button" class="beatmapset-panel__play js-audio--play"></button>
                         <div class="beatmapset-panel__shadow"></div>
                     </div>
                 </div>`
@@ -2241,7 +2262,9 @@
                     .play-detail__pp.play-detail__recent-pp {min-width: 0px; padding: 0px;}
                     .div-24h {margin-top: 50px;}
                     .modal-hr {color: red;}
-                    .modal-ez {color: green;}`
+                    .modal-ez {color: green;}
+                    .opModal {color: black;}
+                    .opModal h1 {color: ${osuPink};}`
                 ));
             }
         }
@@ -2427,7 +2450,8 @@
         function beatmapIdOfDetailRow(ele){
             var href = $(ele).find(".play-detail__title").attr("href");
             var temp = href.split("/");
-            return temp[temp.length - 1];
+            temp = temp[temp.length - 1];
+            return temp.split("?")[0];
         }
 
         function addDetails(top, score, mapId){
@@ -3250,6 +3274,11 @@
                     {mods: ["7K"], selection: 1},
                     {mods: ["8K"], selection: 1},
                     {mods: ["9K"], selection: 1}]),
+                mapMode < 3 ? [] : //mirror
+                genModBtns([
+                    {mods: ["MR"], selection: 0},
+                    {mods: ["MR"], selection: 1},
+                    {mods: ["MR"], selection: 2}]),
                 mapMode > 0 ? [] : //SO only for standard
                 [genModBtns([
                     {mods: ["SO"], selection: 0},
@@ -3974,6 +4003,11 @@
                     {mods: ["7K"], selection: 1},
                     {mods: ["8K"], selection: 1},
                     {mods: ["9K"], selection: 1}]),
+                mapMode < 3 ? [] : //mirror
+                genModBtns([
+                    {mods: ["MR"], selection: 0},
+                    {mods: ["MR"], selection: 1},
+                    {mods: ["MR"], selection: 2}]),
                 mapMode > 0 ? [] : //SO only for standard
                 [genModBtns([
                     {mods: ["SO"], selection: 0},
@@ -4470,16 +4504,20 @@
     }
 
     function displayGetKey(){
-        $(document.body).prepend($("<div style='text-align: center; background-color: red;'></div>")
-                                 .append($("<h1 style='color: white;'></h1>")
-                                         .attr("id", "osuplusnotice")
-                                         .append("[osuplus] Click ",
-                                                 $("<a>here</a>").click(promptKey),
-                                                 " to use your osu!API key.<br>"+
-                                                 "Don't have API key? Get from ",
-                                                 $("<a href='/p/api'>here</a>"))
-                                        )
-                                );
+        $(document.head).append($("<style class='osuplus-displaygetkey-style'></style>").html(
+            `.op-getkey {text-align: center; background-color: red;}
+            .op-getkey h1 {color: white;}
+            .nav2-header {position: relative;}`
+        ));
+        $(document.body).prepend(
+            `<div class="op-getkey">
+                <h1 id="osuplusnotice">
+                    [osuplus] Click <a class="a-promptKey">here</a> to use your osu!API key.<br>
+                    Don't have API key? Get from <a href='/p/api' target="_blank">here</a>
+                </h1>
+            </div>`
+        );
+        $(".a-promptKey").click(promptKey);
     }
 
     function promptKey(){
