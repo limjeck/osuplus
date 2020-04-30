@@ -1,3 +1,15 @@
+## 2.2.1 (30 Apr 2020)
+
+#### Features
+- Added mirror mod filter (temporary image)
+
+#### Bugfixes
+- Fixed invisible white text in various places
+- Fixed detailed scores for best plays in new userpage
+- Fixed difficulties in beatmaps in subscriptions tab
+- Added total playcount for beatmaps in subscriptions tab
+- Fixed new site header blocking api key message
+
 ## 2.2.0 (30 Dec 2019)
 
 #### Features
