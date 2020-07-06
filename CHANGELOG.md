@@ -1,3 +1,16 @@
+## 2.2.2 (6 Jul 2020)
+
+#### Features
+- Shows pp and pp if fc for recent plays in userpage (click the "pp") (only for standard)
+
+#### Bugfixes
+- Fixed not working on beatmaps page
+- Fixed "pp if fc" on beatmaps page
+- Fixed pp ranking page
+- Fixed "Most played" tab in old userpage
+- Added ScoreV2 icon on recent plays in userpage
+- Eslinted
+
 ## 2.2.1 (30 Apr 2020)
 
 #### Features
