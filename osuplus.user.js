@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.1
+// @version      2.2.2
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
 // @include      https://osu.ppy.sh*
 // @include      http://old.ppy.sh*
 // @include      https://old.ppy.sh*
+// @connect      pp.osuck.net
 
 // @noframes
 // @grant        GM.xmlHttpRequest
@@ -19,7 +20,9 @@
 // @require      https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js
 // @require      http://timeago.yarp.com/jquery.timeago.js
 // ==/UserScript==
-/* jshint esversion: 6 */
+
+/*global GM, $, GM_xmlhttpRequest, GM_setValue, GM_getValue, unsafeWindow */
+
 (() => {
     "use strict";
 
@@ -27,7 +30,7 @@
 
     // backwards compatible
     var GMX;
-    if(typeof GM == 'undefined'){
+    if(typeof GM == "undefined"){
         GMX = {
             xmlHttpRequest: GM_xmlhttpRequest,
             setValue: function(name, value){
@@ -47,6 +50,7 @@
         FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
         //UImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAA1VBMVEUAAACioqKbm5vy8vLX19fv7+/Ozs6ioqK0tLTR0dHJycmqqqqzs7Ojo6Oamprb29vT09Ourq6mpqb///8mJiYzMzMxMTEsLCwpKSkvLy81NTUjIyMgICAeHh5JSUlISEhRUVFFRUUZGRkcHBympqZaWlqrq6s6Ojo+Pj5WVlbExMSjo6NCQkI3NzfY2Ni4uLivr695eXlycnJMTEze3t66urqoqKj8/Pz4+Pjg4ODa2tq+vr60tLSbm5t+fn5ra2vk5OTj4+OTk5OMjIyFhYVpaWlmZmaYnrJ3AAAAE3RSTlMAUlL+8f7nQ6np562iS0jy8aRXW3S7rwAAAbZJREFUSMft1dlymzAYhuGmxnaapOtnLLGvNjgBL+DsW/f7v6T+mrrIbQXKccJzAqPROyAxGl71er2X4PhoiH8N3hw+JX33AWrGWNu+vsLykeV+npDc9/0gEhbfvmA41rXA3E0YRSxJLJ9QSQI/PIWhbc88z+OMMb67TISsYMzc4qO2/VssOEFgekmFI01blpYrsdoScR4EgRNbGHa3bv25cqUFampZQKZxDHS2jnOPrSMNcZYkXkT7VmQOx6CjTWn6HJCtC6zixPZJlpk/MOpoJ4TiScOhOOEhifK8WOK4qyVriiWKvUzEtOgVjI5WGZ/zvA6FFS7ftrb8N4q5RLFZZgG5Az4p2wPZ8jlgNa0F3NEHm3CeAgfqc3SFC/bHV2DDdngF3DuEX6hbYmDNGj9Btc0EuxL3Ik5b20PcTK1GucW+JaNta2vJCBtLqh9v9tuIhlrfmQyQyzabzWbf0/NT4TatTBqat7YEmEohxdF0n2zVTy6amcVMKPWtXPODuWOHC8E3G7JVO8F1ZqroW2LgNrNVyrWmJeMhrh+i/9Jis8QltbragNp7Okd6J6OB8g/T6/WevV831F5ngplDwwAAAABJRU5ErkJggg==",
         FImgNew = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMywgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAzMiAxNiIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzIgMTY7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojQjlCOUI5O30KCS5zdDF7ZmlsbDojRkY1QTVBO2ZpbHRlcjp1cmwoI0Fkb2JlX09wYWNpdHlNYXNrRmlsdGVyKTt9Cgkuc3Qye21hc2s6dXJsKCNtYXNrMF8xXyk7fQoJLnN0M3tmaWxsOiNDNEM0QzQ7fQoJLnN0NHtmaWxsOiNBRkFGQUY7fQoJLnN0NXtmaWxsOiNBNEE0QTQ7fQoJLnN0NntmaWxsOiMzMzMzMzM7fQo8L3N0eWxlPgo8cGF0aCBjbGFzcz0ic3QwIiBkPSJNOCwwaDE2YzQuNCwwLDgsMy42LDgsOGwwLDBjMCw0LjQtMy42LDgtOCw4SDhjLTQuNCwwLTgtMy42LTgtOGwwLDBDMCwzLjYsMy42LDAsOCwweiIvPgo8ZGVmcz4KCTxmaWx0ZXIgaWQ9IkFkb2JlX09wYWNpdHlNYXNrRmlsdGVyIiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCI+CgkJPGZlQ29sb3JNYXRyaXggIHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIxIDAgMCAwIDAgIDAgMSAwIDAgMCAgMCAwIDEgMCAwICAwIDAgMCAxIDAiLz4KCTwvZmlsdGVyPgo8L2RlZnM+CjxtYXNrIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCIgaWQ9Im1hc2swXzFfIj4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik04LDBoMTZjNC40LDAsOCwzLjYsOCw4bDAsMGMwLDQuNC0zLjYsOC04LDhIOGMtNC40LDAtOC0zLjYtOC04bDAsMEMwLDMuNiwzLjYsMCw4LDB6Ii8+CjwvbWFzaz4KPGcgY2xhc3M9InN0MiI+Cgk8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTYtOWwxNy4zLDMwSC0xLjNMMTYtOXoiLz4KCTxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0yNy41LDNMMzQsMTQuMkgyMUwyNy41LDN6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNNy41LTJsMy45LDYuOEgzLjZMNy41LTJ6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNOS41LDEzbDMuOSw2LjhINS42TDkuNSwxM3oiLz4KPC9nPgo8Zz4KCTxwb2x5Z29uIGNsYXNzPSJzdDYiIHBvaW50cz0iMTEsMy45IDIxLjMsMy45IDIxLjMsNS4yIDEyLjUsNS4yIDEyLjUsNy41IDIwLjgsNy41IDIwLjgsOC44IDEyLjUsOC44IDEyLjUsMTIuMyAxMSwxMi4zIAkiLz4KPC9nPgo8L3N2Zz4K",
+        v2Img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAgCAYAAACGhPFEAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAcaSURBVFhHrVgJbBRlFH47e3SPHmwPenGJHBW0BBDKGdDQgAEEST0KSDwKGgGj4hUQUSgGUQlRIaGINLUUAgmCLQKSIHI0IgRsTeUUaGmhFy3t7ra72z1875+Z7ex2ZrZFv/Cz7735j2/e//73/qkGwmDTO7Gml2ZFLbeYNIsMek0amrT8k/8VHneH/5qj3b/z6z2t33yS1+wU7LJQI60pWJuQ8Ow0S4nRoBkj2BTR4eGn0mn97FcT1h3yaHf5zxUdsc/IWdfYjCo/WQjUpjY0He+/1xrNzRF0Rfhwao9XA3okTGRJ5jR+4DihQw9x3+Yrtj5RmYWim7cEQ2la7lxByuzuECbQm4uE/fgCHMfLD4peUdxsWh9FWX6yxmljTVHDBho2CGq3ICXJhSFML9bm4sDtEQwyoPWJh6AGQY60buuHccvMRs0gQe8RRPJKnibCBJPBh/GPoeXrtElB6xMPFHW8pROhpDVfvhWbOiBF956gM1y/3QGjFtQImjJocT/+R00O921eOHXRCb//5YQ7DR4WVtSTzoQciAfxQTHIBaGk9fNnRH6q12liBJ1hYKoO/qnuAJsD3SIDqXe37LVB1vv1vEFAdZ0HbXWQ/kIN5O1vhU27WmD+qgb44ZBN0dME4kF8SOQtPKSkuZLNiY8nxWkXCnoAHAbp5JFG+PV8u2BRxpVKN8yabA4QOYFjFq1pgBFDDHDzp75QmNsb9n2eCLlvWGHbfhsLEbUsQ3yIF4qBXtLuERPSjRvRW7LFIzPDBCdxa9VAO3GlsgNmjDcxHfMt5O64Dx/n9ILVOVbQajt3edxjEXC30QuOdp96sUA+xAvFCN7SSVp7YVdqFqa4iYLeBbRI2VU3eDwKe4k4drYdYiK1kBSvY6FSfLIN1iyxwpTRpoDnxV/cekptUHvPyxtUQLyIH4rMoYz0zEnm6LQB+lySlZDxqJGSPtyoUc5T3x2wwXOZlkCMF63vzcKKINqkoNSoFM+hIH7Ek2Qirdu8Ina5KULTjwxqmIYhcri0jS1EJ166YJvTB/dafPDUBD40CERUiZQPJ1DKGnIgfsQTRR2RNveO1WazJ2GQOc4CpWUu3mshC+467ICRQw1gMUmPCQ85Lx/8rQ2iLRw8lNIlDStC4GlmpKPM3GBmDYMxwyJYDN660xFEhLyZX2wDTE9dCMoRpnxd+LMd3n0xBjQYI90NEYEnI23o7iALhufU0UY4cKItiMylm26oafDChPTAAQ9Abu4vClrIa3SWmC73YnIQ5jKwvbzX4q1iahjQ5E9PMWO+drIYFrHnFwc8jwdQhxmBICUqEqL4pTFrtzdDVa0X1iy2Mnt3CRNEnkTaXVruOkpKONACo9IiINKsgeJTTqZTCqTSvGRe17uNSJ5+qfJtyG+B85dc8PmbsZAYx5eDHnCG038ynm4i7Vic21jU1OoLrr0qmDXZAodOOZh8pswJdiwQA1P1QR6WyvhVwsr3DbwKbF+VQFUu4OHuepr4vfZZYxGKDiLd3tDsrSoose9gT8OAFpk+3ghnK1zQgnk7v8QOq1/lt1qElAiR34aE9xy1w/qlVuZhsWx3lzCB+BFPFNvFYZHYHrl+oM/Oh/voh/MmdeDusEXrMJsUrkuAKExfofB6/bB1XyscxzOA10xIxkoZCnFH1F4AL2sVg+ZWv4ziJWx2sSsFWGLO3Kg521bGf4ue6MogBJT2nny9lh3MzSviBGswslfWw4XLLlg0MwpcGCL1TV78FJPEDQI/luGZqRasAZ1FSQo8Cz4Mi2VYbQ+iWocNP+Y6QaMGnfk++Su8oGTyJmWQhxZ8VA/Z0yPZrU7OUwvxed8kHd5HOIiL4WBAsh5MxuCOdDUY2l8Pg/sF3T4DKC13Hpv4yt0VKF7Hxq6Z0hnIu7Fjh0dMOpGXXIhl08KblSE9bDSTDG9Z0DjxJSmrKF1N8cvcMXXJ3YV/VLhOo9qEjeVZaXcytGKHCryd7eVNPQASCXoJBVAfsRvJandp4kF8UGzFFigMoc4hPRqvjCOu7u+zO8GqTeHNypAjKhcqof2YqkIaM8WdIfOqszF8ylAl0oEZQofQAwd2vLX9R1seb1JHKEEiR1tOFVBsXkHHfwHQMDUv0/rEA0UqCNKhimFI8ZxWtjt1S/pgQwZvUod025UmpRck8uH+xFB+zX12RHbNUhQvY+OrmASyn1YI+pzwnilzVeKlJgNPf3D1kAEREr1OnvX7URFehJr4XOyjhKpaz82sD+pXY3r8G9UWbKIvAlAiTR07cGBbfrH9Yr8knS6+lzY20sRZcFHVZYkUbXugkR6GLO6SD6+8tXjwjsx+u24jEi9HM10rZD+T1AjQM7prxmPriy0JG1VOpRf9L6CdtWOrxXYbWyM2F7YuXiaokRZBtZcuvhTnVAFUjs8Dg9JZBzaK3zZsKn8wA/gXdwKtmiVffUYAAAAASUVORK5CYII=",
 
         loaderImg = "data:image/gif;base64,R0lGODlhEAAQAPIAAKmp/wAAAIGBwisrQgAAAEFBYlZWgmFhkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==",
 
@@ -118,58 +122,52 @@
             "MR": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAoCAIAAAADnC86AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAEVSURBVFhH7ZbrDoMgDEZxD7l33F5Sm3ym1F4YEao/5snigNQeiw3bUj5ruYPX/n05jziJ9b0PGC2mCBVk7wHuulxEKnyW777IOBXboAwOYvm848gCULdEVzy3XGSjq02b3lxRJVXstkAe6RVHhM01t9EsVYx9TvLZtIeKk9xIqBpIv+PpbtdKOM1lg85ByshKaDGiKXRcjyRRHmerx5U9PH99LuMRX8afi3Fs4ZyzU0KOB9EV49higTrFJh5qzlazO/XsrOIeE+8EBnTlgZzymKcExrzoNxc9Qc9DyDA5VWNGrvviHnA/o6agEXNe3IAEKFSWq0gRA1jdnSDq7zFegCVaH+R3xRlWooqTBBGJ77jNTeJSNvGFdJiLza7LAAAAAElFTkSuQmCC",
         };
 
-    var BEATMAP = 0,
-        USERPAGE = 1,
-        PPRANKING = 2,
-        BEATMAPLISTING = 3;
-
     var OLDSITE = 0,
         NEWSITE = 1;
 
     var apikey = null,
         hasKey = false,
-        pageType = BEATMAP,
         siteType = OLDSITE,
         osuPink = "#cc2e8a";
 
     var modnames = [
-        {val: 1, name: "NoFail", short: "NF"},
-        {val: 2, name: "Easy", short: "EZ"},
-        {val: 4, name: "TouchDevice", short: "TD"},
-        {val: 8, name: "Hidden", short: "HD"},
-        {val: 16, name: "HardRock", short: "HR"},
-        {val: 32, name: "SuddenDeath", short: "SD"},
-        {val: 64, name: "DoubleTime", short: "DT"},
-        {val: 128, name: "Relax", short: "RX"},
-        {val: 256, name: "HalfTime", short: "HT"},
-        {val: 512, name: "Nightcore", short: "NC"},
-        {val: 1024, name: "Flashlight", short: "FL"},
-        {val: 2048, name: "Autoplay", short: "AT"},
-        {val: 4096, name: "SpunOut", short: "SO"},
-        {val: 8192, name: "Relax2", short: "AP"},
-        {val: 16384, name: "Perfect", short: "PF"},
-        {val: 32768, name: "Key4", short: "4K"},
-        {val: 65536, name: "Key5", short: "5K"},
-        {val: 131072, name: "Key6", short: "6K"},
-        {val: 262144, name: "Key7", short: "7K"},
-        {val: 524288, name: "Key8", short: "8K"},
-        {val: 1048576, name: "FadeIn", short: "FI"},
-        {val: 2097152, name: "Random", short: "RD"},
-        {val: 4194304, name: "LastMod", short: "LM"},
-        {val: 16777216, name: "Key9", short: "9K"},
-        {val: 33554432, name: "Key10", short: "10K"},
-        {val: 67108864, name: "Key1", short: "1K"},
-        {val: 134217728, name: "Key3", short: "3K"},
-        {val: 268435456, name: "Key2", short: "2K"},
-        {val: 536870912, name: "ScoreV2", short: "V2"},
-        {val: 1073741824, name: "Mirror", short: "MR"}
-    ],
+            {val: 1, name: "NoFail", short: "NF"},
+            {val: 2, name: "Easy", short: "EZ"},
+            {val: 4, name: "TouchDevice", short: "TD"},
+            {val: 8, name: "Hidden", short: "HD"},
+            {val: 16, name: "HardRock", short: "HR"},
+            {val: 32, name: "SuddenDeath", short: "SD"},
+            {val: 64, name: "DoubleTime", short: "DT"},
+            {val: 128, name: "Relax", short: "RX"},
+            {val: 256, name: "HalfTime", short: "HT"},
+            {val: 512, name: "Nightcore", short: "NC"},
+            {val: 1024, name: "Flashlight", short: "FL"},
+            {val: 2048, name: "Autoplay", short: "AT"},
+            {val: 4096, name: "SpunOut", short: "SO"},
+            {val: 8192, name: "Relax2", short: "AP"},
+            {val: 16384, name: "Perfect", short: "PF"},
+            {val: 32768, name: "Key4", short: "4K"},
+            {val: 65536, name: "Key5", short: "5K"},
+            {val: 131072, name: "Key6", short: "6K"},
+            {val: 262144, name: "Key7", short: "7K"},
+            {val: 524288, name: "Key8", short: "8K"},
+            {val: 1048576, name: "FadeIn", short: "FI"},
+            {val: 2097152, name: "Random", short: "RD"},
+            {val: 4194304, name: "LastMod", short: "LM"},
+            {val: 16777216, name: "Key9", short: "9K"},
+            {val: 33554432, name: "Key10", short: "10K"},
+            {val: 67108864, name: "Key1", short: "1K"},
+            {val: 134217728, name: "Key3", short: "3K"},
+            {val: 268435456, name: "Key2", short: "2K"},
+            {val: 536870912, name: "ScoreV2", short: "V2"},
+            {val: 1073741824, name: "Mirror", short: "MR"}
+        ],
         // if the first is set, the second has to be set also
         doublemods = [
             ["NC", "DT"],
             ["PF", "SD"]
         ],
-        
+        countryCodes = {"BD": "Bangladesh", "BE": "Belgium", "BF": "Burkina Faso", "BG": "Bulgaria", "BA": "Bosnia and Herzegovina", "BB": "Barbados", "WF": "Wallis and Futuna", "BL": "Saint Barthelemy", "BM": "Bermuda", "BN": "Brunei", "BO": "Bolivia", "BH": "Bahrain", "BI": "Burundi", "BJ": "Benin", "BT": "Bhutan", "JM": "Jamaica", "BV": "Bouvet Island", "BW": "Botswana", "WS": "Samoa", "BQ": "Bonaire, Saint Eustatius and Saba ", "BR": "Brazil", "BS": "Bahamas", "JE": "Jersey", "BY": "Belarus", "BZ": "Belize", "RU": "Russia", "RW": "Rwanda", "RS": "Serbia", "TL": "East Timor", "RE": "Reunion", "TM": "Turkmenistan", "TJ": "Tajikistan", "RO": "Romania", "TK": "Tokelau", "GW": "Guinea-Bissau", "GU": "Guam", "GT": "Guatemala", "GS": "South Georgia and the South Sandwich Islands", "GR": "Greece", "GQ": "Equatorial Guinea", "GP": "Guadeloupe", "JP": "Japan", "GY": "Guyana", "GG": "Guernsey", "GF": "French Guiana", "GE": "Georgia", "GD": "Grenada", "GB": "United Kingdom", "GA": "Gabon", "SV": "El Salvador", "GN": "Guinea", "GM": "Gambia", "GL": "Greenland", "GI": "Gibraltar", "GH": "Ghana", "OM": "Oman", "TN": "Tunisia", "JO": "Jordan", "HR": "Croatia", "HT": "Haiti", "HU": "Hungary", "HK": "Hong Kong", "HN": "Honduras", "HM": "Heard Island and McDonald Islands", "VE": "Venezuela", "PR": "Puerto Rico", "PS": "Palestinian Territory", "PW": "Palau", "PT": "Portugal", "SJ": "Svalbard and Jan Mayen", "PY": "Paraguay", "IQ": "Iraq", "PA": "Panama", "PF": "French Polynesia", "PG": "Papua New Guinea", "PE": "Peru", "PK": "Pakistan", "PH": "Philippines", "PN": "Pitcairn", "PL": "Poland", "PM": "Saint Pierre and Miquelon", "ZM": "Zambia", "EH": "Western Sahara", "EE": "Estonia", "EG": "Egypt", "ZA": "South Africa", "EC": "Ecuador", "IT": "Italy", "VN": "Vietnam", "SB": "Solomon Islands", "ET": "Ethiopia", "SO": "Somalia", "ZW": "Zimbabwe", "SA": "Saudi Arabia", "ES": "Spain", "ER": "Eritrea", "ME": "Montenegro", "MD": "Moldova", "MG": "Madagascar", "MF": "Saint Martin", "MA": "Morocco", "MC": "Monaco", "UZ": "Uzbekistan", "MM": "Myanmar", "ML": "Mali", "MO": "Macao", "MN": "Mongolia", "MH": "Marshall Islands", "MK": "Macedonia", "MU": "Mauritius", "MT": "Malta", "MW": "Malawi", "MV": "Maldives", "MQ": "Martinique", "MP": "Northern Mariana Islands", "MS": "Montserrat", "MR": "Mauritania", "IM": "Isle of Man", "UG": "Uganda", "TZ": "Tanzania", "MY": "Malaysia", "MX": "Mexico", "IL": "Israel", "FR": "France", "IO": "British Indian Ocean Territory", "SH": "Saint Helena", "FI": "Finland", "FJ": "Fiji", "FK": "Falkland Islands", "FM": "Micronesia", "FO": "Faroe Islands", "NI": "Nicaragua", "NL": "Netherlands", "NO": "Norway", "NA": "Namibia", "VU": "Vanuatu", "NC": "New Caledonia", "NE": "Niger", "NF": "Norfolk Island", "NG": "Nigeria", "NZ": "New Zealand", "NP": "Nepal", "NR": "Nauru", "NU": "Niue", "CK": "Cook Islands", "XK": "Kosovo", "CI": "Ivory Coast", "CH": "Switzerland", "CO": "Colombia", "CN": "China", "CM": "Cameroon", "CL": "Chile", "CC": "Cocos Islands", "CA": "Canada", "CG": "Republic of the Congo", "CF": "Central African Republic", "CD": "Democratic Republic of the Congo", "CZ": "Czech Republic", "CY": "Cyprus", "CX": "Christmas Island", "CR": "Costa Rica", "CW": "Curacao", "CV": "Cape Verde", "CU": "Cuba", "SZ": "Swaziland", "SY": "Syria", "SX": "Sint Maarten", "KG": "Kyrgyzstan", "KE": "Kenya", "SS": "South Sudan", "SR": "Suriname", "KI": "Kiribati", "KH": "Cambodia", "KN": "Saint Kitts and Nevis", "KM": "Comoros", "ST": "Sao Tome and Principe", "SK": "Slovakia", "KR": "South Korea", "SI": "Slovenia", "KP": "North Korea", "KW": "Kuwait", "SN": "Senegal", "SM": "San Marino", "SL": "Sierra Leone", "SC": "Seychelles", "KZ": "Kazakhstan", "KY": "Cayman Islands", "SG": "Singapore", "SE": "Sweden", "SD": "Sudan", "DO": "Dominican Republic", "DM": "Dominica", "DJ": "Djibouti", "DK": "Denmark", "VG": "British Virgin Islands", "DE": "Germany", "YE": "Yemen", "DZ": "Algeria", "US": "United States", "UY": "Uruguay", "YT": "Mayotte", "UM": "United States Minor Outlying Islands", "LB": "Lebanon", "LC": "Saint Lucia", "LA": "Laos", "TV": "Tuvalu", "TW": "Taiwan", "TT": "Trinidad and Tobago", "TR": "Turkey", "LK": "Sri Lanka", "LI": "Liechtenstein", "LV": "Latvia", "TO": "Tonga", "LT": "Lithuania", "LU": "Luxembourg", "LR": "Liberia", "LS": "Lesotho", "TH": "Thailand", "TF": "French Southern Territories", "TG": "Togo", "TD": "Chad", "TC": "Turks and Caicos Islands", "LY": "Libya", "VA": "Vatican", "VC": "Saint Vincent and the Grenadines", "AE": "United Arab Emirates", "AD": "Andorra", "AG": "Antigua and Barbuda", "AF": "Afghanistan", "AI": "Anguilla", "VI": "U.S. Virgin Islands", "IS": "Iceland", "IR": "Iran", "AM": "Armenia", "AL": "Albania", "AO": "Angola", "AQ": "Antarctica", "AS": "American Samoa", "AR": "Argentina", "AU": "Australia", "AT": "Austria", "AW": "Aruba", "IN": "India", "AX": "Aland Islands", "AZ": "Azerbaijan", "IE": "Ireland", "ID": "Indonesia", "UA": "Ukraine", "QA": "Qatar", "MZ": "Mozambique"},
         playerCountries = null;
 
     var defaultSettings = {
@@ -212,6 +210,7 @@
         });
     }
 
+    /*eslint-disable*/
     //peppy code
     (function($) {
         $.fn.textWidth = function() {
@@ -291,6 +290,7 @@
         }
         ;
     })($);
+    /*eslint-enable*/
 
     var subscriberManager = (function(){
         var MAPPER = 0,
@@ -496,8 +496,8 @@
                         });
                     });
                     merged.sort(function(a, b){
-                        var date1 = new Date(a.last_update.replace(' ','T') + "+0800");
-                        var date2 = new Date(b.last_update.replace(' ','T') + "+0800");
+                        var date1 = new Date(a.last_update.replace(" ","T") + "+0800");
+                        var date2 = new Date(b.last_update.replace(" ","T") + "+0800");
                         if(date1 > date2) return -1;
                         else return 1;
                     });
@@ -534,16 +534,12 @@
             if(siteType === OLDSITE){
                 mainInit();
                 if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/u\//)){ 
-                    pageType = USERPAGE;
                     osuplusUserpage().init();
                 }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/([bs]\/|p\/beatmap\?)/)){
-                    pageType = BEATMAP;
                     osuplusBeatmap().init();
                 }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/pp/)){
-                    pageType = PPRANKING;
                     osuplusPpRanking().init();
                 }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/beatmaplist/)){
-                    pageType = BEATMAPLISTING;
                     osuplusBeatmapListing().init();
                 }
             }else{
@@ -653,8 +649,10 @@
                 ),
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", $("#settings-apikey").val());
-                    var properties = ["showMirror", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
-                                      "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties"];
+                    var properties = [
+                        "showMirror", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
+                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties"
+                    ];
                     for(let property of properties){
                         setBoolProperty(property);
                     }
@@ -701,16 +699,12 @@
                     var url = window.location.href;
                     var pathname = window.location.pathname;
                     if(pathname == "/beatmapsets"){
-                        pageType = BEATMAPLISTING;
                         setNewOsuplus(osuplusNewBeatmapListing);
                     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/beatmapsets\//)){
-                        pageType = BEATMAP;
                         setNewOsuplus(osuplusNewBeatmap);
                     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/users\//)){
-                        pageType = USERPAGE;
                         setNewOsuplus(osuplusNewUserpage);
                     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/rankings\//)){
-                        pageType = PPRANKING;
                         setNewOsuplus(osuplusNewPpRanking);
                     }
                 }
@@ -873,9 +867,9 @@
 
             subsAddBtn.click(function(){
                 subscriberManager.util.addMapperName(subsTxtbox.val()).then(refreshMappersSub)
-                .catch((e) => {
-                    alert("User does not exist!");
-                });
+                    .catch((e) => {
+                        alert("User does not exist!");
+                    });
             });
             mappersRemoveBtn.click(function(){
                 var selected = mappersSelect.find(":selected");
@@ -929,6 +923,7 @@
                 subsBeatmaplist.append(pageContainer);
                 refreshPage();
 
+                /*eslint-disable */
                 $(".timeago").timeago();
                 $(".sub-beatmap").hover(function() {
                     $(this).find(".maintext").marquee({
@@ -961,6 +956,8 @@
                         $(this).find('i').removeClass("icon-play").addClass("icon-pause");
                     return false;
                 });
+                /*eslint-enable */
+
                 subLoadingStatus = 2;
                 loadingNotice.hide();
             });
@@ -968,25 +965,25 @@
 
         function makeBeatmapBox(beatmapset){
             var id = beatmapset.beatmapset_id;
-            var lastupdate = new Date(beatmapset.last_update.replace(' ','T') + "+0800");
+            var lastupdate = new Date(beatmapset.last_update.replace(" ","T") + "+0800");
             var initiallyHiddenClass = "initiallyHidden";
             if(settings.forceShowDifficulties) initiallyHiddenClass = "";
             var approved = "?";
             switch(beatmapset.approved){
-                case "-2":
-                    approved = "Graveyard"; break;
-                case "-1":
-                    approved = "WIP"; break;
-                case "0":
-                    approved = "Pending"; break;
-                case "1":
-                    approved = "Ranked"; break;
-                case "2":
-                    approved = "Approved"; break;
-                case "3":
-                    approved = "Qualified"; break;
-                case "4":
-                    approved = "Loved";
+            case "-2":
+                approved = "Graveyard"; break;
+            case "-1":
+                approved = "WIP"; break;
+            case "0":
+                approved = "Pending"; break;
+            case "1":
+                approved = "Ranked"; break;
+            case "2":
+                approved = "Approved"; break;
+            case "3":
+                approved = "Qualified"; break;
+            case "4":
+                approved = "Loved";
             }
             var source = "";
             if(beatmapset.source !== ""){
@@ -1165,7 +1162,8 @@
                 subsTitle.removeClass("page-mode-link--is-active");
                 subsContent.hide();
             });
-            $(".js-react--beatmaps").append($("<div class='osu-layout__section'></div>").append(
+            $(".js-react--beatmaps").append(
+                $("<div class='osu-layout__section'></div>").append(
                     $("<div class='osu-page'></div>").append(subsContent)
                 )
             );
@@ -1242,9 +1240,9 @@
 
             subsAddBtn.click(function(){
                 subscriberManager.util.addMapperName(subsTxtbox.val()).then(refreshMappersSub)
-                .catch(() => {
-                    alert("User does not exist!");
-                });
+                    .catch(() => {
+                        alert("User does not exist!");
+                    });
             });
             mappersRemoveBtn.click(function(){
                 var selected = mappersSelect.find(":selected");
@@ -1309,22 +1307,22 @@
             var id = beatmapset.beatmapset_id;
             var approved = "?";
             switch(beatmapset.approved){
-                case "-2":
-                    approved = "Graveyard"; break;
-                case "-1":
-                    approved = "WIP"; break;
-                case "0":
-                    approved = "Pending"; break;
-                case "1":
-                    approved = "Ranked"; break;
-                case "2":
-                    approved = "Approved"; break;
-                case "3":
-                    approved = "Qualified"; break;
-                case "4":
-                    approved = "Loved";
+            case "-2":
+                approved = "Graveyard"; break;
+            case "-1":
+                approved = "WIP"; break;
+            case "0":
+                approved = "Pending"; break;
+            case "1":
+                approved = "Ranked"; break;
+            case "2":
+                approved = "Approved"; break;
+            case "3":
+                approved = "Qualified"; break;
+            case "4":
+                approved = "Loved";
             }
-            var dateset =  new Date(beatmapset.last_update.replace(' ','T') + "+0000");
+            //var dateset =  new Date(beatmapset.last_update.replace(" ","T") + "+0000");
             var playcount = 0;
             for(let diff of beatmapset.difficulties){
                 playcount += parseInt(diff.playcount);
@@ -1372,16 +1370,16 @@
                                     </div>
                                 </div>
                                 <div class="beatmapset-panel__difficulties">
-                                    ${beatmapset.difficulties.map(function(beatmap){
-                                        var difficulty = getDifficultyClass(beatmap.difficultyrating);
-                                        var diffrating = parseFloat(beatmap.difficultyrating).toFixed(2);
-                                        return `
-                                            <div class="beatmapset-panel__difficulty-icon">
-                                                <div class="beatmap-icon beatmap-icon--undefined beatmap-icon--with-hover js-beatmap-tooltip" data-beatmap-title="${beatmap.version}" data-stars="${diffrating}" data-difficulty="${difficulty}" style="--diff:var(--diff-${difficulty});">
-                                                    <i class="fal fa-extra-mode-${intToMode(parseInt(beatmap.mode))}"></i>
-                                                </div>
-                                            </div>`;
-                                    }).join("")}
+${beatmapset.difficulties.map(function(beatmap){
+        var difficulty = getDifficultyClass(beatmap.difficultyrating);
+        var diffrating = parseFloat(beatmap.difficultyrating).toFixed(2);
+        return `
+        <div class="beatmapset-panel__difficulty-icon">
+            <div class="beatmap-icon beatmap-icon--undefined beatmap-icon--with-hover js-beatmap-tooltip" data-beatmap-title="${beatmap.version}" data-stars="${diffrating}" data-difficulty="${difficulty}" style="--diff:var(--diff-${difficulty});">
+                <i class="fal fa-extra-mode-${intToMode(parseInt(beatmap.mode))}"></i>
+            </div>
+        </div>`;
+    }).join("")}
                                 </div>
                             </div>
                         </div>
@@ -1441,8 +1439,7 @@
     }
 
     function osuplusPpRanking(){
-        var country = null,
-            isGlobal = true,
+        var isGlobal = true,
             mode = null,
             tableBody = null,
             tableLoadingNotice = null,
@@ -1451,7 +1448,7 @@
 
         function addCss(){
             $(document.head).append($("<style></style>").html(
-                `.centered {display: block; margin-left: auto; margin-right: auto;}`
+                ".centered {display: block; margin-left: auto; margin-right: auto;}"
             ));
         }
 
@@ -1524,11 +1521,11 @@
                 if(xsplit.length > 1){
                     rtn[xsplit[0]] = xsplit[1];
                 }
-            })
+            });
             return rtn;
         }
 
-        return {init: init}
+        return {init: init};
     }
 
     function osuplusNewPpRanking(){
@@ -1541,7 +1538,7 @@
         function addCss(){
             if(!$(".osuplus-new-ppranking-style").length){
                 $(document.head).append($("<style class='osuplus-new-ppranking-style'></style>").html(
-                    `.centered {display: block; margin-left: auto; margin-right: auto;}`
+                    ".centered {display: block; margin-left: auto; margin-right: auto;}"
                 ));
             }
         }
@@ -1549,7 +1546,7 @@
         function init(){
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded'></a>");
-            var path = window.location.pathname.split('/');
+            var path = window.location.pathname.split("/");
             if(path[3] != "performance") return;
 
             addCss();
@@ -1571,8 +1568,7 @@
 
                 //Get player list
                 var playerList = $(".ranking-page-table__row").map(function(i, ele){
-                    var temp = $(ele).find(".ranking-page-table__user-link a").eq(1).attr("href").split("/");
-                    return temp[temp.length-1];
+                    return $(ele).find(".ranking-page-table__user-link a").eq(1).attr("data-user-id");
                 });
                 var funs = [];
                 playerInfo = [];
@@ -1612,7 +1608,7 @@
                 if(xsplit.length > 1){
                     rtn[xsplit[0]] = xsplit[1];
                 }
-            })
+            });
             return rtn;
         }
 
@@ -1620,7 +1616,7 @@
             $(".osuplus-new-ppranking-style").remove();
         }
 
-        return {init: init, destroy: destroy}
+        return {init: init, destroy: destroy};
     }
 
     function osuplusUserpage(){
@@ -1632,14 +1628,14 @@
             profileTabs = null,
             generalNode = null,
             userRecent = null,
-            beatmapsCache = null,
+            //beatmapsCache = null,
             observer = null,
             generalObserver = null,
             topObserver = null,
-            topSlider = null,
-            topSliderLbl = null,
-            topSliderCB = null,
-            loadingTop = false,
+            //topSlider = null,
+            //topSliderLbl = null,
+            //topSliderCB = null,
+            //loadingTop = false,
             subscribeBtn = null,
             subscribed = false,
             subscribedColour = "#ef77af",
@@ -1661,7 +1657,8 @@
                 .opModalOverlay {position: fixed;top: 0;left: 0;bottom:0;right:0;width: 100%;height: 100%;z-index: 9999;background: #000;display: none;-ms-filter: 'alpha(Opacity=50)';-moz-opacity: .5;-khtml-opacity: .5;opacity: .5;}
                 .tableAttr {width: 50px;}
                 .modal-hr {color: red;}
-                .modal-ez {color: green;}`
+                .modal-ez {color: green;}
+                .ppcalc-pp {cursor: pointer;}`
             ));
         }
 
@@ -1740,11 +1737,11 @@
             });
 
             // Add modal
-            $("body").append('<div class="opModalOverlay opModalOverride" id="opModalOverlay" style="display:none;"></div>');
-            $("body").append('<div class="opModal" id="opModal" style="display:none;"></div>');
+            $("body").append("<div class='opModalOverlay opModalOverride' id='opModalOverlay' style='display:none;''></div>");
+            $("body").append("<div class='opModal' id='opModal' style='display:none;'></div>");
             opModalContent = $("<div id='opModalContent'>");
             $("#opModal").append(
-                '<div class="opModalCloseBtnDiv" style="display: block;"><button class="opModalCloseBtn">x</button></div>', 
+                "<div class='opModalCloseBtnDiv' style='display: block;''><button class='opModalCloseBtn'>x</button></div>", 
                 opModalContent
             );
             $("#opModalOverlay, .opModalCloseBtn").click(function(){
@@ -1892,11 +1889,11 @@
                     maxmapcombo
                 ),
                 gameMode <= 1 ? // Standard/Taiko
-                ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countmiss} }` :
-                gameMode == 2 ? // CTB
-                ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countkatu} / ${score.countmiss} }` :
-                // Mania
-                ` { ${score.countgeki} / ${score.count300} / ${score.countkatu} / ${score.count100} / ${score.count50} / ${score.countmiss} }`
+                    ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countmiss} }` :
+                    gameMode == 2 ? // CTB
+                        ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countkatu} / ${score.countmiss} }` :
+                        // Mania
+                        ` { ${score.countgeki} / ${score.count300} / ${score.countkatu} / ${score.count100} / ${score.count50} / ${score.countmiss} }`
             );
         }
 
@@ -1918,7 +1915,7 @@
             if(id === undefined) return;
             var opModalContent = $("#opModalContent");
             opModalContent.empty();
-               getBeatmapsCache({b: id, m: gameMode, a: 1}, function(beatmap){
+            getBeatmapsCache({b: id, m: gameMode, a: 1}, function(beatmap){
                 beatmap = beatmap[0];
                 opModalContent.append(
                     `<h1>${beatmap.artist} - <a href=/s/${beatmap.beatmapset_id}>${beatmap.title}</a> [<a href=/b/${beatmap.beatmap_id}>${beatmap.version}</a>]</h1>
@@ -2009,7 +2006,7 @@
                     useUserInfo(userInfo[gameMode]);
                 }else{
                     getUser({u: userId, m: gameMode, type: "id"}, function(response){
-                        userInfo[gameMode] = response[0]
+                        userInfo[gameMode] = response[0];
                         useUserInfo(userInfo[gameMode]);
                     });
                 }
@@ -2017,8 +2014,9 @@
         }
 
         function addMostPlayed(){
-            mainTableBody.append($("<tr>").click(function(){ expandProfile("mostplayed", addMostPlayedContent); })
-                .append($("<td class='sectionHeading' id='_mostplayed'>Most Played</td>")),
+            mainTableBody.append(
+                $("<tr>").click(function(){ expandProfile("mostplayed", addMostPlayedContent); })
+                    .append($("<td class='sectionHeading' id='_mostplayed'>Most Played</td>")),
                 $("<tr><td class='sectionContents'><div id='mostplayed'></div></td></tr>")
             );
             profileTabs.append($("<td>Most Played</td>").click(function(){
@@ -2027,8 +2025,9 @@
         }
 
         function addRecent(){
-            mainTableBody.append($("<tr>").click(function(){ expandProfile("recent", addRecentContent); })
-                .append($("<td class='sectionHeading' id='_recent'>Recent</td>")),
+            mainTableBody.append(
+                $("<tr>").click(function(){ expandProfile("recent", addRecentContent); })
+                    .append($("<td class='sectionHeading' id='_recent'>Recent</td>")),
                 $("<tr><td class='sectionContents'><div id='recent'></div></td></tr>")
             );
             profileTabs.append($("<td>Recent</td>").click(function(){
@@ -2089,64 +2088,36 @@
             }
 
             gameMode = getGameMode();
-            retrieveMostPlayed(0, 50, function(beatmaps){
-                container.append("<h2>Most Played</h2>");
 
-                //Put first 50
-                beatmaps.forEach(function(beatmapInfo){
-                    container.append(makeItem(beatmapInfo));
-                });
-
-                //Show more next 50
-                if(beatmaps.length >= 50){
-                    container.append(
-                        $("<div id='more-most'></div>").append(
-                            $("<div class='prof-beatmap'></div>").append(
-                                $("<a></a>").append(
-                                    "<b>Show me more!</b>"
-                                ).click(function(){
-                                    $("#more-most").empty();
-                                    retrieveMostPlayed(50, 100, function(beatmaps2){
-                                        beatmaps2.forEach(function(beatmapInfo2){
-                                            container.append(makeItem(beatmapInfo2));
-                                        });
-                                    });
-                                })
+            function extendMostPlayed(offset){
+                retrieveMostPlayed(offset, 50, function(beatmaps){
+                    beatmaps.forEach(function(beatmapInfo){
+                        container.append(makeItem(beatmapInfo));
+                    });
+                    if(beatmaps.length){
+                        container.append(
+                            $("<div class='more-most'></div>").append(
+                                $("<div class='prof-beatmap'></div>").append(
+                                    $(`<a data-most-offset=${offset+50}></a>`).append(
+                                        "<b>Show me more!</b>"
+                                    ).click(function(){
+                                        var curoffset = parseInt($(this).attr("data-most-offset"));
+                                        $(".more-most").remove();
+                                        extendMostPlayed(curoffset);
+                                    })
+                                )
                             )
-                        )
-                    );
-                }
-            });
+                        );
+                    }
+                });
+            }
+            container.append("<h2>Most Played</h2>");
+            extendMostPlayed(0);
         }
 
-        function retrieveMostPlayed(offset, number, callback){
-            var numgrps = (number/5|0); //integer divide
-            var funs = [];
-            var mostPlayedRaw = [];
-            for(var i=0; i<numgrps; i++){
-                funs.push(function(suboffset){
-                    return function(donecb){
-                        GetPage("https://osu.ppy.sh/users/" + userId + "/beatmapsets/most_played?offset="+suboffset, function(response){
-                            mostPlayedRaw.push({
-                                offset: suboffset,
-                                response: JSON.parse(response)
-                            });
-                            donecb();
-                        });
-                    };
-                }(offset + 5*i));
-            }
-            doManyFunc(funs, function(){
-                mostPlayedRaw.sort(function(a,b){
-                    return a.offset - b.offset;
-                });
-                var mostPlayed = [];
-                mostPlayedRaw.forEach(function(responseSet){
-                    responseSet.response.forEach(function(beatmap){
-                        mostPlayed.push(beatmap);
-                    });
-                });
-                callback(mostPlayed);
+        function retrieveMostPlayed(offset, limit, callback){
+            GetPage(`https://osu.ppy.sh/users/${userId}/beatmapsets/most_played?offset=${offset}&limit=${limit}`, function(response){
+                callback(JSON.parse(response));
             });
         }
 
@@ -2177,11 +2148,12 @@
                 userRecent.forEach(function(play){
                     var modstr = getMods(play.enabled_mods),
                         acc = calcAcc(play, gameMode),
-                        dateset = new Date(play.date.replace(' ','T') + "+0000"), // dates from API in GMT+0
+                        dateset = new Date(play.date.replace(" ","T") + "+0000"), // dates from API in GMT+0
                         maplink = $("<a href='/b/" + play.beatmap_id + "?m=" + gameMode + "'></a>").text("Loading..."),
                         maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                         //starrating = $("<b>...&#9733;</b>"),
-                        failClass = play.rank === "F" ? "failedScore" : "passScore";
+                        failClass = play.rank === "F" ? "failedScore" : "passScore",
+                        ppcalcData = {id: play.beatmap_id, mods: play.enabled_mods, combo: play.maxcombo, acc: acc, miss: play.countmiss};
 
                     var profbeatmap = $("<div class='prof-beatmap'>").addClass(failClass).append(
                         $("<table>").append($("<tr>").append(
@@ -2192,17 +2164,35 @@
                                         maplink,
                                         modstr === "None" ? " " : " +" + modstr
                                     ),
-                                    " (" + acc.toFixed(2) + "%)" + (play.perfect === '1' ? " (FC)" : "") + "\n"
+                                    " (" + acc.toFixed(2) + "%)" + (play.perfect === "1" ? " (FC)" : "") + "\n"
                                 ),
                                 makeScoreStats(play, maxmapcombo),
                                 $("<div class='c'>").append(
-                                    $("<time class='timeago'>").attr("datetime", dateset.toISOString())
-                                                                      .text(dateset.toLocaleString())
+                                    $("<time class='timeago'>")
+                                        .attr("datetime", dateset.toISOString())
+                                        .text(dateset.toLocaleString())
                                 )
-                            )
+                            ),
+                            gameMode == 0 ? 
+                                $(`<td class='ppcalc-pp'>
+                                    <div class='pp-display'><b>pp</b></div>
+                                    <div class='pp-display-weight'></div>
+                                </td>
+                                <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>`) :
+                                ""
                         ))
                     );
                     addModalBtn(profbeatmap, play.beatmap_id);
+                    profbeatmap.find(".ppcalc-pp").click(function(event){
+                        var me = $(this);
+                        me.find(".pp-display b").text("...pp");
+                        me.find(".pp-display-weight").text("(...)");
+                        var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
+                        getPpCalc(ppcalcData).then((result) => {
+                            me.find(".pp-display b").text(`${result.pp}pp`);
+                            me.find(".pp-display-weight").text(`(${result.pp_fc}pp if FC)`);
+                        });
+                    });
 
                     container.append(profbeatmap);
                     
@@ -2258,13 +2248,15 @@
                     .opModal-song-info td {padding: 2px 7px;}
                     .tableAttr {width: 70px;}
                     .sub-button {width: 90px; margin-left: 30px;}
-                    .score-rank--F {background-image: url('${FImgNew}')}
+                    .score-rank--F {background-image: url('${FImgNew}');}
                     .play-detail__pp.play-detail__recent-pp {min-width: 0px; padding: 0px;}
                     .div-24h {margin-top: 50px;}
                     .modal-hr {color: red;}
                     .modal-ez {color: green;}
                     .opModal {color: black;}
-                    .opModal h1 {color: ${osuPink};}`
+                    .opModal h1 {color: ${osuPink};}
+                    .mod--V2 {background-image: url('${v2Img}');}
+                    .ppcalc-pp {cursor: pointer;}`
                 ));
             }
         }
@@ -2306,12 +2298,12 @@
             addRecent();
 
             // Add modal
-            $("body").append('<div class="opModalOverlay opModalOverride" id="opModalOverlay" style="display:none;"></div>');
-            $("body").append('<div class="opModal" id="opModal" style="display:none;"></div>');
+            $("body").append("<div class='opModalOverlay opModalOverride' id='opModalOverlay' style='display:none;'></div>");
+            $("body").append("<div class='opModal' id='opModal' style='display:none;'></div>");
             opModalContent = $("<div id='opModalContent'>");
             $("#opModal").append(
                 opModalContent,
-                '<div class="opModalCloseBtnDiv" style="display: block;"><button class="opModalCloseBtn">x</button></div>');
+                "<div class='opModalCloseBtnDiv' style='display: block;'><button class='opModalCloseBtn'>x</button></div>");
             $("#opModalOverlay, .opModalCloseBtn").click(function(){
                 closeModal();
             });
@@ -2354,11 +2346,11 @@
             if(subscribed){
                 subscribeBtn.text("Subscribed");
                 subscribeBtn.css("background", subscribedColour);
-                subscribeBtn.attr("title", "unsubscribe mapper")
+                subscribeBtn.attr("title", "unsubscribe mapper");
             }else{
                 subscribeBtn.text("Subscribe");
                 subscribeBtn.css("background", unsubscribedColour);
-                subscribeBtn.attr("title", "subscribe mapper")
+                subscribeBtn.attr("title", "subscribe mapper");
             }
         }
 
@@ -2474,7 +2466,7 @@
             }
             if(score.perfect === "1"){
                 if(top.find(".play-detail__pp-weight").length){
-                    top.find(".play-detail__pp-weight").prepend("<span class='play-detail__fc'>(FC) </span>")
+                    top.find(".play-detail__pp-weight").prepend("<span class='play-detail__fc'>(FC) </span>");
                 }else{
                     top.find(".play-detail__accuracy-and-weighted-pp").after("<div><span class='play-detail__fc'>(FC)</span></div>");
                 }
@@ -2489,12 +2481,12 @@
                     maxmapcombo
                 ),
                 gameMode <= 1 ? // Standard/Taiko
-                ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countmiss} }` :
-                gameMode == 2 ? // CTB
-                ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countkatu} / ${score.countmiss} }` :
-                // Mania
-                ` { ${score.countgeki} / ${score.count300} / ${score.countkatu} / ${score.count100} / ${score.count50} / ${score.countmiss} }`
-            )
+                    ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countmiss} }` :
+                    gameMode == 2 ? // CTB
+                        ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countkatu} / ${score.countmiss} }` :
+                        // Mania
+                        ` { ${score.countgeki} / ${score.count300} / ${score.countkatu} / ${score.count100} / ${score.count50} / ${score.countmiss} }`
+            );
         }
 
         function addModalBtn(top, beatmap_id){
@@ -2604,7 +2596,7 @@
 
         function addRecent(){
             $("div[data-page-id=recent_activity] .page-extra").append(
-                `<div class="div-24h"><h2 class="title title--page-extra">Recent 24h</h2></div>`,
+                "<div class='div-24h'><h2 class='title title--page-extra'>Recent 24h</h2></div>",
                 $("<div id='op-recent'>Loading...</div>")
             );
             var container = $("#op-recent");
@@ -2631,25 +2623,27 @@
                 );
 
                 userRecent.forEach(function(play){
-                    var modstr = getMods(play.enabled_mods),
+                    var //modstr = getMods(play.enabled_mods),
                         acc = calcAcc(play, gameMode),
-                        dateset = new Date(play.date.replace(' ','T') + "+0000"), // dates from API in GMT+0
+                        dateset = new Date(play.date.replace(" ","T") + "+0000"), // dates from API in GMT+0
                         maplink = $(`<a href="https://osu.ppy.sh/beatmaps/${play.beatmap_id}" class="play-detail__title u-ellipsis-overflow">
                             Loading...<small class="play-detail__artist"></small></a>`),
-                        mapver = $(`<span class="play-detail__beatmap">Loading...</span>`),
+                        mapver = $("<span class='play-detail__beatmap'>Loading...</span>"),
                         maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                         //starrating = $("<b>...&#9733;</b>"),
-                        failClass = play.rank === "F" ? "failedScore" : "passScore";
+                        failClass = play.rank === "F" ? "failedScore" : "passScore",
+                        ppUnitSpan = "<span class='play-detail__pp-unit'>pp</span>",
+                        ppcalcData = {id: play.beatmap_id, mods: play.enabled_mods, combo: play.maxcombo, acc: acc, miss: play.countmiss};
 
                     var detailrow = $(`<div class='play-detail play-detail--highlightable play-detail--compact ${failClass}'>`).append(
-                        $(`<div class="play-detail__group play-detail__group--top"></div>`).append(
+                        $("<div class='play-detail__group play-detail__group--top'></div>").append(
                             `<div class="play-detail__icon play-detail__icon--main">
                                 <div class="score-rank score-rank--full score-rank--${play.rank}"></div>
                             </div>`,
-                            $(`<div class="play-detail__detail"></div>`).append(
+                            $("<div class='play-detail__detail'></div>").append(
                                 maplink,
                                 makeScoreStats(play, maxmapcombo),
-                                $(`<div class="play-detail__beatmap-and-time"></div>`).append(
+                                $("<div class='play-detail__beatmap-and-time'></div>").append(
                                     mapver,
                                     `<span class="play-detail__time">
                                         <time class="timeago" datetime="${dateset.toISOString()}">${dateset.toLocaleString()}</time>
@@ -2663,23 +2657,35 @@
                                     <div class="play-detail__accuracy-and-weighted-pp">
                                         <span class="play-detail__accuracy">${acc.toFixed(2)}%</span>
                                     </div>
-                                    ${play.perfect == '1' ? 
-                                    `<div><span class="play-detail__fc">(FC)</span></div>` : ""}
+${play.perfect == "1" ? 
+        "<div><span class='play-detail__fc'>(FC)</span></div>" : ""}
                                 </div>
                             </div>
                             <div class="play-detail__score-detail play-detail__score-detail--mods">
                                 <div class="mods mods--profile-page">
-                                    ${getModsArray(play.enabled_mods).map(function(mod){
-                                        return `<div class="mods__mod"><div class="mods__mod-image"><div class="mod mod--${mod.short}" title="${mod.name}"></div></div></div>`;
-                                    }).join("")}
+${getModsArray(play.enabled_mods).map(function(mod){
+        return `<div class="mods__mod"><div class="mods__mod-image"><div class="mod mod--${mod.short}" title="${mod.name}"></div></div></div>`;
+    }).join("")}
                                 </div>
                               </div>
                             </div>
-                            <div class="play-detail__pp play-detail__recent-pp"></div>
+                            <div class="play-detail__pp${gameMode == 0 ? "" : " play-detail__recent-pp"}">
+${gameMode == 0 ? 
+        `<span class='ppcalc-pp'>${ppUnitSpan}</span>
+        <a class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</a>` : ""}
+                            </div>
                             <div class="play-detail__more"></div>
                         </div>`
                     );
                     addModalBtn(detailrow, play.beatmap_id);
+                    detailrow.find(".ppcalc-pp").click(function(event){
+                        var me = $(this);
+                        me.html(`...${ppUnitSpan}<br>(...)`);
+                        var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
+                        getPpCalc(ppcalcData).then((result) => {
+                            me.html(`${result.pp}${ppUnitSpan}<br>(${result.pp_fc}${ppUnitSpan} if FC)`);
+                        });
+                    });
 
                     container.append(detailrow);
                     
@@ -2716,7 +2722,7 @@
             timeDelay = 1000,
             timeoutID = null,
             songInfoRef = null,
-            modBtns = [],
+            //modBtns = [],
             localUser = null,
             localUsername = null,
             localScore = null,
@@ -2804,8 +2810,6 @@
                 addTableLoadingNotice();
                 modifyTableHeaders();
                 addSearchUser();
-
-                var promises = [];
                 doManyFunc([
                     function(callback){
                         getBeatmapInfo(function(response){
@@ -2896,33 +2900,33 @@
         function addSearchUser(){
             $(".content-with-bg").children("h2").before(
                 $("<div></div>").attr("id", "searchuser")
-                .append(
-                    $("<strong>Search user: </strong>"),
-                    $("<input type='text' id='searchusertxt' name='searchusertxt'>")
-                    .val(localUsername)
-                    .bind("enterKey", searchUserEnter)
-                    .keyup(function(e){
-                        if(e.keyCode == 13)
-                        {
-                            $(this).trigger("enterKey");
-                        }
-                    }),
-                    $("<div id='searchuserinfo'>Searching...</div>").hide(),
-                    $("<div></div>").attr("class","beatmapListing")
-                    .attr("id", "searchuserresult")
                     .append(
-                        $("<table width=100% cellspacing=0></table>").append("<tbody></tbody>").append(
-                            scoreListingTitlerow.clone()
-                        )
-                    ).hide()
-                )
+                        $("<strong>Search user: </strong>"),
+                        $("<input type='text' id='searchusertxt' name='searchusertxt'>")
+                            .val(localUsername)
+                            .bind("enterKey", searchUserEnter)
+                            .keyup(function(e){
+                                if(e.keyCode == 13)
+                                {
+                                    $(this).trigger("enterKey");
+                                }
+                            }),
+                        $("<div id='searchuserinfo'>Searching...</div>").hide(),
+                        $("<div></div>").attr("class","beatmapListing")
+                            .attr("id", "searchuserresult")
+                            .append(
+                                $("<table width=100% cellspacing=0></table>").append("<tbody></tbody>").append(
+                                    scoreListingTitlerow.clone()
+                                )
+                            ).hide()
+                    )
             );
         }
 
         function searchUserEnter(){
             $("#searchuserinfo").text("Searching...").show();
             $("#searchuserresult").hide();
-            var searchusernames = $("#searchusertxt").val().split(',');
+            var searchusernames = $("#searchusertxt").val().split(",");
             var promises = searchusernames.map((username) => new Promise(function(resolve, reject){
                 getScoresWithPlayerInfo({b:mapID, u:username, m:mapMode, type:"string"}, settings.showPpRank, resolve);
             }));
@@ -2951,23 +2955,35 @@
         function putRankingType(){
             $(".content-with-bg").children("h2").after(
                 $("<div></div>").attr("id", "rankingtype").append(
-                    $("<label></label>").append($("<input>").attr({type: "radio",
-                                                                   name: "rankingtype",
-                                                                   value: "global"})
-                                                .prop("checked", true)
-                                                .change(rankingTypeChanged),
-                                                "Global"),
-                    $("<label></label>").append($("<input>").attr({type: "radio",
-                                                                   name: "rankingtype",
-                                                                   value: "friends"})
-                                                .change(rankingTypeChanged),
-                                                "Friends"),
+                    $("<label></label>").append(
+                        $("<input>")
+                            .attr({
+                                type: "radio",
+                                name: "rankingtype",
+                                value: "global"})
+                            .prop("checked", true)
+                            .change(rankingTypeChanged),
+                        "Global"
+                    ),
+                    $("<label></label>").append(
+                        $("<input>")
+                            .attr({
+                                type: "radio",
+                                name: "rankingtype",
+                                value: "friends"})
+                            .change(rankingTypeChanged),
+                        "Friends"
+                    ),
                     //Show date button
-                    $("<label></label>").append($("<input>").attr({type: "checkbox",
-                                                                   id: "showdatebox"})
-                                                .change(showDateChanged)
-                                                .prop("checked", showDates),
-                                                "Show date")
+                    $("<label></label>").append(
+                        $("<input>")
+                            .attr({
+                                type: "checkbox",
+                                id: "showdatebox"})
+                            .change(showDateChanged)
+                            .prop("checked", showDates),
+                        "Show date"
+                    )
                 )
             );
         }
@@ -3097,10 +3113,12 @@
             var numrows = rows.length;
             rows.eq(1).children().last().attr("rowspan", numrows);
             var rowclass = "row" + ((numrows+1)%2+1) + "p";
-            scoreLeader.children().append($("<tr></tr>").attr("class", rowclass)
-                                          .append($("<td><strong>pp</strong></td>"))
-                                          .append($("<td></td>").text(parseFloat(score.pp).toFixed(2)))
-                                         );
+            scoreLeader.children().append(
+                $("<tr></tr>")
+                    .attr("class", rowclass)
+                    .append($("<td><strong>pp</strong></td>"))
+                    .append($("<td></td>").text(parseFloat(score.pp).toFixed(2)))
+            );
         }
 
 
@@ -3133,8 +3151,8 @@
                 $(".beatmapDownloadButton").first().before(
                     $("<div>").addClass("beatmapDownloadButton").append(
                         $("<a>").addClass("beatmap_download_link")
-                        .attr("href", "http://bloodcat.com/osu/s/" + mapsetID)
-                        .append($("<img src='"+bloodcatBtnImg+"'>"))
+                            .attr("href", "http://bloodcat.com/osu/s/" + mapsetID)
+                            .append($("<img src='"+bloodcatBtnImg+"'>"))
                     )
                 );
                 // old mirror
@@ -3152,20 +3170,20 @@
             $(".beatmapDownloadButton").first().before(
                 $("<div>").addClass("beatmapDownloadButton").append(
                     $("<a>").addClass("beatmap_download_link")
-                    .append($("<img class='subImg'>"))
-                    .click(function(){
-                        if(subscribed){
-                            subscriberManager.map.remove(mapsetID).then(() => {
-                                subscribed = false;
-                                refreshSubImg(subscribed);
-                            });
-                        }else{
-                            subscriberManager.map.add(mapsetID, artist, title, creator, creator_id).then(() => {
-                                subscribed = true;
-                                refreshSubImg(subscribed);
-                            });
-                        }
-                    })
+                        .append($("<img class='subImg'>"))
+                        .click(function(){
+                            if(subscribed){
+                                subscriberManager.map.remove(mapsetID).then(() => {
+                                    subscribed = false;
+                                    refreshSubImg(subscribed);
+                                });
+                            }else{
+                                subscriberManager.map.add(mapsetID, artist, title, creator, creator_id).then(() => {
+                                    subscribed = true;
+                                    refreshSubImg(subscribed);
+                                });
+                            }
+                        })
                 )
             );
             refreshSubImg(subscribed);
@@ -3187,9 +3205,10 @@
                     var modinfo = modArray[i];
                     var modimg;
                     if(modinfo.mods.length === 1){
-                        modimg = $("<div></div>").addClass("modIcon")
-                                                 .append($("<img>").attr("src", modIconImgs[modinfo.mods[0]]))
-                                                 .attr("value", modinfo.mods[0]);
+                        modimg = $("<div></div>")
+                            .addClass("modIcon")
+                            .append($("<img>").attr("src", modIconImgs[modinfo.mods[0]]))
+                            .attr("value", modinfo.mods[0]);
                     }else{
                         modimg = $("<div></div>").addClass("modIcon").append(
                             $("<div></div>").addClass("modIconOption").append(
@@ -3215,10 +3234,10 @@
                         modimg.attr("value", "XX");
                     }else if(modinfo.selection === 1){
                         modimg.addClass("isSelected");
-                        modimg.attr("value", modinfo.mods.join(','));
+                        modimg.attr("value", modinfo.mods.join(","));
                     }else{ // modinfo.selection === 2
                         modimg.addClass("partialSelected");
-                        modimg.attr("value", ["XX"].concat(modinfo.mods).join(','));
+                        modimg.attr("value", ["XX"].concat(modinfo.mods).join(","));
                     }
                     modgroupArr.push(modimg);
                 }
@@ -3231,16 +3250,16 @@
                     {mods: ["NM"], selection: 0},
                     {mods: ["NM"], selection: 1}]),
                 mapMode < 3 ? // HD for non-mania
-                genModBtns([
-                    {mods: ["HD"], selection: 0},
-                    {mods: ["HD"], selection: 1},
-                    {mods: ["HD"], selection: 2}]) : 
-                genModBtns([ // FI, HD for mania
-                    {mods: ["FI"], selection: 0},
-                    {mods: ["FI"], selection: 1},
-                    {mods: ["HD"], selection: 1},
-                    {mods: ["FI", "HD"], selection: 1},
-                    {mods: ["FI", "HD"], selection: 2}]),
+                    genModBtns([
+                        {mods: ["HD"], selection: 0},
+                        {mods: ["HD"], selection: 1},
+                        {mods: ["HD"], selection: 2}]) : 
+                    genModBtns([ // FI, HD for mania
+                        {mods: ["FI"], selection: 0},
+                        {mods: ["FI"], selection: 1},
+                        {mods: ["HD"], selection: 1},
+                        {mods: ["FI", "HD"], selection: 1},
+                        {mods: ["FI", "HD"], selection: 2}]),
                 genModBtns([
                     {mods: ["HR"], selection: 0},
                     {mods: ["HR"], selection: 1},
@@ -3266,28 +3285,28 @@
                     {mods: ["FL"], selection: 1},
                     {mods: ["FL"], selection: 2}]),
                 mapMode < 3 ? [] : //mania keys
-                genModBtns([
-                    {mods: ["4K"], selection: 0},
-                    {mods: ["4K"], selection: 1},
-                    {mods: ["5K"], selection: 1},
-                    {mods: ["6K"], selection: 1},
-                    {mods: ["7K"], selection: 1},
-                    {mods: ["8K"], selection: 1},
-                    {mods: ["9K"], selection: 1}]),
+                    genModBtns([
+                        {mods: ["4K"], selection: 0},
+                        {mods: ["4K"], selection: 1},
+                        {mods: ["5K"], selection: 1},
+                        {mods: ["6K"], selection: 1},
+                        {mods: ["7K"], selection: 1},
+                        {mods: ["8K"], selection: 1},
+                        {mods: ["9K"], selection: 1}]),
                 mapMode < 3 ? [] : //mirror
-                genModBtns([
-                    {mods: ["MR"], selection: 0},
-                    {mods: ["MR"], selection: 1},
-                    {mods: ["MR"], selection: 2}]),
+                    genModBtns([
+                        {mods: ["MR"], selection: 0},
+                        {mods: ["MR"], selection: 1},
+                        {mods: ["MR"], selection: 2}]),
                 mapMode > 0 ? [] : //SO only for standard
-                [genModBtns([
-                    {mods: ["SO"], selection: 0},
-                    {mods: ["SO"], selection: 1},
-                    {mods: ["SO"], selection: 2}]),
-                 genModBtns([
-                    {mods: ["TD"], selection: 0},
-                    {mods: ["TD"], selection: 1},
-                    {mods: ["TD"], selection: 2}])]
+                    [genModBtns([
+                        {mods: ["SO"], selection: 0},
+                        {mods: ["SO"], selection: 1},
+                        {mods: ["SO"], selection: 2}]),
+                    genModBtns([
+                        {mods: ["TD"], selection: 0},
+                        {mods: ["TD"], selection: 1},
+                        {mods: ["TD"], selection: 2}])]
             );
         }
 
@@ -3364,13 +3383,13 @@
         function getSelectedMods(){
             var selected = [[]];
             $(".modIcon:visible").each(function(){
-                var modarray = $(this).attr("value").split(',');
+                var modarray = $(this).attr("value").split(",");
                 selected = cartesianProd(selected, modarray);
             });
 
             // handle doublemods
-            for(var si=0; si<selected.length; si++){
-                for(var i=0; i<doublemods.length; i++){
+            for(let si=0; si<selected.length; si++){
+                for(let i=0; i<doublemods.length; i++){
                     if(selected[si].indexOf(doublemods[i][0]) >= 0){
                         if(selected[si].indexOf(doublemods[i][1]) < 0){
                             selected[si].push(doublemods[i][1]);
@@ -3380,9 +3399,9 @@
             }
 
             var modvals = [];
-            for(var si=0; si<selected.length; si++){
+            for(let si=0; si<selected.length; si++){
                 var modval = 0;
-                for(var i=0; i<modnames.length; i++){
+                for(let i=0; i<modnames.length; i++){
                     if(selected[si].indexOf(modnames[i].short) >= 0){
                         modval += modnames[i].val;
                     }
@@ -3408,21 +3427,21 @@
             // Add pp column
             scoreListingTitlerow.children().eq(2).after(
                 $("<th></th>")
-                .append($(`<a><strong>pp</strong></a>`)
+                    .append($("<a><strong>pp</strong></a>")
                         .click(function(){
-                    sortResult("pp");
-                    updateScoresTable();
-                })
-                       )
+                            sortResult("pp");
+                            updateScoresTable();
+                        })
+                    )
             );
 
             // Add click scores to sort
             scoreListingTitlerow.children().eq(2).empty().append(
                 $("<a><strong>Score</strong></a>")
-                .click(function(){
-                    sortResult("score");
-                    updateScoresTable();
-                })
+                    .click(function(){
+                        sortResult("score");
+                        updateScoresTable();
+                    })
             );
 
             // Add date column
@@ -3484,7 +3503,7 @@
             var country = score.user.country.toLowerCase();
             var acc = calcAcc(score, mapMode);
             var rowclass, dateset;
-            dateset = new Date(score.date.replace(' ','T') + "+0000"); // dates from API in GMT+0
+            dateset = new Date(score.date.replace(" ","T") + "+0000"); // dates from API in GMT+0
 
             // handle colour of the row, depending on you, friend, odd/even row etc
             if(localUser !== null && localUser.toString() === score.user_id){
@@ -3509,28 +3528,29 @@
             }else{
                 pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
             }
-            var ppcalcData = {id: mapID, m: score.enabled_mods, c: score.maxcombo, acc: acc, miss: score.countmiss};
+            var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
             
             var row = $(`<tr class='${rowclass}'>
-                    <td>${score.replay_available == "1" ? `<a class='require-login' href='/web/osu-getreplay.php?c=${score.score_id}&amp;m=${mapMode}'>#${rankno}</a>` :
-                     `#${rankno}`}</td>
+<td>${score.replay_available == "1" ? 
+        `<a class='require-login' href='/web/osu-getreplay.php?c=${score.score_id}&amp;m=${mapMode}'>#${rankno}</a>` :
+        `#${rankno}`}</td>
                     <td>${getRankImg(score.rank)}</td>
                     <td>${rankno == 1 ? `<b>${commarise(score.score)}</b>` : commarise(score.score)}</td>
                     <td class='${mapMode == 0 ? "ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
                     <td>${acc == 100 ? `<b>${acc.toFixed(2)}%</b>` : `${acc.toFixed(2)}%`}</td>
                     <td>${countryImg}\n${userhref}${pprank}</td>
                     <td>${score.maxcombo}</td>
-                    ${mapMode == 3 ?
-                      // Mania
-                      `<td>${score.countgeki}</td>
-                       <td>${score.count300}</td>
-                       <td>${score.countkatu}</td>
-                       <td>${score.count100}</td>
-                       <td>${score.count50}</td>` :
-                      // Standard/Taiko/CTB
-                      `<td>${score.count300}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count100}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count50}</td>
-                       <td>${score.countgeki}</td>
-                       <td>${score.countkatu}</td>`}
+${mapMode == 3 ?
+    // Mania
+        `<td>${score.countgeki}</td>
+        <td>${score.count300}</td>
+        <td>${score.countkatu}</td>
+        <td>${score.count100}</td>
+        <td>${score.count50}</td>` :
+    // Standard/Taiko/CTB
+        `<td>${score.count300}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count100}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count50}</td>
+        <td>${score.countgeki}</td>
+        <td>${score.countkatu}</td>`}
                     <td>${score.countmiss}</td>
                     <td>${getMods(score.enabled_mods)}</td>
                     <td class='datecol'>
@@ -3557,6 +3577,7 @@
             return row;
         }
 
+        /*
         function dlReplay(score){
             getReplay({m: mapMode, b: mapID, u: score.user_id}, function(response){
                 if(response.error){
@@ -3579,7 +3600,7 @@
                     downloadFile(osr, filename);
                 }
             });
-        }
+        }*/
 
         function minePlayerCountries(){
             scoreListingTitlerow.nextAll().each(function(index, ele){
@@ -3602,7 +3623,7 @@
             scoresResult = null,
             mapMode = 0,
             jsonBeatmapset = null,
-            jsonCountries = null,
+            //jsonCountries = null,
             maxCombo = null,
             showDates = true,
             modsEnabled = true,
@@ -3656,7 +3677,7 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded'></a>");
             addCss();
-            jsonCountries = JSON.parse($("#json-countries").text());
+            //jsonCountries = JSON.parse($("#json-countries").text());
             jsonBeatmapset = JSON.parse($("#json-beatmapset").text());
             showDates = settings.showDates;
             currentUser = JSON.parse(JSON.stringify(unsafeWindow.currentUser));
@@ -3767,13 +3788,12 @@
             return currentUser.friends.map((friend) => friend.target_id.toString());
         }
 
-        function countryNameFromCode(code, jsonCountries){
-            for(var c of jsonCountries){
-                if(c.code === code){
-                    return c.name;
-                }
+        function countryNameFromCode(code){
+            if(countryCodes[code]){
+                return countryCodes[code];
+            }else{
+                return "Unknown";
             }
-            return "Unknown";
         }
 
         function getMapmode(){
@@ -3791,7 +3811,7 @@
             var countryUpper = country.toUpperCase();
             var acc = calcAcc(score, mapMode);
             var rowclass, dateset;
-            dateset = new Date(score.date.replace(' ','T') + "+0000"); // dates from API in GMT+0
+            dateset = new Date(score.date.replace(" ","T") + "+0000"); // dates from API in GMT+0
 
             rowclass = "beatmap-scoreboard-table__body-row beatmap-scoreboard-table__body-row--highlightable";
             if(currentUser !== null && currentUser.id.toString() === score.user_id){ // self
@@ -3806,7 +3826,7 @@
                 rowclass += " greyedout";
             }
 
-            var countryName = countryNameFromCode(countryUpper, jsonCountries);
+            var countryName = countryNameFromCode(countryUpper);
             var countryImg = "";
             if(country !== ""){
                 countryImg = `<a href='/rankings/osu/performance?country=${countryUpper}'><span class='flag-country flag-country--scoreboard flag-country--small-box' \
@@ -3819,7 +3839,7 @@
             }else{
                 pprank = ` <span class='pprank'>(#${score.user.pp_rank})</span>`;
             }
-            var ppcalcData = {id: mapID, m: score.enabled_mods, c: score.maxcombo, acc: acc, miss: score.countmiss};
+            var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
 
             var cellClass = "beatmap-scoreboard-table__cell";
             var row = $(`<tr class='${rowclass}'>
@@ -3831,21 +3851,27 @@
                     <td class='${cellClass}'>${countryImg}</td>
                     <td class='${cellClass}'>${userhref}${pprank}</td>
                     <td class='${cellClass} ${score.perfect=="1" ? `${cellClass}--perfect` : ""}'>${commarise(score.maxcombo)}x</td>
-                    ${mapMode == 3 ?
-                    // Mania
-                    [makeZeroableEntry(score.countgeki),
-                     makeZeroableEntry(score.count300),
-                     makeZeroableEntry(score.countkatu),
-                     makeZeroableEntry(score.count100),
-                     makeZeroableEntry(score.count50)].join("") :
-                    mapMode == 1 ?
-                    // Taiko
-                    [makeZeroableEntry(score.count300),
-                     makeZeroableEntry(score.count100)].join("") :
-                    // Standard/CTB
-                    [makeZeroableEntry(score.count300),
-                     makeZeroableEntry(score.count100),
-                     makeZeroableEntry(score.count50)].join("")}
+${mapMode == 3 ?
+    // Mania
+        [
+            makeZeroableEntry(score.countgeki),
+            makeZeroableEntry(score.count300),
+            makeZeroableEntry(score.countkatu),
+            makeZeroableEntry(score.count100),
+            makeZeroableEntry(score.count50)
+        ].join("") :
+        mapMode == 1 ?
+        // Taiko
+            [
+                makeZeroableEntry(score.count300),
+                makeZeroableEntry(score.count100)
+            ].join("") :
+        // Standard/CTB
+            [
+                makeZeroableEntry(score.count300),
+                makeZeroableEntry(score.count100),
+                makeZeroableEntry(score.count50)
+            ].join("")}
                     ${makeZeroableEntry(score.countmiss)}
                     <td class='${cellClass}${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
                     <td class='${cellClass} ${cellClass}--mods'><div class='mods mods--scoreboard'>${getNewMods(score.enabled_mods)}</div></td>
@@ -3874,14 +3900,14 @@
             }
             return row;
         }
-
+        /*
         function newify(score){
-            score.replay = (score.replay_available == '1');
+            score.replay = (score.replay_available == "1");
             score.user = {username: score.username};
             score.beatmap = {mode: intToMode(mapMode)};
             score.id = score.score_id;
             return score;
-        }
+        }*/
 
         function updateScoresTable(callback){
             var tableRows = [];
@@ -3916,9 +3942,10 @@
                     var modinfo = modArray[i];
                     var modimg;
                     if(modinfo.mods.length === 1){
-                        modimg = $("<div></div>").addClass("modIcon")
-                                                 .append($("<img>").attr("src", modIconImgs[modinfo.mods[0]]))
-                                                 .attr("value", modinfo.mods[0]);
+                        modimg = $("<div></div>")
+                            .addClass("modIcon")
+                            .append($("<img>").attr("src", modIconImgs[modinfo.mods[0]]))
+                            .attr("value", modinfo.mods[0]);
                     }else{
                         modimg = $("<div></div>").addClass("modIcon").append(
                             $("<div></div>").addClass("modIconOption").append(
@@ -3944,10 +3971,10 @@
                         modimg.attr("value", "XX");
                     }else if(modinfo.selection === 1){
                         modimg.addClass("isSelected");
-                        modimg.attr("value", modinfo.mods.join(','));
+                        modimg.attr("value", modinfo.mods.join(","));
                     }else{ // modinfo.selection === 2
                         modimg.addClass("partialSelected");
-                        modimg.attr("value", ["XX"].concat(modinfo.mods).join(','));
+                        modimg.attr("value", ["XX"].concat(modinfo.mods).join(","));
                     }
                     modgroupArr.push(modimg);
                 }
@@ -3960,16 +3987,16 @@
                     {mods: ["NM"], selection: 0},
                     {mods: ["NM"], selection: 1}]),
                 mapMode < 3 ? // HD for non-mania
-                genModBtns([
-                    {mods: ["HD"], selection: 0},
-                    {mods: ["HD"], selection: 1},
-                    {mods: ["HD"], selection: 2}]) : 
-                genModBtns([ // FI, HD for mania
-                    {mods: ["FI"], selection: 0},
-                    {mods: ["FI"], selection: 1},
-                    {mods: ["HD"], selection: 1},
-                    {mods: ["FI", "HD"], selection: 1},
-                    {mods: ["FI", "HD"], selection: 2}]),
+                    genModBtns([
+                        {mods: ["HD"], selection: 0},
+                        {mods: ["HD"], selection: 1},
+                        {mods: ["HD"], selection: 2}]) : 
+                    genModBtns([ // FI, HD for mania
+                        {mods: ["FI"], selection: 0},
+                        {mods: ["FI"], selection: 1},
+                        {mods: ["HD"], selection: 1},
+                        {mods: ["FI", "HD"], selection: 1},
+                        {mods: ["FI", "HD"], selection: 2}]),
                 genModBtns([
                     {mods: ["HR"], selection: 0},
                     {mods: ["HR"], selection: 1},
@@ -3995,28 +4022,30 @@
                     {mods: ["FL"], selection: 1},
                     {mods: ["FL"], selection: 2}]),
                 mapMode < 3 ? [] : //mania keys
-                genModBtns([
-                    {mods: ["4K"], selection: 0},
-                    {mods: ["4K"], selection: 1},
-                    {mods: ["5K"], selection: 1},
-                    {mods: ["6K"], selection: 1},
-                    {mods: ["7K"], selection: 1},
-                    {mods: ["8K"], selection: 1},
-                    {mods: ["9K"], selection: 1}]),
+                    genModBtns([
+                        {mods: ["4K"], selection: 0},
+                        {mods: ["4K"], selection: 1},
+                        {mods: ["5K"], selection: 1},
+                        {mods: ["6K"], selection: 1},
+                        {mods: ["7K"], selection: 1},
+                        {mods: ["8K"], selection: 1},
+                        {mods: ["9K"], selection: 1}]),
                 mapMode < 3 ? [] : //mirror
-                genModBtns([
-                    {mods: ["MR"], selection: 0},
-                    {mods: ["MR"], selection: 1},
-                    {mods: ["MR"], selection: 2}]),
+                    genModBtns([
+                        {mods: ["MR"], selection: 0},
+                        {mods: ["MR"], selection: 1},
+                        {mods: ["MR"], selection: 2}]),
                 mapMode > 0 ? [] : //SO only for standard
-                [genModBtns([
-                    {mods: ["SO"], selection: 0},
-                    {mods: ["SO"], selection: 1},
-                    {mods: ["SO"], selection: 2}]),
-                 genModBtns([
-                    {mods: ["TD"], selection: 0},
-                    {mods: ["TD"], selection: 1},
-                    {mods: ["TD"], selection: 2}])]
+                    [
+                        genModBtns([
+                            {mods: ["SO"], selection: 0},
+                            {mods: ["SO"], selection: 1},
+                            {mods: ["SO"], selection: 2}]),
+                        genModBtns([
+                            {mods: ["TD"], selection: 0},
+                            {mods: ["TD"], selection: 1},
+                            {mods: ["TD"], selection: 2}])
+                    ]
             ));
         }
 
@@ -4093,13 +4122,13 @@
         function getSelectedMods(){
             var selected = [[]];
             $(".modIcon:visible").each(function(){
-                var modarray = $(this).attr("value").split(',');
+                var modarray = $(this).attr("value").split(",");
                 selected = cartesianProd(selected, modarray);
             });
 
             // handle doublemods
-            for(var si=0; si<selected.length; si++){
-                for(var i=0; i<doublemods.length; i++){
+            for(let si=0; si<selected.length; si++){
+                for(let i=0; i<doublemods.length; i++){
                     if(selected[si].indexOf(doublemods[i][0]) >= 0){
                         if(selected[si].indexOf(doublemods[i][1]) < 0){
                             selected[si].push(doublemods[i][1]);
@@ -4109,9 +4138,9 @@
             }
 
             var modvals = [];
-            for(var si=0; si<selected.length; si++){
+            for(let si=0; si<selected.length; si++){
                 var modval = 0;
-                for(var i=0; i<modnames.length; i++){
+                for(let i=0; i<modnames.length; i++){
                     if(selected[si].indexOf(modnames[i].short) >= 0){
                         modval += modnames[i].val;
                     }
@@ -4127,23 +4156,32 @@
         function putRankingType(){
             $(".beatmap-scoreboard-table").before(
                 $("<div class='osuplus-table' id='rankingtype'></div>").append(
-                    $("<label></label>").append($("<input>").attr({type: "radio",
-                                                                   name: "rankingtype",
-                                                                   value: "global"})
-                                                .prop("checked", true)
-                                                .change(rankingTypeChanged),
-                                                "Global"),
-                    $("<label></label>").append($("<input>").attr({type: "radio",
-                                                                   name: "rankingtype",
-                                                                   value: "friends"})
-                                                .change(rankingTypeChanged),
-                                                "Friends"),
+                    $("<label></label>").append(
+                        $("<input>")
+                            .attr({
+                                type: "radio",
+                                name: "rankingtype",
+                                value: "global"})
+                            .prop("checked", true)
+                            .change(rankingTypeChanged),
+                        "Global"),
+                    $("<label></label>").append(
+                        $("<input>")
+                            .attr({
+                                type: "radio",
+                                name: "rankingtype",
+                                value: "friends"})
+                            .change(rankingTypeChanged),
+                        "Friends"),
                     //Show date button
-                    $("<label></label>").append($("<input>").attr({type: "checkbox",
-                                                                   id: "showdatebox"})
-                                                .change(showDateChanged)
-                                                .prop("checked", showDates),
-                                                "Show date")
+                    $("<label></label>").append(
+                        $("<input>")
+                            .attr({
+                                type: "checkbox",
+                                id: "showdatebox"})
+                            .change(showDateChanged)
+                            .prop("checked", showDates),
+                        "Show date")
                 )
             );
         }
@@ -4248,7 +4286,7 @@
                 $(".sub-button").find(".btn-osu-big__text-top").text("Unsubscribe");
             }else{
                 $(".sub-button").removeClass("subbed");
-                $(".sub-button").find(".btn-osu-big__text-top").text("Subscribe");;
+                $(".sub-button").find(".btn-osu-big__text-top").text("Subscribe");
             }
         }
 
@@ -4264,7 +4302,7 @@
                         `If below doesn't work, <a href='http://bloodcat.com/osu/preview.html#${mapID}' target='_blank'>open in new tab</a><br>
                         <iframe class='osupreview' src='https://bloodcat.com/osu/preview.html#${mapID}' allowfullscreen></iframe>`
                     );
-                    osupreviewEle.data("loaded", true)
+                    osupreviewEle.data("loaded", true);
                 })
             );
         }
@@ -4344,17 +4382,17 @@
             // Add click scores/pp to sort
             $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--score").text("").append(
                 $("<a>Score</a>")
-                .click(function(){
-                    sortResult("score");
-                    updateScoresTable();
-                })
+                    .click(function(){
+                        sortResult("score");
+                        updateScoresTable();
+                    })
             );
             $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--pp").text("").append(
                 $("<a>pp</a>")
-                .click(function(){
-                    sortResult("pp");
-                    updateScoresTable();
-                })
+                    .click(function(){
+                        sortResult("pp");
+                        updateScoresTable();
+                    })
             );
 
             // Add date column
@@ -4375,36 +4413,36 @@
         function addSearchUser(){
             $(".beatmap-scoreboard-table").before(
                 $("<div class='osuplus-table'></div>").attr("id", "searchuser")
-                .append(
-                    $("<strong>Search user: </strong>"),
-                    $("<input>").attr({type: "text",
-                                       id: "searchusertxt"})
-                    .val(currentUser.username)
-                    .bind("enterKey", searchUserEnter)
-                    .keyup(function(e){
-                        if(e.keyCode == 13)
-                        {
-                            $(this).trigger("enterKey");
-                        }
-                    }),
-                    $("<div></div>").attr("id", "searchuserinfo").text("Searching...").hide(),
-                    $("<div></div>").attr("class", "search-beatmap-scoreboard-table")
-                    .attr("id", "searchuserresult")
                     .append(
-                        $("<table class='search-beatmap-scoreboard-table__table'></table>").append(
-                            $("<thead></thead>").append(
-                                $(".beatmap-scoreboard-table__table thead tr").clone()
-                            )
-                        ).append("<tbody class='beatmap-scoreboard-table__body'></tbody>")
-                    ).hide()
-                )
+                        $("<strong>Search user: </strong>"),
+                        $("<input>")
+                            .attr({type: "text", id: "searchusertxt"})
+                            .val(currentUser.username)
+                            .bind("enterKey", searchUserEnter)
+                            .keyup(function(e){
+                                if(e.keyCode == 13)
+                                {
+                                    $(this).trigger("enterKey");
+                                }
+                            }),
+                        $("<div></div>").attr("id", "searchuserinfo").text("Searching...").hide(),
+                        $("<div></div>").attr("class", "search-beatmap-scoreboard-table")
+                            .attr("id", "searchuserresult")
+                            .append(
+                                $("<table class='search-beatmap-scoreboard-table__table'></table>").append(
+                                    $("<thead></thead>").append(
+                                        $(".beatmap-scoreboard-table__table thead tr").clone()
+                                    )
+                                ).append("<tbody class='beatmap-scoreboard-table__body'></tbody>")
+                            ).hide()
+                    )
             );
         }
 
         function searchUserEnter(){
             $("#searchuserinfo").text("Searching...").show();
             $("#searchuserresult").hide();
-            var searchusernames = $("#searchusertxt").val().split(',');
+            var searchusernames = $("#searchusertxt").val().split(",");
             var promises = searchusernames.map((username) => new Promise(function(resolve, reject){
                 getScoresWithPlayerInfo({b:mapID, u:username, m:mapMode, type:"string"}, settings.showPpRank, resolve);
             }));
@@ -4441,7 +4479,7 @@
         function minePlayerCountries(){
             $(".beatmap-scoreboard-table__body").children().each(function(index, ele){
                 var country = $(ele).children().eq(4).children().first().attr("href").split("=")[1].toLowerCase();
-                var uid = $(ele).children().eq(5).children().first().attr("href").split("/")[2]
+                var uid = $(ele).children().eq(5).children().first().attr("href").split("/")[2];
                 savePlayerCountry(uid, country);
             });
         }
@@ -4456,10 +4494,11 @@
         }else{
             if(settings.fetchPlayerCountries){
                 getUser({u:playerid, type:"id"}, function(response){
+                    var country;
                     if(response.length){
-                        var country = response[0].country.toLowerCase();
+                        country = response[0].country.toLowerCase();
                     }else{
-                        var country = "xx";
+                        country = "xx";
                     }
                     savePlayerCountry(playerid, country);
                     callback(country);
@@ -4490,7 +4529,7 @@
         var changeFun = function(){
             sliderLbl.text(getValue());
             valueChange(getValue(), sliderCB.prop("checked"));
-        }
+        };
 
         slider = $("<input type='range' min=1 max=21 id='opslider' value=7>").on("input", changeFun);
         sliderLbl = $("<span>7</span>");
@@ -4555,7 +4594,7 @@
         var mods = [];
         for(let mod of modnames){
             if(mod.val & modnum){
-                mods.push(mod)
+                mods.push(mod);
             }
         }
         // handle doublemods
@@ -4587,7 +4626,7 @@
         var modsArray = getModsArray(modnum);
         var modsHtml = modsArray.map(function(mod){
             return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--${mod.short}' title='${mod.name}'></div></div></div>`;
-        })
+        });
         return modsHtml.join("");
     }
 
@@ -4648,49 +4687,49 @@
 
     function modeToInt(mode){
         switch(mode){
-            case "osu":
-                return 0;
-            case "taiko":
-                return 1;
-            case "fruits":
-                return 2;
-            case "mania":
-                return 3;
-            default:
-                return 0;
+        case "osu":
+            return 0;
+        case "taiko":
+            return 1;
+        case "fruits":
+            return 2;
+        case "mania":
+            return 3;
+        default:
+            return 0;
         }
     }
 
     function intToMode(modeint){
         switch(modeint){
-            case 0:
-                return "osu";
-            case 1:
-                return "taiko";
-            case 2:
-                return "fruits";
-            case 3:
-                return "mania";
-            default:
-                return "osu";
+        case 0:
+            return "osu";
+        case 1:
+            return "taiko";
+        case 2:
+            return "fruits";
+        case 3:
+            return "mania";
+        default:
+            return "osu";
         }
     }
 
     function getPpCalc(params){
-        /* see https://osu-pp-calc-api.glitch.me/
+        /* see https://pp.osuck.net/pp
         id - beatmap id
-        m - mods number
-        c - combo
+        mods - mods number
+        combo - combo
         acc - accuracy
         miss - number of misses
         */
         var promise = new Promise((resolve, reject) => {
-            var ppcalcurl = getUrl("https://osu-pp-calc-api.glitch.me", params);
+            var ppcalcurl = getUrl("https://pp.osuck.net/pp", params);
             getRequest(ppcalcurl, function(response){
                 var ans = {
-                    pp: parseFloat(response.pp), 
-                    pp_fc: parseFloat(response.pp_fc),
-                    rql: response.rql // ranked|qualified|loved|pending|graveyard etc
+                    pp: parseFloat(response.pp.current), 
+                    pp_fc: parseFloat(response.pp.fc),
+                    rql: response.status.name // ranked|qualified|loved|pending|graveyard etc
                 };
                 resolve(ans);
             });
@@ -4720,7 +4759,7 @@
                     funs.push(function(donecb){
                         getUser({u: score.user_id, type: "id", m: mode}, function(userInfo){
                             response[index].user = userInfo[0];
-                            savePlayerCountry(score.user_id, userInfo[0].country)
+                            savePlayerCountry(score.user_id, userInfo[0].country);
                             donecb();
                         }, reqTracker);
                     });
@@ -4735,7 +4774,7 @@
             });
             doManyFunc(funs, function(){
                 callback(response);
-            })
+            });
         }, reqTracker);
     }
 
@@ -4751,7 +4790,7 @@
         params.k = apikey;
         getRequest(getUrl(url, params), callback, reqTracker);
     }
-
+    //eslint-disable-next-line no-unused-vars
     function getReplay(params, callback, reqTracker){
         /*
         k - api key (required).
@@ -4951,6 +4990,7 @@
         }
     }
 
+    //eslint-disable-next-line no-unused-vars
     function downloadFile(data, filename){
         var link = document.createElement("a");
         link.download = filename;
