@@ -4398,6 +4398,10 @@ ${mapMode == 3 ?
             // Add date column
             $(".osuplus-table.beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
             $(".search-beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
+            
+            // Remove time column
+            $(".osuplus-table.beatmap-scoreboard-table__table thead tr").children().eq(-4).remove();
+            $(".search-beatmap-scoreboard-table__table thead tr").children().eq(-4).remove();
 
             // Add max combo
             $(".osuplus-table .beatmap-scoreboard-table__header--maxcombo").text(`Max Combo${maxCombo ? ` (${maxCombo})` : ""}`);
