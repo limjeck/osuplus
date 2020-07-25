@@ -2664,7 +2664,7 @@ ${play.perfect == "1" ?
                             <div class="play-detail__score-detail play-detail__score-detail--mods">
                                 <div class="mods mods--profile-page">
 ${getModsArray(play.enabled_mods).map(function(mod){
-        return `<div class="mods__mod"><div class="mods__mod-image"><div class="mod mod--${mod.short}" title="${mod.name}"></div></div></div>`;
+        return `<div class="mods__mod"><div class="mods__mod-image"><div class="mod mod--dynamic mod--${mod.short}" title="${mod.name}"></div></div></div>`;
     }).join("")}
                                 </div>
                               </div>
@@ -4625,7 +4625,7 @@ ${mapMode == 3 ?
     function getNewMods(modnum){
         var modsArray = getModsArray(modnum);
         var modsHtml = modsArray.map(function(mod){
-            return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--${mod.short}' title='${mod.name}'></div></div></div>`;
+            return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--dynamic mod--${mod.short}' title='${mod.name}'></div></div></div>`;
         });
         return modsHtml.join("");
     }
