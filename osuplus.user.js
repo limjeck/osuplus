@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.2
+// @version      2.2.3
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -2663,9 +2663,7 @@ ${play.perfect == "1" ?
                             </div>
                             <div class="play-detail__score-detail play-detail__score-detail--mods">
                                 <div class="mods mods--profile-page">
-${getModsArray(play.enabled_mods).map(function(mod){
-        return `<div class="mods__mod"><div class="mods__mod-image"><div class="mod mod--${mod.short}" title="${mod.name}"></div></div></div>`;
-    }).join("")}
+                                    ${getNewMods(play.enabled_mods)}
                                 </div>
                               </div>
                             </div>
@@ -3668,7 +3666,8 @@ ${mapMode == 3 ?
                      #searchusertxt {color: black;}
                      .beatmap-scoreboard-table__cell--grade {width: auto; height: auto; display: table-cell;}
                      .beatmap-scoreboard-table__cell--grade .score-rank {width: 100%;}
-                     .ppcalc-pp {cursor: pointer;}`
+                     .ppcalc-pp {cursor: pointer;}
+                     .osuplus-pp-cell {padding-right: 10px;}`
                 ));
             }
         }
@@ -3810,8 +3809,8 @@ ${mapMode == 3 ?
             var country = score.user.country.toLowerCase();
             var countryUpper = country.toUpperCase();
             var acc = calcAcc(score, mapMode);
-            var rowclass, dateset;
-            dateset = new Date(score.date.replace(" ","T") + "+0000"); // dates from API in GMT+0
+            var rowclass;
+            var datetime = score.date.replace(" ", "T") + "+0000"; // dates from API in GMT+0
 
             rowclass = "beatmap-scoreboard-table__body-row beatmap-scoreboard-table__body-row--highlightable";
             if(currentUser !== null && currentUser.id.toString() === score.user_id){ // self
@@ -3840,7 +3839,7 @@ ${mapMode == 3 ?
                 pprank = ` <span class='pprank'>(#${score.user.pp_rank})</span>`;
             }
             var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
-
+            
             var cellClass = "beatmap-scoreboard-table__cell";
             var row = $(`<tr class='${rowclass}'>
                     <td class='${cellClass} ${cellClass}--rank'>
@@ -3873,13 +3872,15 @@ ${mapMode == 3 ?
                 makeZeroableEntry(score.count50)
             ].join("")}
                     ${makeZeroableEntry(score.countmiss)}
-                    <td class='${cellClass}${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
-                    <td class='${cellClass} ${cellClass}--mods'><div class='mods mods--scoreboard'>${getNewMods(score.enabled_mods)}</div></td>
-                    <td class='${cellClass} datecol'>
-                        <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time></td>
+                    <td class='${cellClass} osuplus-pp-cell${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
+                    <td class='${cellClass} ${cellClass}--time'>
+                        <time class='js-tooltip-time' title='${datetime}'>
+                            ${window.eval(`moment("${datetime}").locale("scoreboard").fromNow()`)}</time></td>
+                    <td class='${cellClass} ${cellClass}--mods'>
+                        <div class='mods mods--scoreboard'>${getNewMods(score.enabled_mods)}</div></td>
                     <td class="beatmap-scoreboard-table__play-detail-menu"></td>
                     <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
-                    </tr>`);
+                </tr>`);
             //doesn't work on greasemonkey, unfixable?
             //ReactDOM.render(React.createElement(_exported.PlayDetailMenu, {score: newify(score)}), row.find(".beatmap-scoreboard-table__play-detail-menu")[0]);
 
@@ -4174,6 +4175,7 @@ ${mapMode == 3 ?
                             .change(rankingTypeChanged),
                         "Friends"),
                     //Show date button
+                    /*
                     $("<label></label>").append(
                         $("<input>")
                             .attr({
@@ -4181,7 +4183,7 @@ ${mapMode == 3 ?
                                 id: "showdatebox"})
                             .change(showDateChanged)
                             .prop("checked", showDates),
-                        "Show date")
+                        "Show date")*/
                 )
             );
         }
@@ -4396,8 +4398,8 @@ ${mapMode == 3 ?
             );
 
             // Add date column
-            $(".osuplus-table.beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
-            $(".search-beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
+            //$(".osuplus-table.beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
+            //$(".search-beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
 
             // Add max combo
             $(".osuplus-table .beatmap-scoreboard-table__header--maxcombo").text(`Max Combo${maxCombo ? ` (${maxCombo})` : ""}`);
@@ -4625,7 +4627,7 @@ ${mapMode == 3 ?
     function getNewMods(modnum){
         var modsArray = getModsArray(modnum);
         var modsHtml = modsArray.map(function(mod){
-            return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--${mod.short}' title='${mod.name}'></div></div></div>`;
+            return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--dynamic mod--${mod.short}' title='${mod.name}'></div></div></div>`;
         });
         return modsHtml.join("");
     }
