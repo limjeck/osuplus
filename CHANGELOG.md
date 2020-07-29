@@ -1,3 +1,9 @@
+## 2.2.3 (29 Jul 2020)
+
+#### Bugfixes
+- Replaced new beatmaps page date column with original time column
+- Fixed new mod icons not showing
+
 ## 2.2.2 (6 Jul 2020)
 
 #### Features
