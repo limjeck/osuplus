@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.3
+// @version      2.2.4
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -2256,7 +2256,10 @@ ${beatmapset.difficulties.map(function(beatmap){
                     .opModal {color: black;}
                     .opModal h1 {color: ${osuPink};}
                     .mod--V2 {background-image: url('${v2Img}');}
-                    .ppcalc-pp {cursor: pointer;}`
+                    .ppcalc-pp {cursor: pointer;}
+                    .play-detail {position: relative;}
+                    .op-relrank {position: absolute; height: 100%; width: 40px; margin-left: -40px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; opacity: 0;}
+                    .play-detail:hover .op-relrank {opacity: 1;}`
                 ));
             }
         }
@@ -2457,6 +2460,12 @@ ${beatmapset.difficulties.map(function(beatmap){
             }else{
                 detailify(top, score);
             }
+            addRelativeRank(top);
+        }
+
+        function addRelativeRank(top){
+            var relrank = top.index() + 1;
+            top.append(`<div class='op-relrank'>${relrank}</div>`);
         }
 
         function detailify(top, score, beatmap){
@@ -2616,10 +2625,12 @@ ${beatmapset.difficulties.map(function(beatmap){
                     }
                 });
 
+                var subcontainer = $("<div class='op-recent-container'></div>");
                 container.empty().append(
                     $("<label></label>").append(
                         failedCheckbox, "Show failed scores"
-                    )
+                    ),
+                    subcontainer
                 );
 
                 userRecent.forEach(function(play){
@@ -2685,7 +2696,7 @@ ${gameMode == 0 ?
                         });
                     });
 
-                    container.append(detailrow);
+                    subcontainer.append(detailrow);
                     
                     getBeatmapsCache({b: play.beatmap_id, m: gameMode, a: 1}, function(response){
                         var r = response[0];
@@ -2698,6 +2709,9 @@ ${gameMode == 0 ?
                         mapver.text(r.version);
                         detailrow.find(".identifier").val(r.beatmap_id);
                     });
+                });
+                subcontainer.children().each((id, row) => {
+                    addRelativeRank($(row));
                 });
                 $(".timeago").timeago();
                 if(failedChecked){
@@ -3623,7 +3637,7 @@ ${mapMode == 3 ?
             jsonBeatmapset = null,
             //jsonCountries = null,
             maxCombo = null,
-            showDates = true,
+            //showDates = true,
             modsEnabled = true,
             timeDelay = 1000,
             timeoutID = null,
@@ -3652,7 +3666,7 @@ ${mapMode == 3 ?
                      .partialSelected {border: 3px dashed red;}
                      .osupreview {width: 425px; height: 344px;}
                      #opslider {width: 250px; display: inline-block; margin: 10px;}
-                     .recentscore > td {background-color: greenyellow !important;}
+                     .recentscore > td {background-color: green !important;}
                      .centered {display: block; margin-left: auto; margin-right: auto;}
                      .greyedout {opacity: 0.5}
                      #rankingtype label {padding: 8px}
@@ -3678,7 +3692,7 @@ ${mapMode == 3 ?
             addCss();
             //jsonCountries = JSON.parse($("#json-countries").text());
             jsonBeatmapset = JSON.parse($("#json-beatmapset").text());
-            showDates = settings.showDates;
+            //showDates = settings.showDates;
             currentUser = JSON.parse(JSON.stringify(unsafeWindow.currentUser));
             friends = extractFriends();
 
@@ -3733,7 +3747,8 @@ ${mapMode == 3 ?
             maxCombo = getMaxCombo(jsonBeatmapset, mapID, mapMode);
             minePlayerCountries();
 
-            if($(".page-tabs__tab--active").text() == "Global Ranking" && ($(".beatmapset-scoreboard__mods--initial").length || $(".beatmapset-scoreboard__mods").length==0)){
+            if($(".page-tabs").children().first().hasClass("page-tabs__tab--active") && 
+                ($(".beatmapset-scoreboard__mods--initial").length || $(".beatmapset-scoreboard__mods").length==0)){
                 if(hasKey){
                     addSearchUser();
                     putRankingType();
@@ -3812,7 +3827,7 @@ ${mapMode == 3 ?
             var rowclass;
             var datetime = score.date.replace(" ", "T") + "+0000"; // dates from API in GMT+0
 
-            rowclass = "beatmap-scoreboard-table__body-row beatmap-scoreboard-table__body-row--highlightable";
+            rowclass = "clickable-row beatmap-scoreboard-table__body-row beatmap-scoreboard-table__body-row--highlightable";
             if(currentUser !== null && currentUser.id.toString() === score.user_id){ // self
                 rowclass += " beatmap-scoreboard-table__body-row--self";
             }else if(isFriend(score.user_id)){
@@ -3828,10 +3843,10 @@ ${mapMode == 3 ?
             var countryName = countryNameFromCode(countryUpper);
             var countryImg = "";
             if(country !== ""){
-                countryImg = `<a href='/rankings/osu/performance?country=${countryUpper}'><span class='flag-country flag-country--scoreboard flag-country--small-box' \
+                countryImg = `<a class='stop-propagation' href='/rankings/osu/performance?country=${countryUpper}'><span class='flag-country flag-country--scoreboard flag-country--small-box' \
                               style='background-image: url(&quot;/images/flags/${countryUpper}.png&quot;);' title='${countryName}'></span></a>`;
             }
-            var userhref = `<a class='beatmap-scoreboard-table__user-link js-usercard' data-user-id='${score.user_id}' href='/users/${score.user_id}'>${score.username}</a>`;
+            var userhref = `<a class='beatmap-scoreboard-table__user-link js-usercard stop-propagation' data-user-id='${score.user_id}' href='/users/${score.user_id}'>${score.username}</a>`;
             var pprank;
             if(score.user.pp_rank === undefined){
                 pprank = " <span class='pprank'></span>";
@@ -3841,9 +3856,9 @@ ${mapMode == 3 ?
             var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
             
             var cellClass = "beatmap-scoreboard-table__cell";
-            var row = $(`<tr class='${rowclass}'>
-                    <td class='${cellClass} ${cellClass}--rank'>
-                    ${score.replay_available == "1" ? `<a class='require-login' href='/scores/${intToMode(mapMode)}/${score.score_id}/download'>#${rankno}</a>` : `#${rankno}`}</td>
+            var row = $(`<tr class='${rowclass}' href='/scores/osu/${score.score_id}'>
+                    <td class='${cellClass} ${cellClass}--rank stop-propagation'>
+                    ${score.replay_available == "1" ? `<a class='' href='/scores/${intToMode(mapMode)}/${score.score_id}/download'>#${rankno}</a>` : `#${rankno}`}</td>
                     <td class='${cellClass} ${cellClass}--grade'><div class='score-rank score-rank--tiny score-rank--${score.rank}'></div></td>
                     <td class='${cellClass} ${cellClass}--score'>${commarise(score.score)}</td>
                     <td class='${cellClass} ${acc==100 ? `${cellClass}--perfect'` : ""}'>${acc.toFixed(2)}%</td>
@@ -3872,18 +3887,21 @@ ${mapMode == 3 ?
                 makeZeroableEntry(score.count50)
             ].join("")}
                     ${makeZeroableEntry(score.countmiss)}
-                    <td class='${cellClass} osuplus-pp-cell${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
+                    <td class='${cellClass} osuplus-pp-cell stop-propagation${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
                     <td class='${cellClass} ${cellClass}--time'>
                         <time class='js-tooltip-time' title='${datetime}'>
                             ${window.eval(`moment("${datetime}").locale("scoreboard").fromNow()`)}</time></td>
                     <td class='${cellClass} ${cellClass}--mods'>
-                        <div class='mods mods--scoreboard'>${getNewMods(score.enabled_mods)}</div></td>
-                    <td class="beatmap-scoreboard-table__play-detail-menu"></td>
+                        <div class="beatmap-scoreboard-table__mods">${getNewMods(score.enabled_mods)}</div></td>
+                    <!--<td class="beatmap-scoreboard-table__play-detail-menu"></td>-->
                     <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
                 </tr>`);
             //doesn't work on greasemonkey, unfixable?
             //ReactDOM.render(React.createElement(_exported.PlayDetailMenu, {score: newify(score)}), row.find(".beatmap-scoreboard-table__play-detail-menu")[0]);
 
+            row.find(".stop-propagation").click((event) => {
+                event.stopPropagation();
+            });
             //ppcalc, only for std
             if(mapMode == 0){
                 row.find(".ppcalc-pp").click(function(event){
@@ -3899,6 +3917,16 @@ ${mapMode == 3 ?
                     });
                 });
             }
+            row.click((event) => {
+                var url = $(event.currentTarget).attr("href");
+                if(event.ctrlKey){
+                    //open in new tab
+                    window.open(url, "_blank");
+                }else{
+                    //open normally
+                    window.location.href = url;
+                }
+            });
             return row;
         }
         /*
@@ -4187,7 +4215,7 @@ ${mapMode == 3 ?
                 )
             );
         }
-
+        /*
         function showDateChanged(){
             showDates = $("#showdatebox").prop("checked");
             updateShowDate();
@@ -4196,7 +4224,7 @@ ${mapMode == 3 ?
         function updateShowDate(){
             if(showDates) $(".datecol").show();
             else $(".datecol").hide();
-        }
+        }*/
 
         function rankingTypeChanged(){
             var rankingType = $("input[name=rankingtype]:checked").val();
@@ -4317,7 +4345,8 @@ ${mapMode == 3 ?
                         var curTime = new Date();
                         rows.each(function(index, row){
                             row = $(row);
-                            var scoreTime = new Date(row.find("time").attr("datetime"));
+                            var scoreTime = row.find("time").attr("title") || row.find("time").attr("data-orig-title");
+                            scoreTime = new Date(scoreTime);
                             var diff = (curTime - scoreTime) / (1000*60*60*24);
                             if(diff < val){
                                 row.addClass("recentscore");
@@ -4627,7 +4656,8 @@ ${mapMode == 3 ?
     function getNewMods(modnum){
         var modsArray = getModsArray(modnum);
         var modsHtml = modsArray.map(function(mod){
-            return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--dynamic mod--${mod.short}' title='${mod.name}'></div></div></div>`;
+            //return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--dynamic mod--${mod.short}' title='${mod.name}'></div></div></div>`;
+            return `<div class='mod mod--${mod.short}' title='${mod.name}'></div>`;
         });
         return modsHtml.join("");
     }
