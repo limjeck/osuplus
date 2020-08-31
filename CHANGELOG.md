@@ -1,3 +1,15 @@
+## 2.2.4 (31 Aug 2020)
+
+#### Features
+- New userpage scores when hovered shows its relative position
+
+#### Bugfixes
+- Fixed new beatmaps page not working with non-English languages
+- Fixed new beatmaps page mods taking up multiple lines
+- Fixed highlight recent scores on new beatmaps page
+- Clicking a score on new beatmaps page takes you to the score page (same as on original page)
+  - Ctrl-click opens in new tab (unlike original page)
+
 ## 2.2.3 (29 Jul 2020)
 
 #### Bugfixes
