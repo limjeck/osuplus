@@ -3880,12 +3880,19 @@ ${mapMode == 3 ?
                 makeZeroableEntry(score.count300),
                 makeZeroableEntry(score.count100)
             ].join("") :
-        // Standard/CTB
-            [
-                makeZeroableEntry(score.count300),
-                makeZeroableEntry(score.count100),
-                makeZeroableEntry(score.count50)
-            ].join("")}
+            mapMode == 2 ?
+            // CTB
+                [
+                    makeZeroableEntry(score.count300),
+                    makeZeroableEntry(score.count100),
+                    makeZeroableEntry(score.countkatu)
+                ].join("") :
+            // Standard
+                [
+                    makeZeroableEntry(score.count300),
+                    makeZeroableEntry(score.count100),
+                    makeZeroableEntry(score.count50)
+                ].join("")}
                     ${makeZeroableEntry(score.countmiss)}
                     <td class='${cellClass} osuplus-pp-cell stop-propagation${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
                     <td class='${cellClass} ${cellClass}--time'>
