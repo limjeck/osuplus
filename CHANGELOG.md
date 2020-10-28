@@ -1,3 +1,12 @@
+## 2.2.5 (28 Oct 2020)
+
+#### Bugfixes
+- Added modding discussion link in subscriptions in old site
+- Fixed mods being vertical in new userpage recent section
+- Fixed CTB Droplet Miss displaying incorrect value in new beatmap page
+- Updated Mirror mod icon
+- Updated V2 mod mini icon
+
 ## 2.2.4 (31 Aug 2020)
 
 #### Features
