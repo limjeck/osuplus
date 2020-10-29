@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.5
+// @version      2.2.6
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -2750,26 +2750,30 @@ ${gameMode == 0 ?
 
 
         function addCss(){
-            $(document.head).append($("<style></style>").html(
-                ".modIconGroup {display: inline-block; margin: 2px;}\n" +
-                ".modIcon {overflow: hidden; position: relative; width: 40px; height: 40px;}\n" +
-                ".modIconOption, .modIconOption img, .modIcon img { width: 100%; height: 100%; }\n" +
-                ".modIconOption {overflow: hidden; position: absolute; transform: skewX(-45deg);}\n" +
-                ".modIconOption:first-child {left: 0px; transform-origin: 100% 0;}\n" +
-                ".modIconOption:last-child {right: 0px; transform-origin: 0 100%;}\n" +
-                ".modIconOption img {transform: skewX(45deg); transform-origin: inherit;}\n" +
-                ".notSelected {border: 3px solid transparent;}\n" +
-                ".isSelected {border: 3px solid red;}\n" +
-                ".partialSelected {border: 3px dashed red;}\n" +
-                ".osupreview {width: 425px; height: 344px;}\n" +
-                ".count-display {text-align: right;}\n" +
-                "#opslider {width: 250px;}\n" +
-                ".recentscore {background-color: greenyellow;}\n" +
-                ".recentscore:hover {background: #fde1ff; cursor: pointer;}\n" +
-                ".centered {display: block; margin-left: auto; margin-right: auto;}\n" +
-                ".greyedout {opacity: 0.5;}\n" +
-                ".ppcalc-pp {cursor: pointer;}\n"
-            ));
+            $(document.head).append(`<style>
+                .modIconGroup {display: inline-block; margin: 2px;}
+                .modIcon {overflow: hidden; position: relative; width: 40px; height: 40px;}
+                .modIconOption, .modIconOption img, .modIcon img { width: 100%; height: 100%; }
+                .modIconOption {overflow: hidden; position: absolute; transform: skewX(-45deg);}
+                .modIconOption:first-child {left: 0px; transform-origin: 100% 0;}
+                .modIconOption:last-child {right: 0px; transform-origin: 0 100%;}
+                .modIconOption img {transform: skewX(45deg); transform-origin: inherit;}
+                .notSelected {border: 3px solid transparent;}
+                .isSelected {border: 3px solid red;}
+                .partialSelected {border: 3px dashed red;}
+                .osupreview {width: 425px; height: 344px;}
+                .count-display {text-align: right;}
+                #opslider {width: 250px;}
+                .recentscore {background-color: greenyellow;}
+                .recentscore:hover {background: #fde1ff; cursor: pointer;}
+                .centered {display: block; margin-left: auto; margin-right: auto;}
+                .greyedout {opacity: 0.5;}
+                .ppcalc-pp {cursor: pointer;}
+                .slider-export-container {display: flex;}
+                .export-container {flex: 1; text-align: right;}
+                .export-btn {cursor: pointer; padding-right: 5px;}
+                </style>`
+            );
         }
 
         function init(){
@@ -2852,27 +2856,33 @@ ${gameMode == 0 ?
             });
         }
 
-        function addSlider(){
+        function addSlider(){ // and export button
             scoreListing.before(
-                createSlider(function(val, checked){
-                    var rows = scoreListingTitlerow.nextAll();
-                    if(checked){
-                        var curTime = new Date();
-                        rows.each(function(index, row){
-                            row = $(row);
-                            var scoreTime = new Date(row.find("time").attr("datetime"));
-                            var diff = (curTime - scoreTime) / (1000*60*60*24);
-                            if(diff < val){
-                                row.addClass("recentscore");
-                            }else{
-                                row.removeClass("recentscore");
-                            }
-                        });
-                    }else{
-                        rows.removeClass("recentscore");
-                    }
-                })
+                $("<div class='slider-export-container'></div>").append(
+                    createSlider(function(val, checked){
+                        var rows = scoreListingTitlerow.nextAll();
+                        if(checked){
+                            var curTime = new Date();
+                            rows.each(function(index, row){
+                                row = $(row);
+                                var scoreTime = new Date(row.find("time").attr("datetime"));
+                                var diff = (curTime - scoreTime) / (1000*60*60*24);
+                                if(diff < val){
+                                    row.addClass("recentscore");
+                                }else{
+                                    row.removeClass("recentscore");
+                                }
+                            });
+                        }else{
+                            rows.removeClass("recentscore");
+                        }
+                    }).addClass("slider-container"),
+                    "<div class='export-container'><a class='export-btn'>export to csv</a></div>"
+                )
             );
+            $(".export-btn").click(function(){
+                downloadFile(scoresToCsv(result, mapMode), "scores.csv");
+            });
         }
 
         function abortReqs(){
@@ -3680,7 +3690,10 @@ ${mapMode == 3 ?
                      .beatmap-scoreboard-table__cell--grade {width: auto; height: auto; display: table-cell;}
                      .beatmap-scoreboard-table__cell--grade .score-rank {width: 100%;}
                      .ppcalc-pp {cursor: pointer;}
-                     .osuplus-pp-cell {padding-right: 10px;}`
+                     .osuplus-pp-cell {padding-right: 10px;}
+                     .slider-export-container {display: flex;}
+                     .export-container {flex: 1; text-align: right;}
+                     .export-btn {cursor: pointer;}`
                 ));
             }
         }
@@ -3842,8 +3855,8 @@ ${mapMode == 3 ?
             var countryName = countryNameFromCode(countryUpper);
             var countryImg = "";
             if(country !== ""){
-                countryImg = `<a class='stop-propagation' href='/rankings/osu/performance?country=${countryUpper}'><span class='flag-country flag-country--scoreboard flag-country--small-box' \
-                              style='background-image: url(&quot;/images/flags/${countryUpper}.png&quot;);' title='${countryName}'></span></a>`;
+                countryImg = `<a class='stop-propagation' href='/rankings/osu/performance?country=${countryUpper}'><div class='flag-country flag-country--flat' \
+                              style='background-image: url(&quot;/images/flags/${countryUpper}.png&quot;);' title='${countryName}'></div></a>`;
             }
             var userhref = `<a class='beatmap-scoreboard-table__user-link js-usercard stop-propagation' data-user-id='${score.user_id}' href='/users/${score.user_id}'>${score.username}</a>`;
             var pprank;
@@ -4343,28 +4356,34 @@ ${mapMode == 3 ?
             );
         }
 
-        function addSlider(){
+        function addSlider(){ // and export button
             $(".beatmap-scoreboard-table").before(
-                createSlider(function(val, checked){
-                    var rows = $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__body-row");
-                    if(checked){
-                        var curTime = new Date();
-                        rows.each(function(index, row){
-                            row = $(row);
-                            var scoreTime = row.find("time").attr("title") || row.find("time").attr("data-orig-title");
-                            scoreTime = new Date(scoreTime);
-                            var diff = (curTime - scoreTime) / (1000*60*60*24);
-                            if(diff < val){
-                                row.addClass("recentscore");
-                            }else{
-                                row.removeClass("recentscore");
-                            }
-                        });
-                    }else{
-                        rows.removeClass("recentscore");
-                    }
-                }).addClass("osuplus-table")
+                $("<div class='osuplus-table slider-export-container'></div>").append(
+                    createSlider(function(val, checked){
+                        var rows = $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__body-row");
+                        if(checked){
+                            var curTime = new Date();
+                            rows.each(function(index, row){
+                                row = $(row);
+                                var scoreTime = row.find("time").attr("title") || row.find("time").attr("data-orig-title");
+                                scoreTime = new Date(scoreTime);
+                                var diff = (curTime - scoreTime) / (1000*60*60*24);
+                                if(diff < val){
+                                    row.addClass("recentscore");
+                                }else{
+                                    row.removeClass("recentscore");
+                                }
+                            });
+                        }else{
+                            rows.removeClass("recentscore");
+                        }
+                    }).addClass("slider-container"),
+                    "<div class='export-container'><a class='export-btn'>export to csv</a></div>"
+                )
             );
+            $(".export-btn").click(function(){
+                downloadFile(scoresToCsv(scoresResult, mapMode), "scores.csv");
+            });
         }
 
         function abortReqs(){
@@ -4624,6 +4643,34 @@ ${mapMode == 3 ?
                 callback(true);
             }
         });
+    }
+
+    function scoresToCsv(scores, mapMode){
+        var header = ["rank", "score", "accuracy", "country", "username", "user_id", "maxcombo", "perfect", "300", "100", "50", "geki", "katu", "miss", "pp", "date", "mods", "mods_int", "replay_available", "score_id"];
+        var content = scores.map((score) => [
+            score.rank,
+            score.score,
+            calcAcc(score, mapMode),
+            score.user.country || "",
+            score.username,
+            score.user_id,
+            score.maxcombo,
+            score.perfect,
+            score.count300,
+            score.count100,
+            score.count50,
+            score.countgeki,
+            score.countkatu,
+            score.countmiss,
+            score.pp,
+            score.date,
+            `"${getMods(score.enabled_mods)}"`,
+            score.enabled_mods,
+            score.replay_available,
+            score.score_id
+        ]);
+        var table = [header].concat(content);
+        return table.map((row) => row.join(",")).join("\n");
     }
 
     function getModsArray(modnum){
@@ -5028,7 +5075,6 @@ ${mapMode == 3 ?
         }
     }
 
-    //eslint-disable-next-line no-unused-vars
     function downloadFile(data, filename){
         var link = document.createElement("a");
         link.download = filename;
