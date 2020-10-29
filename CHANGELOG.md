@@ -1,3 +1,11 @@
+## 2.2.6 (29 Oct 2020)
+
+#### Features
+- Added "export to csv" button on beatmap page
+
+#### Bugfixes
+- Fixed missing country flag on new beatmap page
+
 ## 2.2.5 (28 Oct 2020)
 
 #### Bugfixes
