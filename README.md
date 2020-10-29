@@ -29,6 +29,7 @@ All features are available on both the old and new site.
 - Settings tab to enable/disable osuplus features
 - Force show difficulties in beatmap listing
 - Display "pp if ranked or fc" for maps with scoreboards and user recent plays (click the pp value) (only for standard)
+- Export beatmap top scores to csv
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
