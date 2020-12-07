@@ -1,3 +1,12 @@
+## 2.2.7 (7 Dec 2020)
+
+#### Features
+- Added option to show site swapper in new site in settings (false by default)
+
+#### Bugfixes
+- Fixed beatmaps page formatting
+- Added spaces to some mods tooltip
+
 ## 2.2.6 (29 Oct 2020)
 
 #### Features
