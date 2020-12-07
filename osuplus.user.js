@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.6
+// @version      2.2.7
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -132,19 +132,19 @@
         osuPink = "#cc2e8a";
 
     var modnames = [
-            {val: 1, name: "NoFail", short: "NF"},
+            {val: 1, name: "No Fail", short: "NF"},
             {val: 2, name: "Easy", short: "EZ"},
-            {val: 4, name: "TouchDevice", short: "TD"},
+            {val: 4, name: "Touch Device", short: "TD"},
             {val: 8, name: "Hidden", short: "HD"},
-            {val: 16, name: "HardRock", short: "HR"},
-            {val: 32, name: "SuddenDeath", short: "SD"},
-            {val: 64, name: "DoubleTime", short: "DT"},
+            {val: 16, name: "Hard Rock", short: "HR"},
+            {val: 32, name: "Sudden Death", short: "SD"},
+            {val: 64, name: "Double Time", short: "DT"},
             {val: 128, name: "Relax", short: "RX"},
-            {val: 256, name: "HalfTime", short: "HT"},
+            {val: 256, name: "Half Time", short: "HT"},
             {val: 512, name: "Nightcore", short: "NC"},
             {val: 1024, name: "Flashlight", short: "FL"},
             {val: 2048, name: "Autoplay", short: "AT"},
-            {val: 4096, name: "SpunOut", short: "SO"},
+            {val: 4096, name: "Spun Out", short: "SO"},
             {val: 8192, name: "Relax2", short: "AP"},
             {val: 16384, name: "Perfect", short: "PF"},
             {val: 32768, name: "Key4", short: "4K"},
@@ -152,15 +152,15 @@
             {val: 131072, name: "Key6", short: "6K"},
             {val: 262144, name: "Key7", short: "7K"},
             {val: 524288, name: "Key8", short: "8K"},
-            {val: 1048576, name: "FadeIn", short: "FI"},
+            {val: 1048576, name: "Fade In", short: "FI"},
             {val: 2097152, name: "Random", short: "RD"},
-            {val: 4194304, name: "LastMod", short: "LM"},
+            {val: 4194304, name: "Last Mod", short: "LM"},
             {val: 16777216, name: "Key9", short: "9K"},
             {val: 33554432, name: "Key10", short: "10K"},
             {val: 67108864, name: "Key1", short: "1K"},
             {val: 134217728, name: "Key3", short: "3K"},
             {val: 268435456, name: "Key2", short: "2K"},
-            {val: 536870912, name: "ScoreV2", short: "V2"},
+            {val: 536870912, name: "Score V2", short: "V2"},
             {val: 1073741824, name: "Mirror", short: "MR"}
         ],
         // if the first is set, the second has to be set also
@@ -187,6 +187,7 @@
         rankingVisible: true,
         forceShowDifficulties: false,
         pp2dp: true,
+        showSiteSwitcher: false,
     };
 
     var settings = {};
@@ -610,7 +611,8 @@
                         "<h2>General</h2>",
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
                             makeSettingRow("API key", null, `<input type='text' style='display:none' id='settings-apikey' name='apikey' value='${settings.apikey}'>
-                                                          <label><input type='checkbox' id='show-apikey'>Show</label>`)
+                                                          <label><input type='checkbox' id='show-apikey'>Show</label>`),
+                            makeSettingRow("Show Site Switcher", null, makeCheckboxOption("showSiteSwitcher"))
                         )
                     ),
                     $("<div>").append(
@@ -652,7 +654,7 @@
                     GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = [
                         "showMirror", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
-                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties"
+                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -693,6 +695,10 @@
             };
 
         function init(){
+            // add site switcher
+            if(settings.showSiteSwitcher){
+                $(document.body).append("<script src='//s.ppy.sh/js/site-switcher.js'></script>");
+            }
             setInterval(function(){
                 if(currentBody != document.body){
                     currentBody = document.body;
@@ -3691,9 +3697,12 @@ ${mapMode == 3 ?
                      .beatmap-scoreboard-table__cell--grade .score-rank {width: 100%;}
                      .ppcalc-pp {cursor: pointer;}
                      .osuplus-pp-cell {padding-right: 10px;}
+                     .osuplus-pp-cell a {height: auto;}
                      .slider-export-container {display: flex;}
                      .export-container {flex: 1; text-align: right;}
-                     .export-btn {cursor: pointer;}`
+                     .export-btn {cursor: pointer;}
+                     .beatmap-scoreboard-table__cell-oprank {position: relative;}
+                     .beatmap-scoreboard-table__cell-content--oprank {position: absolute; right: 0px; color: hsl(var(--hsl-l2));}`
                 ));
             }
         }
@@ -3827,15 +3836,11 @@ ${mapMode == 3 ?
             return modeToInt(modeStr);
         }
 
-        function makeZeroableEntry(num){
-            var cellClass = "beatmap-scoreboard-table__cell";
-            return `<td class='${cellClass} ${num === "0" ? `${cellClass}--zero` : ""}'>${commarise(num)}</td>`;
-        }
-
         function makeScoreTableRow(score, rankno, greyedout){
             var country = score.user.country.toLowerCase();
             var countryUpper = country.toUpperCase();
             var acc = calcAcc(score, mapMode);
+            var mapModeStr = intToMode(mapMode);
             var rowclass;
             var datetime = score.date.replace(" ", "T") + "+0000"; // dates from API in GMT+0
 
@@ -3852,31 +3857,55 @@ ${mapMode == 3 ?
                 rowclass += " greyedout";
             }
 
+            var cellClass = "beatmap-scoreboard-table__cell";
+            var scoreHref = `href='https://osu.ppy.sh/scores/${mapModeStr}/${score.score_id}'`;
             var countryName = countryNameFromCode(countryUpper);
             var countryImg = "";
             if(country !== ""){
-                countryImg = `<a class='stop-propagation' href='/rankings/osu/performance?country=${countryUpper}'><div class='flag-country flag-country--flat' \
-                              style='background-image: url(&quot;/images/flags/${countryUpper}.png&quot;);' title='${countryName}'></div></a>`;
+                countryImg = `<a class='${cellClass}-content' href='/rankings/${mapModeStr}/performance?country=${countryUpper}'>
+                        <div class='flag-country flag-country--flat' style='background-image: url(&quot;/images/flags/${countryUpper}.png&quot;);' title='${countryName}'></div>
+                    </a>`;
             }
-            var userhref = `<a class='beatmap-scoreboard-table__user-link js-usercard stop-propagation' data-user-id='${score.user_id}' href='/users/${score.user_id}'>${score.username}</a>`;
             var pprank;
             if(score.user.pp_rank === undefined){
                 pprank = " <span class='pprank'></span>";
             }else{
-                pprank = ` <span class='pprank'>(#${score.user.pp_rank})</span>`;
+                pprank = ` <span class='pprank'>&nbsp;(#${score.user.pp_rank})</span>`;
             }
+            var userhref = `<a class='${cellClass}-content ${cellClass}-content--user-link js-usercard' data-user-id='${score.user_id}' href='/users/${score.user_id}/${mapModeStr}'>${score.username} ${pprank}</a>`;
+            
             var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
             
-            var cellClass = "beatmap-scoreboard-table__cell";
-            var row = $(`<tr class='${rowclass}' href='/scores/osu/${score.score_id}'>
-                    <td class='${cellClass} ${cellClass}--rank stop-propagation'>
-                    ${score.replay_available == "1" ? `<a class='' href='/scores/${intToMode(mapMode)}/${score.score_id}/download'>#${rankno}</a>` : `#${rankno}`}</td>
-                    <td class='${cellClass} ${cellClass}--grade'><div class='score-rank score-rank--tiny score-rank--${score.rank}'></div></td>
-                    <td class='${cellClass} ${cellClass}--score'>${commarise(score.score)}</td>
-                    <td class='${cellClass} ${acc==100 ? `${cellClass}--perfect'` : ""}'>${acc.toFixed(2)}%</td>
+            function makeTdLink(modifiers, content){
+                return `<td class=${cellClass}>
+                        <a class='${cellClass}-content ${modifiers.map(x => `${cellClass}-content--${x}`).join(" ")}' ${scoreHref}>
+                            ${content}
+                        </a>
+                    </td>`;
+            }
+
+            function makeZeroableEntry(num){
+                return makeTdLink(num === "0" ? ["zero"] : [], commarise(num));
+            }
+            
+            var row = $(`<tr class='${rowclass}'>
+                    <td class='${cellClass} ${cellClass}-oprank'>
+                        <a class='${cellClass}-content ${cellClass}-content--rank ${cellClass}-content--oprank' 
+                            ${score.replay_available == "1" ? `href='/scores/${intToMode(mapMode)}/${score.score_id}/download'` : ""}>
+                            #${rankno}
+                        </a>
+                        <a class='${cellClass}-content' ${scoreHref}></a>
+                    </td>
+                    ${makeTdLink(["grade"], `
+                        <div class='score-rank score-rank--tiny score-rank--${score.rank}'></div>`)}
+                    ${makeTdLink(["score"], commarise(score.score))}
+                    ${makeTdLink(acc == 100 ? ["perfect"] : [], `${acc.toFixed(2)}%`)}
                     <td class='${cellClass}'>${countryImg}</td>
-                    <td class='${cellClass}'>${userhref}${pprank}</td>
-                    <td class='${cellClass} ${score.perfect=="1" ? `${cellClass}--perfect` : ""}'>${commarise(score.maxcombo)}x</td>
+                    <td class='${cellClass} u-relative'>
+                        ${userhref}
+                        <a class='${cellClass}-content' ${scoreHref}></a>
+                    </td>
+                    ${makeTdLink(score.perfect == "1" ? ["perfect"] : [], commarise(score.maxcombo) + "x")}
 ${mapMode == 3 ?
     // Mania
         [
@@ -3906,21 +3935,25 @@ ${mapMode == 3 ?
                     makeZeroableEntry(score.count50)
                 ].join("")}
                     ${makeZeroableEntry(score.countmiss)}
-                    <td class='${cellClass} osuplus-pp-cell stop-propagation${mapMode == 0 ? " ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
-                    <td class='${cellClass} ${cellClass}--time'>
+                    <td class='${cellClass} osuplus-pp-cell${mapMode == 0 ? " ppcalc-pp" : ""}'>
+                        <a class='${cellClass}-content'>
+                            ${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span>
+                        </a>
+                    </td>
+                    ${makeTdLink(["time"], `
                         <time class='js-tooltip-time' title='${datetime}'>
-                            ${window.eval(`moment("${datetime}").locale("scoreboard").fromNow()`)}</time></td>
-                    <td class='${cellClass} ${cellClass}--mods'>
-                        <div class="beatmap-scoreboard-table__mods">${getNewMods(score.enabled_mods)}</div></td>
+                            ${window.eval(`moment("${datetime}").locale("scoreboard").fromNow()`)}
+                        </time>`)}
+                    ${makeTdLink(["mods"], `
+                        <div class='beatmap-scoreboard-table__mods'>
+                            ${getNewMods(score.enabled_mods)}
+                        </div>`)}
                     <!--<td class="beatmap-scoreboard-table__play-detail-menu"></td>-->
                     <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
                 </tr>`);
             //doesn't work on greasemonkey, unfixable?
             //ReactDOM.render(React.createElement(_exported.PlayDetailMenu, {score: newify(score)}), row.find(".beatmap-scoreboard-table__play-detail-menu")[0]);
 
-            row.find(".stop-propagation").click((event) => {
-                event.stopPropagation();
-            });
             //ppcalc, only for std
             if(mapMode == 0){
                 row.find(".ppcalc-pp").click(function(event){
@@ -3936,16 +3969,7 @@ ${mapMode == 3 ?
                     });
                 });
             }
-            row.click((event) => {
-                var url = $(event.currentTarget).attr("href");
-                if(event.ctrlKey){
-                    //open in new tab
-                    window.open(url, "_blank");
-                }else{
-                    //open normally
-                    window.location.href = url;
-                }
-            });
+
             return row;
         }
         /*
