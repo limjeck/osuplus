@@ -2905,8 +2905,8 @@ ${gameMode == 0 ?
                 ).click(function(){
                     if(osupreviewLoaded) return;
                     $("#osupreview").html(
-                        "If below doesn't work, <a href='http://bloodcat.com/osu/preview.html#" + mapID + "' target='_blank'>open in new tab</a><br>" +
-                        "<iframe class='osupreview' src='https://bloodcat.com/osu/preview.html#" + mapID + "' allowfullscreen></iframe>"
+                        "If below doesn't work, <a href='http://jmir.xyz/osu/preview.html#" + mapID + "' target='_blank'>open in new tab</a><br>" +
+                        "<iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#" + mapID + "' allowfullscreen></iframe>"
                     );
                     osupreviewLoaded = true;
                 })
@@ -4372,8 +4372,8 @@ ${mapMode == 3 ?
                     var osupreviewEle = $(this).find("#osupreview");
                     if(osupreviewEle.data("loaded")) return;
                     osupreviewEle.html(
-                        `If below doesn't work, <a href='http://bloodcat.com/osu/preview.html#${mapID}' target='_blank'>open in new tab</a><br>
-                        <iframe class='osupreview' src='https://bloodcat.com/osu/preview.html#${mapID}' allowfullscreen></iframe>`
+                        `If below doesn't work, <a href='http://jmir.xyz/osu/preview.html#${mapID}' target='_blank'>open in new tab</a><br>
+                        <iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe>`
                     );
                     osupreviewEle.data("loaded", true);
                 })
