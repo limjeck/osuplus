@@ -1,3 +1,11 @@
+## 2.2.8 (17 Jan 2021)
+
+#### Features
+- RIP bloodcat
+  - Added Beatconnect mirror
+  - Added Sayobot mirror (disabled by default)
+  - Temporary replacement for osu!preview
+
 ## 2.2.7 (7 Dec 2020)
 
 #### Features
