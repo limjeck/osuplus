@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.9b
+// @version      2.2.8
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
