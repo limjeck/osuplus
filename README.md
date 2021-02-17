@@ -1,6 +1,6 @@
 # osuplus
 
-A userscript to add features to your boring osu! web pages.
+A userscript to add features to your boring osu! web pages.(chimu mirror added)
 
 ## [Changelog](CHANGELOG.md)
 
@@ -15,7 +15,7 @@ All features are available on both the old and new site.
 - Display pp rank
 - Search scores of any user
 - Download replay of any score (if available)
-- Bloodcat mirror
+- Chimu mirror
 - Display numerical value of CS, AR, HP, OD
 - [osu!preview](https://osu.ppy.sh/forum/t/383371)
 - Display max combo value
