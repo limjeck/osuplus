@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.8
+// @version      2.2.9
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -174,6 +174,8 @@
     var defaultSettings = {
         showMirror: true,
         showMirror2: false,
+        showMirror3: false,
+        showMirror4: false,
         showSubscribeMap: true,
         apikey: null,
         failedChecked: true,
@@ -185,7 +187,7 @@
         showHitsPerPlay: true,
         fetchUserpageMaxCombo: true,
         fetchFirstsInfo: true,
-        rankingVisible: true,
+        rankingVisible: false,
         forceShowDifficulties: false,
         pp2dp: true,
         showSiteSwitcher: false,
@@ -621,6 +623,8 @@
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
                             makeSettingRow("Show Beatconnect mirror", null, makeCheckboxOption("showMirror")),
                             makeSettingRow("Show Sayobot mirror", null, makeCheckboxOption("showMirror2")),
+                            makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
+                            makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
                             makeSettingRow("Show subscribe map", null, makeCheckboxOption("showSubscribeMap")),
                             makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
@@ -655,7 +659,7 @@
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = [
-                        "showMirror", "showMirror2", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
+                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher"
                     ];
                     for(let property of properties){
@@ -1162,6 +1166,7 @@
                 subsContent.show();
                 beatmaplistingTitle.removeClass("page-mode-link--is-active");
                 $(".osu-layout__row--page-compact").hide();
+                $(".osu-page--beatmapsets-search-header").hide();
                 if(subLoadingStatus === 0){
                     loadSubs();
                 }
@@ -1169,6 +1174,7 @@
             beatmaplistingTitle.click(function(){
                 beatmaplistingTitle.addClass("page-mode-link--is-active");
                 $(".osu-layout__row--page-compact").show();
+                $(".osu-page--beatmapsets-search-header").show();
                 subsTitle.removeClass("page-mode-link--is-active");
                 subsContent.hide();
             });
@@ -1307,7 +1313,6 @@
                 });
                 subsBeatmaplist.append(pageContainer);
                 refreshPage();
-
                 subLoadingStatus = 2;
                 loadingNotice.hide();
             });
@@ -1332,72 +1337,161 @@
             case "4":
                 approved = "Loved";
             }
-            //var dateset =  new Date(beatmapset.last_update.replace(" ","T") + "+0000");
+            var status = approved.toLowerCase();
+            var dateset =  beatmapset.last_update.replace(" ","T") + "+0000";
             var playcount = 0;
             for(let diff of beatmapset.difficulties){
                 playcount += parseInt(diff.playcount);
             }
-            return $(
+
+            var beatmapGroup = [];
+            for(let m=0; m<4; m++){
+                let group = [];
+                for(let diff of beatmapset.difficulties){
+                    if(diff.mode == m.toString()){
+                        group.push(diff);
+                    }
+                }
+                if(group.length > 0){
+                    beatmapGroup.push({beatmaps: group, mode: m});
+                }
+            }
+
+            var transitionDuration = 150;
+
+            var beatmapBox = $(
                 `<div class="beatmapsets__item">
-                    <div class="beatmapset-panel js-audio--player" data-audio-url="//b.ppy.sh/preview/${id}.mp3">
-                        <div class="beatmapset-panel__panel">
-                            <a href="https://osu.ppy.sh/beatmapsets/${id}" class="beatmapset-panel__header">
-                                <img src="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg" srcset="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg 1x, https://assets.ppy.sh/beatmaps/${id}/covers/card@2x.jpg 2x" class="beatmapset-panel__image">
-                                <div class="beatmapset-panel__image-overlay"></div>
-                                <div class="beatmapset-panel__status-container">
-                                    <div class="beatmapset-status">${approved}</div>
-                                </div>
-                                <div class="beatmapset-panel__title-artist-box">
-                                    <div class="u-ellipsis-overflow beatmapset-panel__header-text beatmapset-panel__header-text--title">
-                                        ${beatmapset.title}
-                                    </div>
-                                    <div class="beatmapset-panel__header-text">${beatmapset.artist}</div>
-                                </div>
-                                <div class="beatmapset-panel__counts-box">
-                                    <div class="beatmapset-panel__count" title="Playcount: ${commarise(playcount)}">
-                                        <span class="beatmapset-panel__count-number">${commarise(playcount)}</span>
-                                        <i class="fas fa-fw fa-play-circle"></i>
-                                    </div>
-                                    <div class="beatmapset-panel__count" title="Favourites: ${commarise(beatmapset.favourite_count)}">
-                                        <span class="beatmapset-panel__count-number">${commarise(beatmapset.favourite_count)}</span>
-                                        <i class="fas fa-fw fa-heart"></i>
-                                    </div>
-                                </div>
-                                <div class="beatmapset-panel__preview-bar"></div>
-                            </a>
-                            <div class="beatmapset-panel__content">
-                                <div class="beatmapset-panel__row">
-                                    <div class="beatmapset-panel__mapper-source-box">
-                                        <div class="u-ellipsis-overflow">
-                                            mapped by <a href="https://osu.ppy.sh/users/${beatmapset.creator_id}" class="js-usercard" data-user-id="${beatmapset.creator_id}"><strong>${beatmapset.creator}</strong></a>
+                    <div class="beatmapset-panel js-audio--player" data-audio-url="//b.ppy.sh/preview/${id}.mp3" style="--beatmaps-popup-transition-duration:${transitionDuration}ms;">
+                        <a class="beatmapset-panel__cover-container" href="https://osu.ppy.sh/beatmapsets/${id}">
+                            <div class="beatmapset-panel__cover-col beatmapset-panel__cover-col--play">
+                                <div class="beatmapset-panel__cover beatmapset-panel__cover--default"></div>
+                                <img class="beatmapset-panel__cover" src="https://assets.ppy.sh/beatmaps/${id}/covers/list@2x.jpg">
+                            </div>
+                            <div class="beatmapset-panel__cover-col beatmapset-panel__cover-col--info">
+                                <div class="beatmapset-panel__cover beatmapset-panel__cover--default"></div>
+                                <img src="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg" srcset="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg 1x, https://assets.ppy.sh/beatmaps/${id}/covers/card@2x.jpg 2x" class="beatmapset-panel__cover">
+                            </div>
+                        </a>
+                        <div class="beatmapset-panel__content">
+                            <div class="beatmapset-panel__play-container">
+                                <button class="beatmapset-panel__play js-audio--play" type="button"></button>
+                                <div class="beatmapset-panel__play-progress">
+                                    <div class="circular-progress circular-progress--beatmapset-panel" title="0 / 1">
+                                        <div class="circular-progress__label">1</div>
+                                        <div class="circular-progress__slice">
+                                            <div class="circular-progress__circle"></div>
+                                            <div class="circular-progress__circle circular-progress__circle--fill"></div>
                                         </div>
-                                        <div class="u-ellipsis-overflow">${beatmapset.source}</div>
-                                    </div>
-                                    <div class="beatmapset-panel__icons-box">
-                                        <a href="https://osu.ppy.sh/beatmapsets/${id}/download" title="download" class="beatmapset-panel__icon js-beatmapset-download-link" data-turbolinks="false">
-                                            <i class="fas fa-lg fa-download"></i>
-                                        </a>
                                     </div>
                                 </div>
-                                <div class="beatmapset-panel__difficulties">
-${beatmapset.difficulties.map(function(beatmap){
-        var difficulty = getDifficultyClass(beatmap.difficultyrating);
-        var diffrating = parseFloat(beatmap.difficultyrating).toFixed(2);
-        return `
-        <div class="beatmapset-panel__difficulty-icon">
-            <div class="beatmap-icon beatmap-icon--undefined beatmap-icon--with-hover js-beatmap-tooltip" data-beatmap-title="${beatmap.version}" data-stars="${diffrating}" data-difficulty="${difficulty}" style="--diff:var(--diff-${difficulty});">
-                <i class="fal fa-extra-mode-${intToMode(parseInt(beatmap.mode))}"></i>
-            </div>
+                                <div class="beatmapset-panel__play-icons"></div>
+                            </div>
+                            <div class="beatmapset-panel__info">
+                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--title"><a class="beatmapset-panel__main-link u-ellipsis-overflow" href="https://osu.ppy.sh/beatmapsets/${id}">${beatmapset.title}</a></div>
+                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--artist"><a class="beatmapset-panel__main-link u-ellipsis-overflow" href="https://osu.ppy.sh/beatmapsets/${id}">by ${beatmapset.artist}</a></div>
+                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--mapper">
+                                    <div class="u-ellipsis-overflow">mapped by <a class="js-usercard beatmapset-panel__mapper-link u-hover" data-user-id="${beatmapset.creator_id}" href="https://osu.ppy.sh/users/${beatmapset.creator_id}">${beatmapset.creator}</a></div>
+                                </div>
+                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--stats">
+                                    <div class="beatmapset-panel__stats-item" title="Playcount: ${commarise(playcount)}"><span class="beatmapset-panel__stats-item-icon"><i class="fas fa-play-circle"></i></span><span>${formatNumberSuffixed(playcount, 1)}</span></div>
+                                    <div class="beatmapset-panel__stats-item" title="Favourites: ${commarise(beatmapset.favourite_count)}"><span class="beatmapset-panel__stats-item-icon"><i class="far fa-heart"></i></span><span>${formatNumberSuffixed(parseInt(beatmapset.favourite_count), 1)}</span></div>
+                                    <div class="beatmapset-panel__stats-item"><span class="beatmapset-panel__stats-item-icon"><i class="fas fa-fw fa-check-circle"></i></span><time class="js-tooltip-time" title="${dateset}" datetime="${dateset}">${window.eval(`moment("${dateset}").format("ll")`)}</time></div>
+                                </div>
+                                <a class="beatmapset-panel__info-row beatmapset-panel__info-row--extra" href="https://osu.ppy.sh/beatmapsets/${id}">
+                                    <div class="beatmapset-panel__extra-item">
+                                        <div class="beatmapset-status beatmapset-status--panel" style="--bg:var(--beatmapset-${status}-bg); --colour:var(--beatmapset-${status}-colour);">${approved}</div>
+                                    </div>
+    ${beatmapGroup.map((group) => {
+        return `<div class="beatmapset-panel__extra-item beatmapset-panel__extra-item--dots">
+            <div class="beatmapset-panel__beatmap-icon"><i class="fal fa-extra-mode-${intToMode(group.mode)}"></i></div>
+    ${group.beatmaps.map((beatmap) => {
+        return `<div class="beatmapset-panel__beatmap-dot" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});"></div>`;
+    }).join("")}
         </div>`;
     }).join("")}
-                                </div>
+                                </a>
+                            </div>
+                            <div class="beatmapset-panel__menu-container">
+                                <div class="beatmapset-panel__menu"><button class="beatmapset-panel__menu-item" title="Favourite this beatmapset" type="button"><span class="far fa-heart"></span></button><a class="beatmapset-panel__menu-item" data-turbolinks="false" href="https://osu.ppy.sh/beatmapsets/${id}/download" title="download"><span class="fas fa-file-download"></span></a></div>
                             </div>
                         </div>
-                        <button type="button" class="beatmapset-panel__play js-audio--play"></button>
-                        <div class="beatmapset-panel__shadow"></div>
+                        <button class="beatmapset-panel__mobile-expand" type="button"><span class="fas fa-angle-down"></span></button>
                     </div>
                 </div>`
             );
+
+            var popupTimeout = null,
+                popupHover = false,
+                popup = null;
+
+            function makePopup(){
+                var rect = beatmapBox.get(0).getBoundingClientRect();
+                var pup = $(`<div>
+                    <div class="beatmaps-popup" style="opacity: 1; transition-duration: ${transitionDuration}ms; top: ${window.scrollY + rect.bottom}px; left: ${window.scrollX + rect.left}px; width: ${rect.width}px;">
+                        <div class="beatmaps-popup__content">
+    ${beatmapGroup.map((group) => {
+        return `<div class="beatmaps-popup__group">
+    ${group.beatmaps.map((beatmap) => {
+        return `<a class="beatmaps-popup-item" href="https://osu.ppy.sh/beatmaps/${beatmap.beatmap_id}">
+            <span class="beatmaps-popup-item__col beatmaps-popup-item__col--mode">
+                <span class="fal fa-extra-mode-${intToMode(group.mode)}"></span>
+            </span>
+            <span class="beatmaps-popup-item__col beatmaps-popup-item__col--difficulty" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});">
+                <span class="beatmaps-popup-item__difficulty-icon">
+                    <span class="fas fa-star"></span>
+                </span>${parseFloat(beatmap.difficultyrating).toFixed(2)}
+            </span>
+            <span class="beatmaps-popup-item__col beatmaps-popup-item__col--name u-ellipsis-overflow">${beatmap.version}</span>
+        </a>`;
+    }).join("")}
+        </div>`;
+    }).join("")}
+                        </div>
+                    </div>
+                </div>`);
+                pup.mouseenter(() => {
+                    clearTimeout(popupTimeout);
+                    setPopupHover(true);
+                }).mouseleave(popupFastDelayedHide);
+                return pup;
+            }
+
+            function setPopupHover(val){
+                if(val == popupHover) return;
+                popupHover = val;
+                if(val){
+                    popup = makePopup();
+                    $(document.body).append(popup);
+                }else{
+                    popup.remove();
+                }
+            }
+
+            function popupDelayedShow(){
+                clearTimeout(popupTimeout);
+                if(popupHover) return;
+                popupTimeout = setTimeout(() => {
+                    setPopupHover(true);
+                }, 100);
+            }
+            function popupDelayedHide(){
+                clearTimeout(popupTimeout);
+                if(!popupHover) return;
+                popupTimeout = setTimeout(() => {
+                    setPopupHover(false);
+                }, 500);
+            }
+            function popupFastDelayedHide(){
+                clearTimeout(popupTimeout);
+                if(!popupHover) return;
+                popupTimeout = setTimeout(() => {
+                    setPopupHover(false);
+                }, 100);
+            }
+            beatmapBox.children().first().mouseleave(popupFastDelayedHide);
+            beatmapBox.find(".beatmapset-panel__info-row--extra").mouseenter(popupDelayedShow).mouseleave(popupDelayedHide);
+
+            return beatmapBox;
         }
 
         async function refreshMappersSub(id){
@@ -1429,16 +1523,6 @@ ${beatmapset.difficulties.map(function(beatmap){
                 optionsls.push(option);
             }
             mapsSelect.append(optionsls);
-        }
-
-        function getDifficultyClass(difficultyrating){
-            var rating = parseFloat(difficultyrating);
-            if(rating < 1.5) return "easy";
-            if(rating < 2.25) return "normal";
-            if(rating < 3.75) return "hard";
-            if(rating < 5.25) return "insane";
-            if(rating < 6.75) return "expert";
-            return "expert-plus";
         }
 
         function destroy(){
@@ -1542,7 +1626,8 @@ ${beatmapset.difficulties.map(function(beatmap){
         var isGlobal = true,
             mode = null,
             tableLoadingNotice = null,
-            playerInfo = [];
+            playerInfo = [],
+            destroyed = false;
 
 
         function addCss(){
@@ -1591,6 +1676,7 @@ ${beatmapset.difficulties.map(function(beatmap){
                     });
                 });
                 doManyFunc(funs, function(){
+                    if(destroyed) return;
                     tableLoadingNotice.hide();
                     
                     //Add new header
@@ -1624,6 +1710,7 @@ ${beatmapset.difficulties.map(function(beatmap){
 
         function destroy(){
             $(".osuplus-new-ppranking-style").remove();
+            destroyed = true;
         }
 
         return {init: init, destroy: destroy};
@@ -3767,13 +3854,13 @@ ${beatmapset.difficulties.map(function(beatmap){
 
         function refreshBeatmapsetHeader(){
             $(".osuplus-header").remove();
+            mapID = $(".beatmapset-beatmap-picker__beatmap--active").attr("href").split("/")[1];
+            mapMode = getMapmode();
             addOsuPreview();
         }
 
         function refreshTable(){
             $(".osuplus-table").remove();
-            mapID = $(".beatmapset-beatmap-picker__beatmap--active").attr("href").split("/")[1];
-            mapMode = getMapmode();
             maxCombo = getMaxCombo(jsonBeatmapset, mapID, mapMode);
             minePlayerCountries();
 
@@ -3946,7 +4033,7 @@ ${beatmapset.difficulties.map(function(beatmap){
                     ${makeZeroableEntry(score.countmiss)}
                     <td class='${cellClass} osuplus-pp-cell${mapMode == 0 ? " ppcalc-pp" : ""}'>
                         <a class='${cellClass}-content'>
-                            ${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span>
+                            <span title="${score.pp}">${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)}</span> <span class="if-fc-span"></span>
                         </a>
                     </td>
                     ${makeTdLink(["time"], `
@@ -3967,13 +4054,13 @@ ${beatmapset.difficulties.map(function(beatmap){
             if(mapMode == 0){
                 row.find(".ppcalc-pp").click(function(event){
                     var me = $(this);
-                    me.find("span").text("(...)");
+                    me.find(".if-fc-span").text("(...)");
                     var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
                     getPpCalc(ppcalcData).then((result) => {
                         if(result.rql == "ranked" || result.rql == "qualified"){
-                            me.find("span").text(`(${result.pp_fc} if FC)`);
+                            me.find(".if-fc-span").text(`(${result.pp_fc} if FC)`);
                         }else{
-                            me.html(`<span>${result.pp} (${result.pp_fc} if FC)</span>`);
+                            me.html(`<span class="if-fc-span">${result.pp} (${result.pp_fc} FC)</span>`);
                         }
                     });
                 });
@@ -4045,6 +4132,7 @@ ${beatmapset.difficulties.map(function(beatmap){
                         modimg.addClass("nomodIcon");
                     }else{
                         modimg.click(modIconClick);
+                        modimg.contextmenu(modIconRightClick);
                     }
 
                     if(modinfo.selection === 0){
@@ -4089,7 +4177,9 @@ ${beatmapset.difficulties.map(function(beatmap){
                     {mods: ["DT"], selection: 1},
                     {mods: ["NC"], selection: 1},
                     {mods: ["DT", "NC"], selection: 1},
-                    {mods: ["HT"], selection: 1}]),
+                    {mods: ["DT", "NC"], selection: 2},
+                    {mods: ["HT"], selection: 1},
+                    {mods: ["HT"], selection: 2}]),
                 genModBtns([
                     {mods: ["SD"], selection: 0},
                     {mods: ["SD"], selection: 1},
@@ -4153,6 +4243,23 @@ ${beatmapset.difficulties.map(function(beatmap){
             }
 
             timeoutUpdate();
+        }
+
+        function modIconRightClick(){
+            if(!modsEnabled) return;
+            if(!$(this).hasClass("nomodIcon")){
+                $(".nomodIcon").hide().parent().children().first().show();
+            }
+            var parent = $(this).parent();
+            $(this).hide();
+            if($(this).prev().length === 0){
+                parent.children().last().show();
+            }else{
+                $(this).prev().show();
+            }
+
+            timeoutUpdate();
+            return false;
         }
 
         function timeoutUpdate(){
@@ -4308,7 +4415,7 @@ ${beatmapset.difficulties.map(function(beatmap){
                     return function(callback){
                         getScoresWithPlayerInfo({b:mapID, u:uid, m:mapMode, type:"id"}, settings.showPpRank, function(response){
                             if(response.length > 0){
-                                scoresResult.push(response[0]);
+                                scoresResult = scoresResult.concat(response);
                             }
                             callback();
                         }, scoreReqs);
@@ -4321,25 +4428,35 @@ ${beatmapset.difficulties.map(function(beatmap){
             });
         }
 
+        function makeMirror(url, name, newtab){
+            return `<a href="${url}" ${newtab ? "target='_blank'" : ""} data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
+                <span class="btn-osu-big__content ">
+                <span class="btn-osu-big__left">
+                <span class="btn-osu-big__text-top">${name}</span>
+                </span><span class="btn-osu-big__icon">
+                <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`;
+        }
+
         function addMirrors(){
             if(settings.showMirror){
                 $(".beatmapset-header__buttons").append(
-                    `<a href="https://beatconnect.io/b/${jsonBeatmapset.id}" data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
-                    <span class="btn-osu-big__content ">
-                    <span class="btn-osu-big__left">
-                    <span class="btn-osu-big__text-top">Beatconnect mirror</span>
-                    </span><span class="btn-osu-big__icon">
-                    <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`
+                    makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", false)
                 );
             }
             if(settings.showMirror2){
                 $(".beatmapset-header__buttons").append(
-                    `<a href="https://osu.sayobot.cn/home?search=${jsonBeatmapset.id}" target="_blank" data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
-                    <span class="btn-osu-big__content ">
-                    <span class="btn-osu-big__left">
-                    <span class="btn-osu-big__text-top">Sayobot</span>
-                    </span><span class="btn-osu-big__icon">
-                    <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`
+                    makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", false),
+                    makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot NoVid", false)
+                );
+            }
+            if(settings.showMirror3){
+                $(".beatmapset-header__buttons").append(
+                    makeMirror(`https://nerina.pw/d/${jsonBeatmapset.id}`, "NeriNyan", false)
+                );
+            }
+            if(settings.showMirror4){
+                $(".beatmapset-header__buttons").append(
+                    makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false)
                 );
             }
         }
@@ -4488,7 +4605,12 @@ ${beatmapset.difficulties.map(function(beatmap){
                         updateScoresTable();
                     })
             );
-            $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--pp").text("").append(
+            var ppheader = $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--pp");
+            if(ppheader.length == 0){
+                ppheader = $("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--pp'></th>");
+                $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--time").before(ppheader);
+            }
+            ppheader.text("").append(
                 $("<a>pp</a>")
                     .click(function(){
                         sortResult("pp");
@@ -4843,6 +4965,31 @@ ${beatmapset.difficulties.map(function(beatmap){
         default:
             return "osu";
         }
+    }
+
+    function formatNumberSuffixed(num, precision){
+        const suffixes = ["", "k", "m", "b", "t"];
+        const k = 1000;
+
+        const format = (n) => {
+            var options = {minimumFractionDigits: 0, maximumFractionDigits: precision};
+            return n.toLocaleString("en", options);
+        };
+
+        if (num < k) return format(num);
+        const i = Math.min(suffixes.length - 1, Math.floor(Math.log(num) / Math.log(k)));
+
+        return `${format(num / Math.pow(k, i))}${suffixes[i]}`;
+    }
+
+    function getDiffRating(rating){
+        rating = parseFloat(rating);
+        if (rating < 2) return "easy";
+        if (rating < 2.7) return "normal";
+        if (rating < 4) return "hard";
+        if (rating < 5.3) return "insane";
+        if (rating < 6.5) return "expert";
+        return "expert-plus";
     }
 
     function getPpCalc(params){
