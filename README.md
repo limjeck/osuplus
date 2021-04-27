@@ -14,8 +14,9 @@ All features are available on both the old and new site.
 - Display score date
 - Display pp rank
 - Search scores of any user
+  - Search multiple users at once with a comma separated list
 - Download replay of any score (if available)
-- Bloodcat mirror
+- Beatmap mirrors
 - Display numerical value of CS, AR, HP, OD
 - [osu!preview](https://osu.ppy.sh/forum/t/383371)
 - Display max combo value
@@ -29,7 +30,7 @@ All features are available on both the old and new site.
 - Settings tab to enable/disable osuplus features
 - Force show difficulties in beatmap listing
 - Display "pp if ranked or fc" for maps with scoreboards and user recent plays (click the pp value) (only for standard)
-- Export beatmap top scores to csv
+- Export beatmap leaderboard to csv
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
