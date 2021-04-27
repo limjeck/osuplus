@@ -1,3 +1,20 @@
+## 2.2.9 (27 Apr 2021)
+
+#### Features
+- Beatmap page
+  - Added Sayobot novid mirror (enable in settings)
+  - Added NeriNyan and Chimu.moe mirrors (enable in settings)
+  - Hovering over pp shows more precise pp (like official)
+  - Right clicking mod options cycle them backwards
+  - Added optional mod selectors DT/NC and HT
+  - Friends scores show every mod score (instead of just their top score)
+
+#### Bugfixes
+- Fixed osu!preview link
+- Fixed subscriptions tab
+- Added back pp header in scoreboards without pp
+- Fixed pp leaderboards country/global column messing up when switching filter too quickly
+
 ## 2.2.8 (17 Jan 2021)
 
 #### Features
