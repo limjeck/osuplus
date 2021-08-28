@@ -4429,41 +4429,35 @@
         }
 
         function makeMirror(url, name, newtab){
-            return `<a href="${url}" ${newtab ? "target='_blank'" : ""} data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
+            $(
+                `<a href="${url}" ${newtab ? "target='_blank'" : ""} data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
                 <span class="btn-osu-big__content ">
                 <span class="btn-osu-big__left">
                 <span class="btn-osu-big__text-top">${name}</span>
                 </span><span class="btn-osu-big__icon">
-                <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`;
+                <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`
+            ).insertBefore($(".beatmapset-header__more"));
         }
-
+        
         function addMirrors(){
             if(settings.showMirror){
-                $(".beatmapset-header__buttons").append(
-                    makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", false)
-                );
+                makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", false);
             }
             if(settings.showMirror2){
-                $(".beatmapset-header__buttons").append(
-                    makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", false),
-                    makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot NoVid", false)
-                );
+                makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", false);
+                makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot NoVid", false);
             }
             if(settings.showMirror3){
-                $(".beatmapset-header__buttons").append(
-                    makeMirror(`https://nerina.pw/d/${jsonBeatmapset.id}`, "NeriNyan", false)
-                );
+                makeMirror(`https://nerina.pw/d/${jsonBeatmapset.id}`, "NeriNyan", false);
             }
             if(settings.showMirror4){
-                $(".beatmapset-header__buttons").append(
-                    makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false)
-                );
+                makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false);
             }
         }
-
+        
         async function addSubBtn(){
             subscribed = await subscriberManager.map.isSubscribed(jsonBeatmapset.id.toString());
-            $(".beatmapset-header__buttons").append(
+            $(
                 `<a class='btn-osu-big btn-osu-big--beatmapset-header sub-button' title='Subscribe map'>
                     <span class='btn-osu-big__content'>
                         <span class='btn-osu-big__left'>
@@ -4474,7 +4468,7 @@
                         </span>
                     </span>
                 </a>`
-            );
+            ).insertBefore($(".beatmapset-header__more"));
             $(".sub-button").click(function(){
                 if(subscribed){
                     subscriberManager.map.remove(jsonBeatmapset.id.toString()).then(() => {
