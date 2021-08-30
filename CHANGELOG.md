@@ -1,3 +1,12 @@
+## 2.3.0 (30 Aug 2021)
+
+#### Features
+- Match cost calculator in mp pages
+
+#### Bugfixes
+- Replaced /p/api links with old.ppy.sh/p/api
+- Moved mirrors/subscribe button in beatmaps page to before the ellipsis
+
 ## 2.2.9 (27 Apr 2021)
 
 #### Features
