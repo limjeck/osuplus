@@ -2,6 +2,9 @@
 
 A userscript to add features to your boring osu! web pages.
 
+Forum: https://osu.ppy.sh/community/forums/topics/408541 \
+Discord: https://discord.gg/mzssqXQepM
+
 ## [Changelog](CHANGELOG.md)
 
 ## Features
@@ -31,6 +34,7 @@ All features are available on both the old and new site.
 - Force show difficulties in beatmap listing
 - Display "pp if ranked or fc" for maps with scoreboards and user recent plays (click the pp value) (only for standard)
 - Export beatmap leaderboard to csv
+- Match cost calculator
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
