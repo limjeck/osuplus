@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.2.9
+// @version      2.3.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -211,6 +211,7 @@
         }));
         return Promise.all(promises).then(() => {
             settings.displayTopNum = settings.showTop100 ? 100 : 50;
+            //settings.apikey = null;
             return settings;
         });
     }
@@ -719,6 +720,8 @@
                         setNewOsuplus(osuplusNewUserpage);
                     }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/rankings\//)){
                         setNewOsuplus(osuplusNewPpRanking);
+                    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/community\/matches/)){
+                        setNewOsuplus(osuplusNewMp);
                     }
                 }
             }, 1000);
@@ -735,6 +738,340 @@
         });
 
         return {init: init};
+    }
+
+
+    function osuplusNewMp(){
+        var jsonEvents = null,
+            mpId = null,
+            userMap = null,
+            matches = null,
+            userDict = null,
+            mpDiv = null;
+
+        function addCss(){
+            if(!$(".osuplus-new-mp-style").length){
+                $(document.head).append($("<style class='osuplus-new-mp-style'></style>").html(
+                    `#osuplus-mc {padding: 10px 0px;}
+                    .osuplus-mp-body {background-color: hsl(var(--hsl-b4)); border-radius: 4px;}
+                    .mc-settings {display: flex;}
+                    .mc-maps-container {flex: 2;}
+                    .mc-users-container {flex: 1;}
+                    .mc-others-container {flex: 1;}
+                    .mp-team-red, .mp-team-blue {height: 12px; width: 12px; border-radius: 50%; display: inline-block;}
+                    .mp-label {text-transform: initial;}
+                    .mp-team-red {background-color: #ff3c3c;}
+                    .mp-team-blue {background-color: #3ca1ff;}
+                    .mc-calculate-row {text-align: center;}
+                    .mc-calculate-btn {color: black;}
+                    .mc-results-header {text-align: center; margin: 20px 0px 0px 0px;}
+                    .mc-teamresult {text-align: center;}
+                    .mc-result {display: flex; justify-content: space-evenly;}
+                    .mc-mc {display: inline-block; width: 50px; text-align: right;}
+                    #mc-ez-mult, #mc-fl-mult {color: black;}`
+                ));
+            }
+        }
+
+        function init(){
+            if($("#osuplusloaded").length) return;
+            $("body").append("<a hidden id='osuplusloaded'></a>");
+            addCss();
+            jsonEvents = JSON.parse($("#json-events").text());
+            mpId = jsonEvents.match.id;
+            mpDiv = $(`<div class='osuplus-mp-container'>
+                <div class='js-spoilerbox bbcode-spoilerbox'>
+                    <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'>
+                        <span class="bbcode-spoilerbox__link-icon"></span>Match costs
+                    </a>
+                    <div class='bbcode-spoilerbox__body osuplus-mp-body'>
+                        <div id='osuplus-mc'>
+                            Loading...
+                        </div>
+                    </div>
+                </div>
+            </div>`).click(function(){
+                var mcEle = $(this).find("#osuplus-mc");
+                if(mcEle.data("loaded")) return;
+                mcEle.data("loaded", true);
+                getMpEvents(mpId).then((res) => {
+                    jsonEvents = res;
+                    userMap = getUserMap(jsonEvents.users);
+                    matches = extractMatches(jsonEvents.events, userMap);
+                    userDict = getUserDict(userMap, matches);
+                    var teamval = {blue: 2, red: 1, none: 0};
+                    var userData = Object.values(userDict).sort((a, b) => teamval[b.team] - teamval[a.team]);
+
+                    mcEle.html(
+                        `<div class='mc-settings'>
+                            <div class='mc-maps-container'>
+                                <div>Maps</div>
+                                ${matches.map((match, index) => 
+                                    `<input type='checkbox' id='mp-map-${match.beatmap.id}' name='${index}' checked>
+                                    <label for='mp-map-${match.beatmap.id}' class='mp-label'>
+                                        ${match.beatmap.title} [${match.beatmap.version}] ${match.mods.length == 0 ? "" : `+${match.mods.join(",")}`}
+                                    </label><br>`
+                                ).join("")}
+                            </div>
+                            <div class='mc-users-container'>
+                                <div>Players</div>
+                                ${userData.map((user) => 
+                                    `<div class='mc-user'>
+                                        <input type='checkbox' id='mp-user-${user.id}' name='${user.id}' checked>
+                                        <label for='mp-user-${user.id}' class='mp-label'><span class='mp-team-${user.team}'></span> ${user.username}</label>
+                                    </div>`
+                                ).join("")}
+                            </div>
+                            <div class='mc-others-container'>
+                                EZ mult: <input type='text' id='mc-ez-mult' value='1.00'><br>
+                                FL mult: <input type='text' id='mc-fl-mult' value='1.00'><br>
+                                <br>
+                                <div class='mc-formulas'>
+                                    Formula:
+                                    <div class='mc-formula-box'>
+                                        <input type='radio' id='mc-formula-osuplus' name='mc-formula' value='osuplus' checked>
+                                        <label for='mc-formula-osuplus' class='mp-label'>osuplus</label> <a href='https://i.imgur.com/BJPOKDY.png' target='_blank'>?</a><br>
+                                        <input type='radio' id='mc-formula-bathbot' name='mc-formula' value='bathbot'>
+                                        <label for='mc-formula-bathbot' class='mp-label'>Bathbot</label> <a href='https://i.imgur.com/7KFwcUS.png' target='_blank'>?</a><br>
+                                        <input type='radio' id='mc-formula-flashlight' name='mc-formula' value='flashlight'>
+                                        <label for='mc-formula-flashlight' class='mp-label'>Flashlight</label> <a href='https://i.imgur.com/lNITeBx.png' target='_blank'>?</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class='mc-calculate-row'>
+                            <button class='mc-calculate-btn'>Calculate match costs</button>
+                        </div>
+                        <div class='mc-results'>
+
+                        </div>`
+                    );
+                    mcEle.find("button.mc-calculate-btn").click(() => {
+                        var selectedMatches = $.map($(".mc-maps-container input:checked"), x => deepCopy(matches[x.name]));
+                        var ezmult = parseFloat($("#mc-ez-mult").val());
+                        if(isNaN(ezmult)) ezmult = 1;
+                        var flmult = parseFloat($("#mc-fl-mult").val());
+                        if(isNaN(flmult)) flmult = 1;
+                        for(let match of selectedMatches){
+                            for(let score of match.scores){
+                                if(inArray(score.mods, "EZ")){
+                                    score.score *= ezmult;
+                                }
+                                if(inArray(score.mods, "FL")){
+                                    score.score *= flmult;
+                                }
+                            }
+                        }
+
+                        var selectedUsersList = $.map($(".mc-user input:checked"), x => x.name);
+                        var selectedUsers = {};
+                        for(let user in userMap){
+                            selectedUsers[user] = false;
+                        }
+                        for(let user of selectedUsersList){
+                            selectedUsers[user] = true;
+                        }
+                        var formula = $(".mc-formula-box input[name=mc-formula]:checked").val();
+                        var result = matchCost(selectedMatches, selectedUsers, formula);
+                        var teamresultDiv = "";
+                        if(result.teamresult.none == 0){
+                            teamresultDiv = `<span class='mp-team-blue'></span> ${result.teamresult.blue} - ${result.teamresult.red} <span class='mp-team-red'></span>`;
+                        }
+                        var mc = [];
+                        for(let id in result.mc){
+                            mc.push({
+                                id: id,
+                                username: userDict[id].username,
+                                team: userDict[id].team,
+                                mc: result.mc[id]
+                            });
+                        }
+                        mc.sort((a, b) => b.mc - a.mc);
+                        mcEle.find(".mc-results").empty().html(
+                            `<div class='mc-results-header'>${jsonEvents.match.name}<br>Formula: ${formula}</div>
+                            <div class='mc-teamresult'>${teamresultDiv}</div>
+                            <div class='mc-result'>
+                                <ol class='mc-list'>
+                                    ${mc.map(x => 
+                                    `<li><span class='mc-mc'>${x.mc.toFixed(3)}</span> <span class='mp-team-${x.team}'></span> ${x.username}</li>`
+                                    ).join("")}
+                                </ol>
+                            </div>`
+                        );
+                    });
+                });
+            });
+            $(".mp-history-content h3").after(mpDiv);
+            
+        }
+
+        function matchCost(selectedMatches, selectedUsers, formula){
+            var userStats = {};
+            for(let user in selectedUsers){
+                if(selectedUsers[user]){
+                    userStats[user] = {
+                        plays: 0,
+                        sum: 0,
+                        sum_median: 0,
+                        tbbonus: 0,
+                        modcombis: new Set()
+                    };
+                }
+            }
+            var teamresult = {blue: 0, red: 0, none: 0};
+            for(let match of selectedMatches){
+                var nplayers = 0;
+                var totalscore = 0;
+                var scorels = [];
+                var teamscore = {blue: 0, red: 0, none: 0};
+                for(let score of match.scores){
+                    if(selectedUsers[score.user_id]){
+                        nplayers += 1;
+                        totalscore += score.score;
+                        scorels.push(score.score);
+                        teamscore[score.team] += score.score;
+                        userStats[score.user_id].plays += 1;
+                        var mods = deepCopy(score.mods);
+                        removeFromArray(mods, "NF");
+                        userStats[score.user_id].modcombis.add(mods.join(","));
+                    }
+                }
+                var medianscore = median(scorels);
+                for(let i in match.scores){
+                    var score = match.scores[i];
+                    if(selectedUsers[score.user_id]){
+                        userStats[score.user_id].sum += score.score * nplayers / totalscore;
+                        userStats[score.user_id].sum_median += score.score / medianscore;
+                        if(i == match.scores.length - 1 && teamscore["blue"] == teamscore["red"]){ // TB
+                            userStats[score.user_id].tbbonus = score.score * nplayers / totalscore;
+                        }
+                    }
+                }
+                if(teamscore["none"] > 0){
+                    teamresult["none"] += 1;
+                }else if(teamscore["blue"] + teamscore["red"] > 0){
+                    if(teamscore["blue"] >= teamscore["red"]){
+                        teamresult["blue"] += 1;
+                    }else{
+                        teamresult["red"] += 1;
+                    }
+                }
+            }
+
+            var mc;
+            switch(formula){
+            case "osuplus":
+                mc = matchCostOsuplus(userStats, selectedMatches);
+                break;
+            case "bathbot":
+                mc = matchCostBathbot(userStats, selectedMatches);
+                break;
+            case "flashlight":
+                mc = matchCostFlashlight(userStats, selectedMatches);
+                break;
+            }
+            return {mc: mc, teamresult: teamresult};
+        }
+
+        function matchCostOsuplus(userStats, selectedMatches){
+            var ans = {};
+            for(let id in userStats){
+                ans[id] = 2 * userStats[id].sum / (userStats[id].plays + 2);
+            }
+            return ans;
+        }
+
+        function matchCostBathbot(userStats, selectedMatches){
+            var ans = {};
+            for(let id in userStats){
+                let p = userStats[id].plays;
+                ans[id] = (userStats[id].sum + p*0.5 + userStats[id].tbbonus) / p * 1.4**(((p-1)/(selectedMatches.length-1))**0.6) * (1 + 0.02*Math.max(0, userStats[id].modcombis.size-2));
+            }
+            return ans;
+        }
+
+        function matchCostFlashlight(userStats, selectedMatches){
+            var ans = {};
+            var plays = [];
+            for(let id in userStats){
+                if(userStats[id].plays > 0){
+                    plays.push(userStats[id].plays);
+                }
+            }
+            var medianplays = median(plays);
+            for(let id in userStats){
+                let p = userStats[id].plays;
+                ans[id] = userStats[id].sum_median / p * (p / medianplays)**(1/3);
+            }
+            return ans;
+        }
+
+        function getUserDict(userMap, matches){
+            var userDict = {};
+            for(let id in userMap){
+                userDict[id] = {
+                    id: id,
+                    username: userMap[id]
+                };
+            }
+            for(let match of matches){
+                for(let score of match.scores){
+                    userDict[score.user_id].team = score.team;
+                }
+            }
+            for(let id in userDict){
+                if(userDict[id].team === undefined){
+                    delete userDict[id];
+                }
+            }
+            return userDict;
+        }
+
+        function extractMatches(events, userMap){
+            var matches = [];
+            for(let event of events){
+                if(event.detail.type == "other"){
+                    var match = {
+                        beatmap: event.game.beatmap === undefined ? {
+                            id: Math.floor(Math.random() * 1e12),
+                            title: "deleted beatmap",
+                            version: "rip"
+                        } : {
+                            id: event.game.beatmap.id,
+                            title: event.game.beatmap.beatmapset.title,
+                            version: event.game.beatmap.version
+                        },
+                        scores: event.game.scores.map((score) => ({
+                            user_id: score.user_id,
+                            username: userMap[score.user_id],
+                            mods: score.mods,
+                            team: score.match.team,
+                            passed: score.passed,
+                            score: score.score
+                        })),
+                        mods: event.game.mods
+                    };
+                    if(match.scores.length){
+                        matches.push(match);
+                    }
+                }
+            }
+            return matches;
+        }
+
+        function getUserMap(users){
+            var userMap = {};
+            for(let user of users){
+                userMap[user.id] = user.username;
+            }
+            return userMap;
+        }
+
+        function destroy(){
+            $(".osuplus-new-mp-style").remove();
+        }
+
+        return {init: init, destroy: destroy};
     }
 
     function osuplusBeatmapListing(){
@@ -1401,14 +1738,14 @@
                                     <div class="beatmapset-panel__extra-item">
                                         <div class="beatmapset-status beatmapset-status--panel" style="--bg:var(--beatmapset-${status}-bg); --colour:var(--beatmapset-${status}-colour);">${approved}</div>
                                     </div>
-    ${beatmapGroup.map((group) => {
-        return `<div class="beatmapset-panel__extra-item beatmapset-panel__extra-item--dots">
-            <div class="beatmapset-panel__beatmap-icon"><i class="fal fa-extra-mode-${intToMode(group.mode)}"></i></div>
-    ${group.beatmaps.map((beatmap) => {
-        return `<div class="beatmapset-panel__beatmap-dot" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});"></div>`;
-    }).join("")}
-        </div>`;
-    }).join("")}
+                                    ${beatmapGroup.map((group) => {
+                                        return `<div class="beatmapset-panel__extra-item beatmapset-panel__extra-item--dots">
+                                            <div class="beatmapset-panel__beatmap-icon"><i class="fal fa-extra-mode-${intToMode(group.mode)}"></i></div>
+                                    ${group.beatmaps.map((beatmap) => {
+                                        return `<div class="beatmapset-panel__beatmap-dot" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});"></div>`;
+                                    }).join("")}
+                                        </div>`;
+                                    }).join("")}
                                 </a>
                             </div>
                             <div class="beatmapset-panel__menu-container">
@@ -1429,23 +1766,23 @@
                 var pup = $(`<div>
                     <div class="beatmaps-popup" style="opacity: 1; transition-duration: ${transitionDuration}ms; top: ${window.scrollY + rect.bottom}px; left: ${window.scrollX + rect.left}px; width: ${rect.width}px;">
                         <div class="beatmaps-popup__content">
-    ${beatmapGroup.map((group) => {
-        return `<div class="beatmaps-popup__group">
-    ${group.beatmaps.map((beatmap) => {
-        return `<a class="beatmaps-popup-item" href="https://osu.ppy.sh/beatmaps/${beatmap.beatmap_id}">
-            <span class="beatmaps-popup-item__col beatmaps-popup-item__col--mode">
-                <span class="fal fa-extra-mode-${intToMode(group.mode)}"></span>
-            </span>
-            <span class="beatmaps-popup-item__col beatmaps-popup-item__col--difficulty" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});">
-                <span class="beatmaps-popup-item__difficulty-icon">
-                    <span class="fas fa-star"></span>
-                </span>${parseFloat(beatmap.difficultyrating).toFixed(2)}
-            </span>
-            <span class="beatmaps-popup-item__col beatmaps-popup-item__col--name u-ellipsis-overflow">${beatmap.version}</span>
-        </a>`;
-    }).join("")}
-        </div>`;
-    }).join("")}
+                            ${beatmapGroup.map((group) => {
+                                return `<div class="beatmaps-popup__group">
+                            ${group.beatmaps.map((beatmap) => {
+                                return `<a class="beatmaps-popup-item" href="https://osu.ppy.sh/beatmaps/${beatmap.beatmap_id}">
+                                    <span class="beatmaps-popup-item__col beatmaps-popup-item__col--mode">
+                                        <span class="fal fa-extra-mode-${intToMode(group.mode)}"></span>
+                                    </span>
+                                    <span class="beatmaps-popup-item__col beatmaps-popup-item__col--difficulty" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});">
+                                        <span class="beatmaps-popup-item__difficulty-icon">
+                                            <span class="fas fa-star"></span>
+                                        </span>${parseFloat(beatmap.difficultyrating).toFixed(2)}
+                                    </span>
+                                    <span class="beatmaps-popup-item__col beatmaps-popup-item__col--name u-ellipsis-overflow">${beatmap.version}</span>
+                                </a>`;
+                            }).join("")}
+                                </div>`;
+                            }).join("")}
                         </div>
                     </div>
                 </div>`);
@@ -2771,17 +3108,17 @@
                                     <div class="play-detail__accuracy-and-weighted-pp">
                                         <span class="play-detail__accuracy">${acc.toFixed(2)}%</span>
                                     </div>
-        ${play.perfect == "1" ? 
-        "<div><span class='play-detail__fc'>(FC)</span></div>" : ""}
+                                    ${play.perfect == "1" ? 
+                                    "<div><span class='play-detail__fc'>(FC)</span></div>" : ""}
                                 </div>
                             </div>
                             <div class="play-detail__score-detail play-detail__score-detail--mods">
                                 ${getNewMods(play.enabled_mods)}
                             </div>
                             <div class="play-detail__pp${gameMode == 0 ? "" : " play-detail__recent-pp"}">
-        ${gameMode == 0 ? 
-        `<span class='ppcalc-pp'>${ppUnitSpan}</span>
-        <a class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</a>` : ""}
+                                ${gameMode == 0 ? 
+                                `<span class='ppcalc-pp'>${ppUnitSpan}</span>
+                                <a class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</a>` : ""}
                             </div>
                             <div class="play-detail__more"></div>
                         </div>`
@@ -3654,35 +3991,37 @@
             }
             var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
             
-            var row = $(`<tr class='${rowclass}'>
-        <td>${score.replay_available == "1" ? 
-        `<a class='require-login' href='/web/osu-getreplay.php?c=${score.score_id}&amp;m=${mapMode}'>#${rankno}</a>` :
-        `#${rankno}`}</td>
+            var row = $(
+                `<tr class='${rowclass}'>
+                    <td>${score.replay_available == "1" ? 
+                        `<a class='require-login' href='/web/osu-getreplay.php?c=${score.score_id}&amp;m=${mapMode}'>#${rankno}</a>` :
+                        `#${rankno}`}
+                    </td>
                     <td>${getRankImg(score.rank)}</td>
                     <td>${rankno == 1 ? `<b>${commarise(score.score)}</b>` : commarise(score.score)}</td>
                     <td class='${mapMode == 0 ? "ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
                     <td>${acc == 100 ? `<b>${acc.toFixed(2)}%</b>` : `${acc.toFixed(2)}%`}</td>
                     <td>${countryImg}\n${userhref}${pprank}</td>
                     <td>${score.maxcombo}</td>
-        ${mapMode == 3 ?
-        // Mania
-        `<td>${score.countgeki}</td>
-        <td>${score.count300}</td>
-        <td>${score.countkatu}</td>
-        <td>${score.count100}</td>
-        <td>${score.count50}</td>` :
-        // Standard/Taiko/CTB
-        `<td>${score.count300}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count100}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count50}</td>
-        <td>${score.countgeki}</td>
-        <td>${score.countkatu}</td>`}
+                    ${mapMode == 3 ?
+                        // Mania
+                        `<td>${score.countgeki}</td>
+                        <td>${score.count300}</td>
+                        <td>${score.countkatu}</td>
+                        <td>${score.count100}</td>
+                        <td>${score.count50}</td>` :
+                        // Standard/Taiko/CTB
+                        `<td>${score.count300}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count100}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count50}</td>
+                        <td>${score.countgeki}</td>
+                        <td>${score.countkatu}</td>`}
                     <td>${score.countmiss}</td>
                     <td>${getMods(score.enabled_mods)}</td>
                     <td class='datecol'>
-                      <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time>
+                        <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time>
                     </td>
                     <td><a onclick='reportscore(${score.score_id});'>Report</a></td>
                     <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
-                    </tr>`);
+                </tr>`);
             //ppcalc, only for std
             if(mapMode == 0){
                 row.find(".ppcalc-pp").click(function(event){
@@ -3787,7 +4126,7 @@
                      .osupreview-container {padding: 30px;}
                      .beatmap-scoreboard-table__header--miss {max-width: 45px; min-width: 30px; width: auto;}
                      .beatmap-scoreboard-table__header a {cursor: pointer;}
-                     .sub-button {background-color: #29b; background-image: none;}
+                     .sub-button {background-image: none;}
                      .subbed {background-color: #ef77af;}
                      #searchusertxt {color: black;}
                      .beatmap-scoreboard-table__cell--grade {width: auto; height: auto; display: table-cell;}
@@ -4002,34 +4341,34 @@
                         <a class='${cellClass}-content' ${scoreHref}></a>
                     </td>
                     ${makeTdLink(score.perfect == "1" ? ["perfect"] : [], commarise(score.maxcombo) + "x")}
-        ${mapMode == 3 ?
-        // Mania
-        [
-            makeZeroableEntry(score.countgeki),
-            makeZeroableEntry(score.count300),
-            makeZeroableEntry(score.countkatu),
-            makeZeroableEntry(score.count100),
-            makeZeroableEntry(score.count50)
-        ].join("") :
-        mapMode == 1 ?
-        // Taiko
-            [
-                makeZeroableEntry(score.count300),
-                makeZeroableEntry(score.count100)
-            ].join("") :
-            mapMode == 2 ?
-            // CTB
-                [
-                    makeZeroableEntry(score.count300),
-                    makeZeroableEntry(score.count100),
-                    makeZeroableEntry(score.countkatu)
-                ].join("") :
-            // Standard
-                [
-                    makeZeroableEntry(score.count300),
-                    makeZeroableEntry(score.count100),
-                    makeZeroableEntry(score.count50)
-                ].join("")}
+                    ${mapMode == 3 ?
+                    // Mania
+                    [
+                        makeZeroableEntry(score.countgeki),
+                        makeZeroableEntry(score.count300),
+                        makeZeroableEntry(score.countkatu),
+                        makeZeroableEntry(score.count100),
+                        makeZeroableEntry(score.count50)
+                    ].join("") :
+                    mapMode == 1 ?
+                    // Taiko
+                    [
+                        makeZeroableEntry(score.count300),
+                        makeZeroableEntry(score.count100)
+                    ].join("") :
+                    mapMode == 2 ?
+                    // CTB
+                    [
+                        makeZeroableEntry(score.count300),
+                        makeZeroableEntry(score.count100),
+                        makeZeroableEntry(score.countkatu)
+                    ].join("") :
+                    // Standard
+                    [
+                        makeZeroableEntry(score.count300),
+                        makeZeroableEntry(score.count100),
+                        makeZeroableEntry(score.count50)
+                    ].join("")}
                     ${makeZeroableEntry(score.countmiss)}
                     <td class='${cellClass} osuplus-pp-cell${mapMode == 0 ? " ppcalc-pp" : ""}'>
                         <a class='${cellClass}-content'>
@@ -4439,23 +4778,23 @@
 
         function addMirrors(){
             if(settings.showMirror){
-                $(".beatmapset-header__buttons").append(
+                $(".beatmapset-header__more").before(
                     makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", false)
                 );
             }
             if(settings.showMirror2){
-                $(".beatmapset-header__buttons").append(
+                $(".beatmapset-header__more").before(
                     makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", false),
                     makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot NoVid", false)
                 );
             }
             if(settings.showMirror3){
-                $(".beatmapset-header__buttons").append(
+                $(".beatmapset-header__more").before(
                     makeMirror(`https://nerina.pw/d/${jsonBeatmapset.id}`, "NeriNyan", false)
                 );
             }
             if(settings.showMirror4){
-                $(".beatmapset-header__buttons").append(
+                $(".beatmapset-header__more").before(
                     makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false)
                 );
             }
@@ -4463,7 +4802,7 @@
 
         async function addSubBtn(){
             subscribed = await subscriberManager.map.isSubscribed(jsonBeatmapset.id.toString());
-            $(".beatmapset-header__buttons").append(
+            $(".beatmapset-header__more").before(
                 `<a class='btn-osu-big btn-osu-big--beatmapset-header sub-button' title='Subscribe map'>
                     <span class='btn-osu-big__content'>
                         <span class='btn-osu-big__left'>
@@ -4504,7 +4843,7 @@
         function addOsuPreview(){
             $(".beatmapset-info").after(
                 $("<div class='osupreview-container osuplus-header'><div class='js-spoilerbox bbcode-spoilerbox'>\
-                    <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><i class='fas fa-chevron-right bbcode-spoilerbox__arrow'></i>osu!preview</a>\
+                    <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>osu!preview</a>\
                     <div class='bbcode-spoilerbox__body'><div id='osupreview'></div></div></div>"
                 ).click(function(){
                     var osupreviewEle = $(this).find("#osupreview");
@@ -4775,7 +5114,7 @@
             `<div class="op-getkey">
                 <h1 id="osuplusnotice">
                     [osuplus] Click <a class="a-promptKey">here</a> to use your osu!API key.<br>
-                    Don't have API key? Get from <a href='/p/api' target="_blank">here</a>
+                    Don't have API key? Get from <a href='https://old.ppy.sh/p/api' target="_blank">here</a>
                 </h1>
             </div>`
         );
@@ -5055,6 +5394,48 @@
         }, reqTracker);
     }
 
+    function getMpEvents(mp){
+        function doBefore(events, first, resolve){
+            var id = events.events[0].id;
+            var url2 = `https://osu.ppy.sh/community/matches/${mp}?before=${id}&limit=100`;
+            $.get(url2, (res) => {
+                if(debug) console.log(url2, res);
+                events.events = res.events.concat(events.events);
+                //combine users
+                for(let u of res.users){
+                    var isthere = false;
+                    for(let v of events.users){
+                        if(v.id === u.id){
+                            isthere = true;
+                            break;
+                        }
+                    }
+                    if(!isthere){
+                        events.users.push(u);
+                    }
+                }
+                if(res.events.length && res.events[0].id > first){
+                    doBefore(res.events[0].id, first, resolve);
+                }else{
+                    resolve(events);
+                }
+            }, "json");
+        }
+
+        return new Promise((resolve, reject) => {
+            var url = `https://osu.ppy.sh/community/matches/${mp}`;
+            $.get(url, (events) => {
+                if(debug) console.log(url, events);
+                var first = events.first_event_id;
+                if(events.events.length && events.events[0].id > first){
+                    doBefore(events, first, resolve);
+                }else{
+                    resolve(events);
+                }
+            }, "json");
+        });
+    }
+
     function getUserRecent(params, callback, reqTracker){
         /*
         k - api key (required).
@@ -5234,9 +5615,20 @@
         return false;
     }
 
+    function deepCopy(dict){
+        return JSON.parse(JSON.stringify(dict));
+    }
+
     function removeFromArray(arr, ele){
         var _index = arr.indexOf(ele);
         if(_index > -1) arr.splice(_index, 1);
+    }
+
+    function median(ls){
+        if(ls.length === 0) return 0;
+        ls = [...ls].sort((a, b) => a - b); //javascript will normally sort lexicographically
+        var mid = Math.floor(ls.length / 2);
+        return ls.length % 2 === 0 ? (ls[mid] + ls[mid-1]) / 2 : ls[mid];
     }
 
     // returns [a1.push(e) for a1 in arr1, e in arr2]
