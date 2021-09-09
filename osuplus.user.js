@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.0
+// @version      2.3.1
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -4434,7 +4434,7 @@
 
             $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__body-row").remove();
             $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__body").append(tableRows);
-            $(".timeago").timeago();
+            //$(".timeago").timeago();
             //updateShowDate();
             tableLoadingNotice.hide();
             if(callback) callback();
@@ -4768,35 +4768,32 @@
         }
 
         function makeMirror(url, name, newtab){
-            return `<a href="${url}" ${newtab ? "target='_blank'" : ""} data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
+            var mirror = `<a href="${url}" ${newtab ? "target='_blank'" : ""} data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
                 <span class="btn-osu-big__content ">
                 <span class="btn-osu-big__left">
                 <span class="btn-osu-big__text-top">${name}</span>
                 </span><span class="btn-osu-big__icon">
                 <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`;
+            if($(".beatmapset-header__more").length > 0){
+                $(".beatmapset-header__more").before(mirror);
+            }else{
+                $(".beatmapset-header__buttons").append(mirror);
+            }
         }
 
         function addMirrors(){
             if(settings.showMirror){
-                $(".beatmapset-header__more").before(
-                    makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", false)
-                );
+                makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", false);
             }
             if(settings.showMirror2){
-                $(".beatmapset-header__more").before(
-                    makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", false),
-                    makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot NoVid", false)
-                );
+                makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", false);
+                makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot NoVid", false);
             }
             if(settings.showMirror3){
-                $(".beatmapset-header__more").before(
-                    makeMirror(`https://nerina.pw/d/${jsonBeatmapset.id}`, "NeriNyan", false)
-                );
+                makeMirror(`https://nerina.pw/d/${jsonBeatmapset.id}`, "NeriNyan", false);
             }
             if(settings.showMirror4){
-                $(".beatmapset-header__more").before(
-                    makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false)
-                );
+                makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false);
             }
         }
 
@@ -5021,7 +5018,7 @@
                         $("#searchuserresult .beatmap-scoreboard-table__body").append(tableRow);
                     });
                     
-                    $(".timeago").timeago();
+                    //$(".timeago").timeago();
                     $("#searchuserinfo").hide();
                     $("#searchuserresult").show();
                 }else{
