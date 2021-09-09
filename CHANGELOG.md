@@ -1,3 +1,9 @@
+## 2.3.1 (9 Sep 2021)
+
+#### Bugfixes
+- Fixed beatmap scoreboard not loading for some people
+- Fixed beatmap mirrors not appearing on some beatmaps
+
 ## 2.3.0 (30 Aug 2021)
 
 #### Features
