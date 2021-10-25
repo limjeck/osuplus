@@ -1,3 +1,11 @@
+## 2.3.2 (24 Oct 2021)
+
+#### Features
+- Settings icon draggable
+
+#### Bugfixes
+- Rate-limited to 1 request every 100ms (due to users getting banned for sending 100s of requests at once)
+
 ## 2.3.1 (9 Sep 2021)
 
 #### Bugfixes

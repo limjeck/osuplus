@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.1
+// @version      2.3.2
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -690,8 +690,38 @@
             $("#osuplusModalOverlay, #osuplusModal").fadeOut(200);
         }
 
-        $("#osuplusSettingsBtn").click(openModal);
         $("#osuplusModalOverlay, .osuplusModalClose, #osuplusSettingsSaveBtn").click(closeModal);
+
+        dragElement($("#osuplusSettingsBtn"), openModal);
+    }
+
+    // draggable code
+    function dragElement(ele, onclick){
+        var cursorx = 0, elex = 0, moved = false;
+        ele.mousedown((e) => {
+            e.preventDefault();
+            cursorx = e.clientX;
+            elex = ele.position().left;
+            moved = false;
+            $(document).mousemove(dragmove);
+            $(document).mouseup(dragup);
+        });
+
+        function dragmove(e){
+            e.preventDefault();
+            moved = true;
+            var newcursorx = e.clientX;
+            var newright = $(document).width() - elex - ele.width() + cursorx - newcursorx;
+            ele.css("right", newright + "px");
+        }
+
+        function dragup(e){
+            $(document).off("mousemove", dragmove);
+            $(document).off("mouseup", dragup);
+            if(!moved && onclick){
+                onclick();
+            }
+        }
     }
 
     function osuplusNew(){
@@ -5551,8 +5581,27 @@
         return rtn;
     }
 
+    var requestLimiter = {
+        rate: 100, //time between requests, in ms
+        interval: null,
+        queue: [],
+        loop: function(){
+            if(this.queue.length > 0){
+                var details = this.queue.shift();
+                if(debug) console.log(details.url);
+                GMX.xmlHttpRequest(details);
+            }
+        },
+        makeRequest: function(details){
+            if(this.interval === null){
+                this.interval = setInterval(this.loop.bind(this), this.rate);
+            }
+            this.queue.push(details);
+        }
+        
+    };
+
     function GetPage(url, callback) {
-        if(debug) console.log(url);
         return abortableXHR({
             method: "GET",
             url: url,
@@ -5579,7 +5628,7 @@
                 details.ontimeout(resp);
             }
         };
-        GMX.xmlHttpRequest({
+        requestLimiter.makeRequest({
             method: details.method,
             url: details.url,
             synchronous: details.synchronous,
