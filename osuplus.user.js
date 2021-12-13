@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.2
+// @version      2.3.3
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -191,6 +191,7 @@
         forceShowDifficulties: false,
         pp2dp: true,
         showSiteSwitcher: false,
+        showMpGrades: true,
     };
 
     var settings = {};
@@ -655,13 +656,19 @@
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
                             makeSettingRow("Force show difficulties", "so no need to hover over maps", makeCheckboxOption("forceShowDifficulties"))
                         )
+                    ),
+                    $("<div>").append(
+                        "<h2>Multiplayer</h2>",
+                        $("<table class='osuplusSettingsTable' width='100%'>").append(
+                            makeSettingRow("Show grades", "only for std", makeCheckboxOption("showMpGrades"))
+                        )
                     )
                 ),
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = [
                         "showMirror", "showMirror2", "showMirror3", "showMirror4", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
-                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher"
+                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", "showMpGrades"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -777,7 +784,8 @@
             userMap = null,
             matches = null,
             userDict = null,
-            mpDiv = null;
+            mpDiv = null,
+            observer = null;
 
         function addCss(){
             if(!$(".osuplus-new-mp-style").length){
@@ -798,7 +806,14 @@
                     .mc-teamresult {text-align: center;}
                     .mc-result {display: flex; justify-content: space-evenly;}
                     .mc-mc {display: inline-block; width: 50px; text-align: right;}
-                    #mc-ez-mult, #mc-fl-mult {color: black;}`
+                    #mc-ez-mult, #mc-fl-mult {color: black;}
+                    .mc-list {counter-reset: rownum;}
+                    .mc-list-row {counter-increment: rownum;}
+                    .mc-list-row td:first-child::before {content: counter(rownum) ". ";}
+                    .mc-header-plays, .mc-header-tops {padding: 0px 2px;}
+                    .mc-cell-mc {padding-right: 5px;}
+                    .mc-cell-plays, .mc-cell-tops {text-align: center;}
+                    .op-mp-grade {position: relative; width: 50px;}`
                 ));
             }
         }
@@ -837,8 +852,8 @@
                             <div class='mc-maps-container'>
                                 <div>Maps</div>
                                 ${matches.map((match, index) => 
-                                    `<input type='checkbox' id='mp-map-${match.beatmap.id}' name='${index}' checked>
-                                    <label for='mp-map-${match.beatmap.id}' class='mp-label'>
+                                    `<input type='checkbox' id='mp-map-${match.id}' name='${index}' checked>
+                                    <label for='mp-map-${match.id}' class='mp-label'>
                                         ${match.beatmap.title} [${match.beatmap.version}] ${match.mods.length == 0 ? "" : `+${match.mods.join(",")}`}
                                     </label><br>`
                                 ).join("")}
@@ -908,23 +923,30 @@
                             teamresultDiv = `<span class='mp-team-blue'></span> ${result.teamresult.blue} - ${result.teamresult.red} <span class='mp-team-red'></span>`;
                         }
                         var mc = [];
-                        for(let id in result.mc){
+                        for(let id in result.stats){
                             mc.push({
                                 id: id,
                                 username: userDict[id].username,
                                 team: userDict[id].team,
-                                mc: result.mc[id]
+                                stats: result.stats[id]
                             });
                         }
-                        mc.sort((a, b) => b.mc - a.mc);
+                        mc.sort((a, b) => b.stats.mc - a.stats.mc);
                         mcEle.find(".mc-results").empty().html(
                             `<div class='mc-results-header'>${jsonEvents.match.name}<br>Formula: ${formula}</div>
                             <div class='mc-teamresult'>${teamresultDiv}</div>
                             <div class='mc-result'>
-                                <ol class='mc-list'>
+                                <table class='mc-list'>
+                                    <tr><th></th><th></th><th></th><th class='mc-header-plays'>#plays(${selectedMatches.length})</th><th class='mc-header-tops'>#tops</th></tr>
                                     ${mc.map(x => 
-                                    `<li><span class='mc-mc'>${x.mc.toFixed(3)}</span> <span class='mp-team-${x.team}'></span> ${x.username}</li>`
+                                    `<tr class='mc-list-row'><td></td>
+                                        <td class='mc-cell-mc'><span class='mc-mc'>${x.stats.mc.toFixed(3)}</span></td>
+                                        <td class='mc-cell-player'><span class='mp-team-${x.team}'></span> ${x.username}</td>
+                                        <td class='mc-cell-plays'>${x.stats.plays}</td>
+                                        <td class='mc-cell-tops'>${x.stats.tops}</td>
+                                    </tr>`
                                     ).join("")}
+                                    
                                 </ol>
                             </div>`
                         );
@@ -933,6 +955,55 @@
             });
             $(".mp-history-content h3").after(mpDiv);
             
+            // add grades
+            if(settings.showMpGrades){
+                var containers = $(".mp-history-game");
+                $.map(containers, (container) => {
+                    addGrades($(container));
+                });
+                observer = new MutationObserver((mutations, observer) => {
+                    for(let mutation of mutations){
+                        for(let node of mutation.addedNodes){
+                            $.map($(node).find(".mp-history-game"), (container) => {
+                                addGrades($(container));
+                            });
+                        }
+                    }
+                });
+                observer.observe($(".js-react--mp-history")[0], {subtree: true, childList: true});
+            }
+        }
+
+        function addGrades(container){
+            if(container.find(".mp-history-game__stats-box").children().eq(1).text() == "osu!"){ // only for std for now
+                $.map(container.find(".mp-history-player-score"), (playerdiv) => {
+                    playerdiv = $(playerdiv);
+                    var stats = playerdiv.find(".mp-history-player-score__stat-number--small");
+                    var score = {
+                        count300: decommarise(stats.eq(0).text()),
+                        count100: decommarise(stats.eq(1).text()),
+                        count50: decommarise(stats.eq(2).text()),
+                        countmiss: decommarise(stats.eq(3).text()),
+                        countgeki: 0,
+                        countkatu: 0
+                    };
+                    var mods = $.map(playerdiv.find(".mp-history-player-score__mods").children(), (child) => {
+                        return $(child).attr("class").split("mod--")[1];
+                    });
+                    var modnum = 0;
+                    for(let modname of modnames){
+                        if(inArray(mods, modname.short)){
+                            modnum += modname.val;
+                        }
+                    }
+                    var grade = calcGrade(score, 0, modnum);
+                    playerdiv.find(".mp-history-player-score__shapes").after(
+                        `<div class='op-mp-grade'>
+                            <div class='score-rank score-rank--full score-rank--${grade}'></div>
+                        </div>`
+                    );
+                });
+            }
         }
 
         function matchCost(selectedMatches, selectedUsers, formula){
@@ -944,6 +1015,7 @@
                         sum: 0,
                         sum_median: 0,
                         tbbonus: 0,
+                        tops: 0,
                         modcombis: new Set()
                     };
                 }
@@ -954,16 +1026,23 @@
                 var totalscore = 0;
                 var scorels = [];
                 var teamscore = {blue: 0, red: 0, none: 0};
+                var topscore = 1;
                 for(let score of match.scores){
                     if(selectedUsers[score.user_id]){
                         nplayers += 1;
                         totalscore += score.score;
+                        topscore = Math.max(topscore, score.score);
                         scorels.push(score.score);
                         teamscore[score.team] += score.score;
                         userStats[score.user_id].plays += 1;
                         var mods = deepCopy(score.mods);
                         removeFromArray(mods, "NF");
                         userStats[score.user_id].modcombis.add(mods.join(","));
+                    }
+                }
+                for(let score of match.scores){
+                    if(score.score == topscore){
+                        userStats[score.user_id].tops += 1;
                     }
                 }
                 var medianscore = median(scorels);
@@ -1000,7 +1079,11 @@
                 mc = matchCostFlashlight(userStats, selectedMatches);
                 break;
             }
-            return {mc: mc, teamresult: teamresult};
+            var stats = {};
+            for(let id in mc){
+                stats[id] = {mc: mc[id], plays: userStats[id].plays, tops: userStats[id].tops};
+            }
+            return {stats: stats, teamresult: teamresult};
         }
 
         function matchCostOsuplus(userStats, selectedMatches){
@@ -1015,7 +1098,11 @@
             var ans = {};
             for(let id in userStats){
                 let p = userStats[id].plays;
-                ans[id] = (userStats[id].sum + p*0.5 + userStats[id].tbbonus) / p * 1.4**(((p-1)/(selectedMatches.length-1))**0.6) * (1 + 0.02*Math.max(0, userStats[id].modcombis.size-2));
+                if(p == 0){
+                    ans[id] = 0;
+                }else{
+                    ans[id] = (userStats[id].sum + p*0.5 + userStats[id].tbbonus) / p * 1.4**(((p-1)/(selectedMatches.length-1))**0.6) * (1 + 0.02*Math.max(0, userStats[id].modcombis.size-2));
+                }
             }
             return ans;
         }
@@ -1031,7 +1118,11 @@
             var medianplays = median(plays);
             for(let id in userStats){
                 let p = userStats[id].plays;
-                ans[id] = userStats[id].sum_median / p * (p / medianplays)**(1/3);
+                if(p == 0){
+                    ans[id] = 0;
+                }else{
+                    ans[id] = userStats[id].sum_median / p * (p / medianplays)**(1/3);
+                }
             }
             return ans;
         }
@@ -1079,7 +1170,9 @@
                             passed: score.passed,
                             score: score.score
                         })),
-                        mods: event.game.mods
+                        mods: event.game.mods,
+                        id: event.game.id,
+                        mode_int: event.game.mode_int
                     };
                     if(match.scores.length){
                         matches.push(match);
@@ -1099,6 +1192,7 @@
 
         function destroy(){
             $(".osuplus-new-mp-style").remove();
+            observer.disconnect();
         }
 
         return {init: init, destroy: destroy};
@@ -5255,19 +5349,86 @@
             cmiss = parseInt(score.countmiss),
             cgeki = parseInt(score.countgeki),
             ckatu = parseInt(score.countkatu);
-        if(mode === 0){
-            // Standard
+        switch(mode){
+        case 0: // Standard
             return 100.0 * (6*c300 + 2*c100 + c50) / (6*(c50 + c100 + c300 + cmiss));
-        }else if(mode === 1){
-            // Taiko
+        case 1: // Taiko
             return 100.0 * (2*c300 + c100) / (2*(c300 + c100 + cmiss));
-        }else if(mode === 2){
-            //CTB
+        case 2: // CTB
             return 100.0 * (c300 + c100 + c50) / (c300 + c100 + c50 + ckatu + cmiss);
-        }else{
-            //Mania
+        case 3: // Mania
             return 100.0 * (6*cgeki + 6*c300 + 4*ckatu + 2*c100 + c50) / (6*(c50 + c100 + c300 + cmiss + cgeki + ckatu));
         }
+    }
+
+    function calcGrade(score, mode, mods){
+        var c50   = parseInt(score.count50),
+            c100  = parseInt(score.count100),
+            c300  = parseInt(score.count300),
+            cmiss = parseInt(score.countmiss);
+            //cgeki = parseInt(score.countgeki),
+            //ckatu = parseInt(score.countkatu);
+        var ctotal;
+        var acc = calcAcc(score, mode);
+        var grade = "";
+        switch(mode){
+        case 0: // Standard
+            ctotal = c50 + c100 + c300 + cmiss;
+            if(ctotal == c300){
+                grade = "X";
+            }else if(c300 >= 0.9*ctotal && c50 <= 0.01*ctotal && cmiss == 0){
+                grade = "S";
+            }else if(c300 >= 0.8*ctotal && cmiss == 0 || c300 >= 0.9*ctotal){
+                grade = "A";
+            }else if(c300 >= 0.7*ctotal && cmiss == 0 || c300 >= 0.8*ctotal){
+                grade = "B";
+            }else if(c300 >= 0.6*ctotal){
+                grade = "C";
+            }else{
+                grade = "D";
+            }
+            break;
+        case 1: // Taiko
+            // i have no idea and the wiki is inconsistent lol
+            grade = "S";
+            break;
+        case 2: // CTB
+            if(acc == 100){
+                grade = "X";
+            }else if(acc > 98){
+                grade = "S";
+            }else if(acc > 94){
+                grade = "A";
+            }else if(acc > 90){
+                grade = "B";
+            }else if(acc > 85){
+                grade = "C";
+            }else{
+                grade = "D";
+            }
+            break;
+        case 3: // Mania
+            if(acc == 100){
+                grade = "X";
+            }else if(acc > 95){
+                grade = "S";
+            }else if(acc > 90){
+                grade = "A";
+            }else if(acc > 80){
+                grade = "B";
+            }else if(acc > 70){
+                grade = "C";
+            }else{
+                grade = "D";
+            }
+        }
+        var silverflag = (1<<3) + (1<<10) + (1<<20); // HD+FL+FI
+        if(mods & silverflag){
+            if(grade == "X" || grade == "S"){
+                grade += "H";
+            }
+        }
+        return grade;
     }
 
     function getTime(datestring){
@@ -5286,6 +5447,12 @@
             num = num.slice(0,-3);
         }
         return numarray.reverse().join(",");
+    }
+
+    function decommarise(numstr){
+        return parseInt(numstr.split("").filter(c => {
+            return c >= "0" && c <= "9";
+        }).join(""));
     }
 
     function secsToMins(secs){
@@ -5442,7 +5609,7 @@
                     }
                 }
                 if(res.events.length && res.events[0].id > first){
-                    doBefore(res.events[0].id, first, resolve);
+                    doBefore(events, first, resolve);
                 }else{
                     resolve(events);
                 }
