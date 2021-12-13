@@ -1,3 +1,14 @@
+## 2.3.3 (13 Dec 2021)
+
+#### Features
+- Added match cost #plays and #tops
+- Added mp grades (for standard only)
+
+#### Bugfixes
+- Fixed mp match cost doesn't load for large mps
+- Fixed match cost bathbot/flashlight formula sometimes give NaN
+- Fixed match cost map selector bug if there are multiple same maps
+
 ## 2.3.2 (24 Oct 2021)
 
 #### Features
