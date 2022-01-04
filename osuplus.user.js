@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.3
+// @version      2.3.4
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -2854,7 +2854,7 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded'></a>");
             addCss();
-            jsonUser = JSON.parse($("#json-user").text());
+            jsonUser = JSON.parse($(".js-react--profile-page").attr("data-initial-data")).user;
             gameMode = getGameMode();
 
             addDetailedTop();
@@ -2898,7 +2898,11 @@
 
             // :)
             if(jsonUser.id == 1843447){
-                $(".profile-info__title").text("osuplus creator");
+                if($(".profile-info__title").length){
+                    $(".profile-info__title").text("osuplus creator");
+                }else{
+                    $(".profile-info__name").after("<span class='profile-info__title'>osuplus creator</span>")
+                }
             }
         }
 
