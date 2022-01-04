@@ -1,3 +1,8 @@
+## 2.3.4 (4 Jan 2022)
+
+#### Bugfixes
+- Fixed userpage
+
 ## 2.3.3 (13 Dec 2021)
 
 #### Features
