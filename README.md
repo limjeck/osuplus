@@ -43,6 +43,8 @@ All features are available on both the old and new site.
 ## How to install
 Ensure you have Tampermonkey/Greasemonkey installed and enabled. 
 
+Obtain an API key at https://osu.ppy.sh/p/api. When prompted for an application name and website, put "osuplus" as the application name and https://osu.ppy.sh/community/forums/topics/408541 or https://github.com/limjeck/osuplus as the website.
+
 Click [here](https://github.com/limjeck/osuplus/raw/master/osuplus.user.js) to install.
 
 Now go to any osu! beatmap listing page. It should prompt you for your API key at the top of the page. Simply paste your API key and done!
