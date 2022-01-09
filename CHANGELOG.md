@@ -1,45 +1,52 @@
-## 2.3.4 (4 Jan 2022)
+# 2.3.5 (9 Jan 2022)
 
-#### Bugfixes
+## Bugfixes
+- Fixed userpage best and first plays not showing detailed stats
+- Fixed max combo not appearing on beatmap pages
+- Fixed mp matchcost showing NaN if there is a map where everyone gets 0
+
+# 2.3.4 (4 Jan 2022)
+
+## Bugfixes
 - Fixed userpage
 
-## 2.3.3 (13 Dec 2021)
+# 2.3.3 (13 Dec 2021)
 
-#### Features
+## Features
 - Added match cost #plays and #tops
 - Added mp grades (for standard only)
 
-#### Bugfixes
+## Bugfixes
 - Fixed mp match cost doesn't load for large mps
 - Fixed match cost bathbot/flashlight formula sometimes give NaN
 - Fixed match cost map selector bug if there are multiple same maps
 
-## 2.3.2 (24 Oct 2021)
+# 2.3.2 (24 Oct 2021)
 
-#### Features
+## Features
 - Settings icon draggable
 
-#### Bugfixes
+## Bugfixes
 - Rate-limited to 1 request every 100ms (due to users getting banned for sending 100s of requests at once)
 
-## 2.3.1 (9 Sep 2021)
+# 2.3.1 (9 Sep 2021)
 
-#### Bugfixes
+## Bugfixes
 - Fixed beatmap scoreboard not loading for some people
 - Fixed beatmap mirrors not appearing on some beatmaps
 
-## 2.3.0 (30 Aug 2021)
+# 2.3.0 (30 Aug 2021)
 
-#### Features
+## Features
 - Match cost calculator in mp pages
 
-#### Bugfixes
+## Bugfixes
 - Replaced /p/api links with old.ppy.sh/p/api
 - Moved mirrors/subscribe button in beatmaps page to before the ellipsis
 
-## 2.2.9 (27 Apr 2021)
+# 2.2.9 (27 Apr 2021)
 
-#### Features
+## Features
 - Beatmap page
   - Added Sayobot novid mirror (enable in settings)
   - Added NeriNyan and Chimu.moe mirrors (enable in settings)
@@ -48,70 +55,70 @@
   - Added optional mod selectors DT/NC and HT
   - Friends scores show every mod score (instead of just their top score)
 
-#### Bugfixes
+## Bugfixes
 - Fixed osu!preview link
 - Fixed subscriptions tab
 - Added back pp header in scoreboards without pp
 - Fixed pp leaderboards country/global column messing up when switching filter too quickly
 
-## 2.2.8 (17 Jan 2021)
+# 2.2.8 (17 Jan 2021)
 
-#### Features
+## Features
 - RIP bloodcat
   - Added Beatconnect mirror
   - Added Sayobot mirror (disabled by default)
   - Temporary replacement for osu!preview
 
-## 2.2.7 (7 Dec 2020)
+# 2.2.7 (7 Dec 2020)
 
-#### Features
+## Features
 - Added option to show site swapper in new site in settings (false by default)
 
-#### Bugfixes
+## Bugfixes
 - Fixed beatmaps page formatting
 - Added spaces to some mods tooltip
 
-## 2.2.6 (29 Oct 2020)
+# 2.2.6 (29 Oct 2020)
 
-#### Features
+## Features
 - Added "export to csv" button on beatmap page
 
-#### Bugfixes
+## Bugfixes
 - Fixed missing country flag on new beatmap page
 
-## 2.2.5 (28 Oct 2020)
+# 2.2.5 (28 Oct 2020)
 
-#### Bugfixes
+## Bugfixes
 - Added modding discussion link in subscriptions in old site
 - Fixed mods being vertical in new userpage recent section
 - Fixed CTB Droplet Miss displaying incorrect value in new beatmap page
 - Updated Mirror mod icon
 - Updated V2 mod mini icon
 
-## 2.2.4 (31 Aug 2020)
+# 2.2.4 (31 Aug 2020)
 
-#### Features
+## Features
 - New userpage scores when hovered shows its relative position
 
-#### Bugfixes
+## Bugfixes
 - Fixed new beatmaps page not working with non-English languages
 - Fixed new beatmaps page mods taking up multiple lines
 - Fixed highlight recent scores on new beatmaps page
 - Clicking a score on new beatmaps page takes you to the score page (same as on original page)
   - Ctrl-click opens in new tab (unlike original page)
 
-## 2.2.3 (29 Jul 2020)
+# 2.2.3 (29 Jul 2020)
 
-#### Bugfixes
+## Bugfixes
 - Replaced new beatmaps page date column with original time column
 - Fixed new mod icons not showing
 
-## 2.2.2 (6 Jul 2020)
+# 2.2.2 (6 Jul 2020)
 
-#### Features
+## Features
 - Shows pp and pp if fc for recent plays in userpage (click the "pp") (only for standard)
 
-#### Bugfixes
+## Bugfixes
 - Fixed not working on beatmaps page
 - Fixed "pp if fc" on beatmaps page
 - Fixed pp ranking page
@@ -119,61 +126,61 @@
 - Added ScoreV2 icon on recent plays in userpage
 - Eslinted
 
-## 2.2.1 (30 Apr 2020)
+# 2.2.1 (30 Apr 2020)
 
-#### Features
+## Features
 - Added mirror mod filter (temporary image)
 
-#### Bugfixes
+## Bugfixes
 - Fixed invisible white text in various places
 - Fixed detailed scores for best plays in new userpage
 - Fixed difficulties in beatmaps in subscriptions tab
 - Added total playcount for beatmaps in subscriptions tab
 - Fixed new site header blocking api key message
 
-## 2.2.0 (30 Dec 2019)
+# 2.2.0 (30 Dec 2019)
 
-#### Features
+## Features
 - Display "pp if ranked or fc" for maps with scoreboards (click the pp value) (only for standard)
 - Userpage top ranks "?" modal now has options to see map values with HR/EZ
 - Subscriptions page now also has pagination at the bottom
 
-#### Bugfixes
+## Bugfixes
 - Fixed slider missing in new site's userpage
 - Fixed scoreboards not loading for non-standard scores
 - Fixed beatmap page score row rank icon when the row is more than 1 line tall
 - Fixed old site beatmap page not highlighting friends' scores
 
-## 2.1.5 (19 Sept 2019)
+# 2.1.5 (19 Sept 2019)
 
-#### Features
+## Features
 - Search user textbox in beatmap page:
   - Now autofills to your username
   - Accepts multiple usernames, separated by commas (e.g. "Vaxei,Rafis,xasuma")
   - Now displays rank #1 onwards instead of all rank #0
 
-#### Bugfixes
+## Bugfixes
 - Fix Mirror mod not displaying properly
 - Search user textbox text in new site's beatmap page is now black (instead of invisible white)
 
-## 2.1.4 (17 June 2019)
+# 2.1.4 (17 June 2019)
 
-#### Bugfixes
+## Bugfixes
 - Now loads on old.ppy.sh/*
 - Update rank images
 
-## 2.1.3 (24 Jan 2019)
+# 2.1.3 (24 Jan 2019)
 
-#### Bugfixes
+## Bugfixes
 - Fixed beatmap page on new site
 - Fixed userpage on new site
 - Fixed beatmap page for unranked maps on old site
 - Fixed repeated loads on new site if you go back
 - Fixed new site subscriptions tab
 
-## 2.1.2 (29 Sept 2018)
+# 2.1.2 (29 Sept 2018)
 
-#### Bugfixes
+## Bugfixes
 - Fixed beatmap scores displaying incorrect date again
 - Fixed user recent scores displaying incorrect date
 - Fixed user "show more" top scores not giving full details
@@ -181,14 +188,14 @@
 - Fixed compatibility with Opera tampermonkey
 - Adjusted Beatmaplisting/Subscription tabs in old site
 
-## 2.1.1 (25 Sept 2018)
+# 2.1.1 (25 Sept 2018)
 
-#### Bugfixes
+## Bugfixes
 - Fixed beatmap scores displaying incorrect date
 
-## 2.1.0 (14 Sept 2018)
+# 2.1.0 (14 Sept 2018)
 
-#### Features
+## Features
 - Added the following features on the new site:
   - Beatmap page:
     - slider to highlight recent scores
@@ -204,27 +211,27 @@
   - Beatmaplisting:
     - tab for subscribed maps and mappers
 
-#### Bugfixes
+## Bugfixes
 - Fixed userpage not displaying correct stats on recent plays for ctb/mania
 - Fixed osuplus not running on unranked beatmaps
 - Now works with Firefox Greasemonkey
 
-## 2.0.2 (4 Sept 2018)
+# 2.0.2 (4 Sept 2018)
 
-#### Features
+## Features
 - Added support for Touch Device mod
 
-#### Bugfixes
+## Bugfixes
 - Fixed osuplus failing when there's banned player on leaderboard
 
-## 2.0.1 (3 Sept 2018)
+# 2.0.1 (3 Sept 2018)
 
-#### Bugfixes
+## Bugfixes
 - Fixed recent scores displaying incorrect date
 
-## 2.0.0 (2 Sept 2018)
+# 2.0.0 (2 Sept 2018)
 
-#### Features
+## Features
 - Added the following features on the new site:
   - Beatmap page:
     - top 100 scores
@@ -240,112 +247,112 @@
 - Added setting to display pp in 0 or 2 dp
 - Beatmap score rank will not link to replay if replay is unavailable
 
-## 1.7.0 (27 Sept 2017)
+# 1.7.0 (27 Sept 2017)
 
-#### Features
+## Features
 - Settings tab on top right to enable/disable osuplus features
 - Added link in osu!preview to open in new tab
 - Added setting to force show difficulties in beatmap listing
 
-#### Bugfixes
+## Bugfixes
 - Fixed Most Played tab
 
-## 1.6.0 (22 June 2017)
+# 1.6.0 (22 June 2017)
 
-#### Features
+## Features
 - Subscription to mappers and maps
 - Beatmap information in userpage top ranks/recent plays
 
-## 1.5.7 (25 May 2017)
+# 1.5.7 (25 May 2017)
 
-#### Bugfixes
+## Bugfixes
 - Fixed Most Played tab (again)
 
-## 1.5.6 (18 May 2017)
+# 1.5.6 (18 May 2017)
 
-#### Bugfixes
+## Bugfixes
 - Fixed rank image not displaying properly (due to ppy moving the image address)
 
-## 1.5.5 (22 Feb 2017)
+# 1.5.5 (22 Feb 2017)
 
-#### Features
+## Features
 - Display multiple scores (if available) when you search the user in beatmap listings
 - Multiple scores by the same player (when multiple mod combinations selected) are now greyed out
 
-## 1.5.4 (8 Feb 2017)
+# 1.5.4 (8 Feb 2017)
 
-#### Bugfixes
+## Bugfixes
 - Fixed top pp scores in userpage displaying incorrect stats if it is not your top score
 - Fixed score stats in userpage for CTB (now {300/100/50/droplet miss/miss}) and mania (now {max/300/200/100/50/miss})
 - Search user textbox now appears faster
 
-## 1.5.3 (1 Nov 2016)
+# 1.5.3 (1 Nov 2016)
 
-#### Bugfixes
+## Bugfixes
 - Show pp rank checkbox now remembers your choice
 - Loads faster (when show pp rank is disabled)
 - Fixed most played tab (again)
 
-## 1.5.2 (16 Sept 2016)
+# 1.5.2 (16 Sept 2016)
 
-#### Bugfixes
+## Bugfixes
 - Checkbox to show global/country rank now (and it remembers your choice)
 - Fixed global/country rank for Firefox
 
-## 1.5.1 (15 Sept 2016)
+# 1.5.1 (15 Sept 2016)
 
-#### Bugfixes
+## Bugfixes
 - Fixed column headers for search user scores
 - Button to show global/country rank (to be compatible with osu!savePP)
 
-## 1.5.0 (12 Sept 2016)
+# 1.5.0 (12 Sept 2016)
 
-#### Features
+## Features
 - Display pp rank in beatmap listing
 - New loading image
 - Display global and country rank in performance ranking
 
-#### Bugfixes
+## Bugfixes
 - Fixed unchecking highlight not dehighlighting in userpage
 - Fixed max combo displaying nullx for Taiko/Mania in userpage (now doesn't display at all, since max combo is not available for Taiko/Mania in the API)
 
-## 1.4.0 (27 May 2016)
+# 1.4.0 (27 May 2016)
 
-#### Features
+## Features
 - Detailed top ranks
 - Star rating in most played
 - Slider to highlight recent scores in beatmap listing and top ranks
 
-#### Bugfixes
+## Bugfixes
 - Fixed most played not working (again)
 - Fixed taiko acc calculation
 
-## 1.3.1 (12 May 2016)
+# 1.3.1 (12 May 2016)
 
-#### Bugfixes
+## Bugfixes
 - Fixed most played not working
 
-## 1.3.0 (9 May 2016)
+# 1.3.0 (9 May 2016)
 
-#### Features
+## Features
 - osu!mania mods
 - Display recent plays (including failed scores) in userpage
 - Display top 100 most played maps in userpage
 - Display total 300/100/50 hits
 - Display hits/play
 
-#### Bugfixes
+## Bugfixes
 - Improved performance
 - Reduced size of images
 
-## 1.2.1 (15 Feb 2016)
+# 1.2.1 (15 Feb 2016)
 
-#### Bugfixes
+## Bugfixes
 - Now works with Greasemonkey 1.15.1 on Pale Moon
 
-## 1.2.0 (11 Feb 2016)
+# 1.2.0 (11 Feb 2016)
 
-#### Features
+## Features
 - Mod icons
 - Allow fuzzy mod selection (e.g. so you can display scores with DT or HDDT)
 - Download replay of any score (if available)
@@ -354,50 +361,50 @@
 - Display max combo value
 - Images now hard-coded in base64
 
-#### Bugfixes
+## Bugfixes
 - No longer displays your name twice in friend ranking if you are your own friend
 - No longer displays duplicate scores if you click buttons too fast
 
-## 1.1.0 (18 Jan 2016)
+# 1.1.0 (18 Jan 2016)
 
-#### Features
+## Features
 - API prompt more obvious
 - Sort by pp
 - New bloodcat image button (thanks [Dionysaw](https://osu.ppy.sh/u/4294475))
 - Show date score is set
 - Simple loading label when loading
 
-#### Bugfixes
+## Bugfixes
 - Faster on Firefox
 
-## 1.0.3 (14 Jan 2016)
+# 1.0.3 (14 Jan 2016)
 
-#### Bugfixes
+## Bugfixes
 - Now works with Firefox!
 
-## 1.0.2 (14 Jan 2016)
+# 1.0.2 (14 Jan 2016)
 
-#### Features
+## Features
 - pp now to 2 decimal places
 
-## 1.0.1 (14 Jan 2016)
+# 1.0.1 (14 Jan 2016)
 
-#### Bugfixes
+## Bugfixes
 - Fix inconsistent friend ranking (the API can screw up if you do multiple requests at the same time, or something)
 
-## 1.0 (13 Jan 2016)
+# 1.0 (13 Jan 2016)
 
-#### Features
+## Features
 - Highlight friends
 - Display friend rankings
 - Search scores of any user
 
-#### Bugfixes
+## Bugfixes
 - Fix osu!mania scorelist
 
-## 0.1 (6 Jan 2016)
+# 0.1 (6 Jan 2016)
 
-#### Features
+## Features
 - Displays up to top 100 scores
 - Displays pp for each score
 - Displays scores according to selected mods
