@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.4
+// @version      2.3.5
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -1039,6 +1039,9 @@
                         removeFromArray(mods, "NF");
                         userStats[score.user_id].modcombis.add(mods.join(","));
                     }
+                }
+                if(totalscore == 0){ // prevent divide by 0 if everyone gets 0
+                    totalscore = 1;
                 }
                 for(let score of match.scores){
                     if(score.score == topscore){
@@ -2901,7 +2904,7 @@
                 if($(".profile-info__title").length){
                     $(".profile-info__title").text("osuplus creator");
                 }else{
-                    $(".profile-info__name").after("<span class='profile-info__title'>osuplus creator</span>")
+                    $(".profile-info__name").after("<span class='profile-info__title'>osuplus creator</span>");
                 }
             }
         }
@@ -2943,20 +2946,20 @@
                     }
                 }
             });
-            $("div[data-page-id=top_ranks] .profile-extra-entries").eq(1).find(".play-detail").each(function(i, ele){
+            $("div[data-page-id=top_ranks] .play-detail-list").eq(1).find(".play-detail").each(function(i, ele){
                 addFirstDetails(ele);
             });
-            if($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[1]){
-                firstObserver.observe($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[1], {childList: true});
+            if($("div[data-page-id=top_ranks] .play-detail-list")[1]){
+                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[1], {childList: true});
             }
 
             getUserBest({u: jsonUser.id, m: gameMode, type: "id", limit: 100}, function(scores){
                 userBest = scores;
-                $("div[data-page-id=top_ranks] .profile-extra-entries").eq(0).find(".play-detail").each(function(i, ele){
+                $("div[data-page-id=top_ranks] .play-detail-list").eq(0).find(".play-detail").each(function(i, ele){
                     addBestDetails(ele);
                 });
-                if($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[0]){
-                    bestObserver.observe($("div[data-page-id=top_ranks] .profile-extra-entries .play-detail-list")[0], {childList: true});
+                if($("div[data-page-id=top_ranks] .play-detail-list")[0]){
+                    bestObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[0], {childList: true});
                 }
             });
 
@@ -4368,7 +4371,7 @@
             });
             if(beatmaps.length){
                 if(beatmaps[0].max_combo){
-                    return beatmaps[0].max_combo[0];
+                    return beatmaps[0].max_combo;
                 }
             }
             return null;
