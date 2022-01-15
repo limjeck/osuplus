@@ -178,6 +178,7 @@
         showMirror4: false,
         showSubscribeMap: true,
         apikey: null,
+        showRecent: true,
         failedChecked: true,
         showDates: true,
         showPpRank: false,
@@ -638,6 +639,7 @@
                     $("<div>").append(
                         "<h2>Userpage</h2>",
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
+                            makeSettingRow("Show all recent scores", "", makeCheckboxOption("showRecent")),
                             makeSettingRow("Show failed scores", "", makeCheckboxOption("failedChecked")),
                             makeSettingRow("Show detailed hit count", "", makeCheckboxOption("showDetailedHitCount")),
                             makeSettingRow("Show hits per play", "", makeCheckboxOption("showHitsPerPlay")),
@@ -667,7 +669,7 @@
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = [
-                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
+                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "showRecent", "failedChecked",
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", "showMpGrades"
                     ];
                     for(let property of properties){
@@ -2271,7 +2273,9 @@
 
             doGeneral();
             addMostPlayed();
-            addRecent();
+            if (settings.showRecent) {
+                addRecent();
+            }
 
             //Subscribe button
             subscriberManager.mapper.isSubscribed(userId).then((result) => {
@@ -2862,7 +2866,9 @@
 
             addDetailedTop();
             addGeneral();
-            addRecent();
+            if (settings.showRecent) {
+                addRecent();
+            }
 
             // Add modal
             $("body").append("<div class='opModalOverlay opModalOverride' id='opModalOverlay' style='display:none;'></div>");
