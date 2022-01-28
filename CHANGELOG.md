@@ -1,3 +1,8 @@
+# 2.3.6 (28 Jan 2022)
+
+## Bugfixes
+- Fixed userpage detailed score stats
+
 # 2.3.5 (9 Jan 2022)
 
 ## Bugfixes
