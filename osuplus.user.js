@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.5
+// @version      2.3.6
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -990,12 +990,7 @@
                     var mods = $.map(playerdiv.find(".mp-history-player-score__mods").children(), (child) => {
                         return $(child).attr("class").split("mod--")[1];
                     });
-                    var modnum = 0;
-                    for(let modname of modnames){
-                        if(inArray(mods, modname.short)){
-                            modnum += modname.val;
-                        }
-                    }
+                    var modnum = modArrayToNum(mods);
                     var grade = calcGrade(score, 0, modnum);
                     playerdiv.find(".mp-history-player-score__shapes").after(
                         `<div class='op-mp-grade'>
@@ -2946,20 +2941,31 @@
                     }
                 }
             });
-            $("div[data-page-id=top_ranks] .play-detail-list").eq(1).find(".play-detail").each(function(i, ele){
+
+            // Add firsts details
+            $("div[data-page-id=top_ranks] .play-detail-list").eq(2).find(".play-detail").each(function(i, ele){
                 addFirstDetails(ele);
             });
-            if($("div[data-page-id=top_ranks] .play-detail-list")[1]){
-                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[1], {childList: true});
+            if($("div[data-page-id=top_ranks] .play-detail-list")[2]){
+                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[2], {childList: true});
             }
 
+            // Add pinned details
+            $("div[data-page-id=top_ranks] .play-detail-list").eq(0).find(".play-detail").each(function(i, ele){
+                addFirstDetails(ele);
+            });
+            if($("div[data-page-id=top_ranks] .play-detail-list")[0]){
+                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[0], {childList: true});
+            }            
+
+            // Add bests details
             getUserBest({u: jsonUser.id, m: gameMode, type: "id", limit: 100}, function(scores){
                 userBest = scores;
-                $("div[data-page-id=top_ranks] .play-detail-list").eq(0).find(".play-detail").each(function(i, ele){
+                $("div[data-page-id=top_ranks] .play-detail-list").eq(1).find(".play-detail").each(function(i, ele){
                     addBestDetails(ele);
                 });
-                if($("div[data-page-id=top_ranks] .play-detail-list")[0]){
-                    bestObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[0], {childList: true});
+                if($("div[data-page-id=top_ranks] .play-detail-list")[1]){
+                    bestObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[1], {childList: true});
                 }
             });
 
@@ -2982,10 +2988,18 @@
                     $("div[data-page-id=top_ranks] .play-detail.recentscore").removeClass("recentscore");
                 }
             });
-            $("div[data-page-id=top_ranks] .title.title--page-extra-small").first().after(sliderDiv);
+            $("div[data-page-id=top_ranks] .title.title--page-extra-small").first().before(sliderDiv);
         }
 
         function addBestDetails(ele){
+            // Only add once
+            ele = $(ele);
+            if(ele.find(".op-details-loaded").length){
+                return;
+            }
+            ele.append("<div hidden class='op-details-loaded'></div>");
+
+            addRelativeRank(ele);
             var beatmapId = beatmapIdOfDetailRow(ele);
             var score = null;
             for(var uscore of userBest){
@@ -2995,23 +3009,35 @@
                 }
             }
             if(score !== null){
-                addDetails($(ele), score, beatmapId);
+                addDetails(ele, score, beatmapId);
             }
         }
 
         function addFirstDetails(ele){
+            // Only add once
+            ele = $(ele);
+            if(ele.find(".op-details-loaded").length){
+                return;
+            }
+            ele.append("<div hidden class='op-details-loaded'></div>");
+
+            addRelativeRank(ele);
+            // Obtain mods
+            let mods = ele.find(".play-detail__score-detail--mods .mod").map((_, x) => $(x).attr("class").split("mod--")[1]).get();
+            let modnum = modArrayToNum(mods);
+
             if(settings.fetchFirstsInfo){
                 var beatmapId = beatmapIdOfDetailRow(ele);
-                getScores({b: beatmapId, u: jsonUser.id, type: "id", m: gameMode, a: 1, limit: 1}, function(scores){
+                getScores({b: beatmapId, u: jsonUser.id, type: "id", m: gameMode, a: 1, mods: modnum, limit: 1}, function(scores){
                     if(scores.length){
-                        addDetails($(ele), scores[0], beatmapId);
+                        addDetails(ele, scores[0], beatmapId);
                     }
                 });
             }
         }
 
         function beatmapIdOfDetailRow(ele){
-            var href = $(ele).find(".play-detail__title").attr("href");
+            var href = ele.find(".play-detail__title").attr("href");
             var temp = href.split("/");
             temp = temp[temp.length - 1];
             return temp.split("?")[0];
@@ -3028,12 +3054,16 @@
             }else{
                 detailify(top, score);
             }
-            addRelativeRank(top);
         }
 
         function addRelativeRank(top){
-            var relrank = top.index() + 1;
-            top.append(`<div class='op-relrank'>${relrank}</div>`);
+            top.append("<div class='op-relrank'></div>");
+            // Make it dynamic
+            top.hover(function(){
+                let relrank = $(this).index() + 1;
+                $(this).find(".op-relrank").text(relrank);
+            });
+            
         }
 
         function detailify(top, score, beatmap){
@@ -5347,6 +5377,30 @@
             return `<div class='mod mod--${mod.short}' title='${mod.name}'></div>`;
         });
         return modsHtml.join("");
+    }
+
+    function modShortToNum(mod){ // e.g. "HD" -> 16
+        for(let md of modnames){
+            if(md.short == mod){
+                return md.val;
+            }
+        }
+    }
+
+    function modArrayToNum(arr){ // e.g. ["HD", "HR"] -> 24
+        let modnum = 0;
+        for(let mod of arr){
+            modnum |= modShortToNum(mod);
+        }
+
+        for(let doublemod of doublemods){
+            let mod1num = modShortToNum(doublemod[0]);
+            if(mod1num & modnum){
+                let mod2num = modShortToNum(doublemod[1]);
+                modnum |= mod2num;
+            }
+        }
+        return modnum;
     }
 
     function calcAcc(score, mode){
