@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.6
+// @version      2.3.7
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @include      http://osu.ppy.sh*
@@ -3199,7 +3199,10 @@
                             <dl class="profile-stats__entry"><dt class="profile-stats__key">50x</dt>
                             <dd class="profile-stats__value">${commarise(c50)} (${(100*c50/ctotal).toFixed(2)}%)</dd></dl>`
                         );
-                    }
+                    }                    
+
+                    // Fix overflowing rank chart
+                    unsafeWindow.dispatchEvent(new Event("resize"));
                 });
             }
         }
@@ -4459,7 +4462,7 @@
             var countryImg = "";
             if(country !== ""){
                 countryImg = `<a class='${cellClass}-content' href='/rankings/${mapModeStr}/performance?country=${countryUpper}'>
-                        <div class='flag-country flag-country--flat' style='background-image: url(&quot;/images/flags/${countryUpper}.png&quot;);' title='${countryName}'></div>
+                        <div class='flag-country flag-country--flat' style='background-image: url(&quot;${getCountryUrl(countryUpper)}&quot;);' title='${countryName}'></div>
                     </a>`;
             }
             var pprank;
@@ -5199,7 +5202,7 @@
         function minePlayerCountries(){
             $(".beatmap-scoreboard-table__body").children().each(function(index, ele){
                 var country = $(ele).children().eq(4).children().first().attr("href").split("=")[1].toLowerCase();
-                var uid = $(ele).children().eq(5).children().first().attr("href").split("/")[2];
+                var uid = $(ele).find(".js-usercard").attr("data-user-id");
                 savePlayerCountry(uid, country);
             });
         }
@@ -5496,8 +5499,9 @@
         return new Date(datestring).getTime();
     }
 
-    function getCountryUrl(country){
-        return "//s.ppy.sh/images/flags/" + country + ".gif";
+    function getCountryUrl(code){
+        var baseFileName = code.split("").map((c) => ((c.charCodeAt(0) + 127397).toString(16))).join("-");
+        return `/assets/images/flags/${baseFileName}.svg`;
     }
 
     function commarise(num){
