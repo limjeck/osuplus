@@ -1,3 +1,10 @@
+# 2.3.7 (23 Mar 2022)
+
+## Bugfixes
+- Fixed userpage rank chart overflowing
+- Fixed beatmap scoreboard countries
+- Fixed beatmap scoreboard displaying some players' countries wrongly
+
 # 2.3.6 (28 Jan 2022)
 
 ## Bugfixes
