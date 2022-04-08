@@ -774,6 +774,11 @@
             currentOsuplus.destroy();
         });
 
+        // fix https://github.com/limjeck/osuplus/issues/62
+        $(document).on("turbolinks:visit",function(){
+            $("#osuplusloaded").remove();
+        });
+
         return {init: init};
     }
 
