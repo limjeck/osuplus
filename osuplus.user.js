@@ -176,6 +176,7 @@
         showMirror2: false,
         showMirror3: false,
         showMirror4: false,
+        showDiscussionMap: false,
         showSubscribeMap: true,
         apikey: null,
         failedChecked: true,
@@ -628,6 +629,7 @@
                             makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
                             makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
                             makeSettingRow("Show subscribe map", null, makeCheckboxOption("showSubscribeMap")),
+                            makeSettingRow("Show discussion box ", null, makeCheckboxOption("showDiscussionMap")),
                             makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
                             makeSettingRow("Fetch player countries outside top 50", "disable to load faster, but some players' countries won't be loaded", makeCheckboxOption("fetchPlayerCountries")),
@@ -667,7 +669,7 @@
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = [
-                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
+                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showSubscribeMap", "showDiscussionMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked",
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", "showMpGrades"
                     ];
                     for(let property of properties){
@@ -4958,6 +4960,9 @@
             }
             if(settings.showMirror4){
                 makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false);
+            }
+            if(settings.showDiscussionMap){
+               makeMirror(`https://osu.ppy.sh/beatmapsets/${jsonBeatmapset.id}/discussion`, "Discussion", false);
             }
         }
 
