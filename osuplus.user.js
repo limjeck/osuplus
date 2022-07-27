@@ -5627,8 +5627,8 @@
             var ppResult = new Promise(resolve => getBeatmapFileCache(ppcalcData.id, resolve))
                 .then(beatmapFile => {
                     var parser = new ojsama.parser().feed(beatmapFile);
-                    console.log(parser.toString());
-                    console.log(parser.map.toString());
+                    debugValue(parser.toString());
+                    debugValue(parser.map.toString());
 
                     return {
                         pp: debugValue(ojsama.ppv2({
