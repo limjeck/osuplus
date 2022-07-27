@@ -5622,11 +5622,6 @@
         };
     }
 
-    function debugValue(x) {
-        console.log(x);
-        return x;
-    }
-
     function getPpCalc(ppcalcData) {
         if (ppcalcData.mode == 0) {
             var ppResult = new Promise(resolve => getBeatmapFileCache(ppcalcData.id, resolve))
@@ -5974,6 +5969,12 @@
     //-------------------------------
     // javascript helper functions
     //-------------------------------
+
+    function debugValue(x) {
+        if (debug)
+            console.log(x);
+        return x;
+    }
 
     function waitForEl(selector, callback){
         var poller = setInterval(() => {
