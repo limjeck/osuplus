@@ -4143,7 +4143,7 @@
             }else{
                 pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
             }
-            var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
+            var ppcalcData = makePpcalcData(mapMode, score, acc);
             
             var row = $(
                 `<tr class='${rowclass}'>
@@ -4463,7 +4463,7 @@
             }
             var userhref = `<a class='${cellClass}-content ${cellClass}-content--user-link js-usercard' data-user-id='${score.user_id}' href='/users/${score.user_id}/${mapModeStr}'>${score.username} ${pprank}</a>`;
             
-            var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
+            var ppcalcData = makePpcalcData(mapMode, score, acc);
             
             function makeTdLink(modifiers, content){
                 return `<td class=${cellClass}>
