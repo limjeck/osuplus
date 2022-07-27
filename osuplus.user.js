@@ -5641,18 +5641,16 @@
                         n50: ppcalcData.n50,
                         nmiss: ppcalcData.nmiss,
                     })),
-                    // "pp if full combo" is defined here as max combo and every miss converted to 50.
-                    // the new n50 is not always (n50 + nmiss), because the play may have failed early.
-                    // TODO: full combo can actually have missed slider ends, should we miss some too?
-                    // TODO: should we convert to 300/100 as needed for similar acc?
+                    // "pp if full combo" is defined here as max combo and every miss converted to 300.
+                    // the new n300 is not always (n300 + nmiss), because the play may have failed early.
                     pp_fc: debugValue(ojsama.ppv2({
                         map: parser.map,
                         mode: ppcalcData.mode,
                         mods: ppcalcData.mods,
                         combo: parser.map.max_combo(),
-                        n300: ppcalcData.n300,
+                        n300: parser.map.objects.length - ppcalcData.n100 - ppcalcData.n50,
                         n100: ppcalcData.n100,
-                        n50: parser.map.objects.length - ppcalcData.n300 - ppcalcData.n100,
+                        n50: ppcalcData.n50,
                         nmiss: 0,
                     })),
                 };
