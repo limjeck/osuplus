@@ -44,6 +44,13 @@
         GMX = GM;
     }
 
+    var ojsama = (() => {
+        // ojsama 2.2.0
+        // https://github.com/Francesco149/ojsama/blob/d3631e35192fe30dfbf782f70f3c058a694f287e/ojsama.min.js
+        var osu={};if(typeof exports!=="undefined"){osu=exports}(function(){osu.VERSION_MAJOR=2;osu.VERSION_MINOR=2;osu.VERSION_PATCH=0;var t={warn:Function.prototype};if(typeof exports!=="undefined"){t=console}var i=function(t,i){var s=new Array(t.length);for(var e=0;e<s.length;++e){s[e]=t[e].toFixed(i)}return s};function R(t){return typeof t==="undefined"}function s(t){this.time=t.time||0;this.ms_per_beat=t.ms_per_beat;if(this.ms_per_beat===undefined){this.ms_per_beat=600}this.change=t.change;if(this.change===undefined){this.change=true}}s.prototype.toString=function(){return"{ time: "+this.time.toFixed(2)+", "+"ms_per_beat: "+this.ms_per_beat.toFixed(2)+" }"};var u={circle:1<<0,slider:1<<1,spinner:1<<3};function e(t){this.pos=t.pos||[0,0]}e.prototype.toString=function(){return"pos: ["+i(this.pos,2)+"]"};function r(t){this.pos=t.pos||[0,0];this.distance=t.distance||0;this.repetitions=t.repetitions||1}r.prototype.toString=function(){return"pos: "+i(this.pos,2)+", "+"distance: "+this.distance.toFixed(2)+", "+"repetitions: "+this.repetitions};function a(t){this.time=t.time||0;this.type=t.type||0;if(!R(t.data))this.data=t.data}a.prototype.typestr=function(){var t="";if(this.type&u.circle)t+="circle | ";if(this.type&u.slider)t+="slider | ";if(this.type&u.spinner)t+="spinner | ";return t.substring(0,Math.max(0,t.length-3))};a.prototype.toString=function(){return"{ time: "+this.time.toFixed(2)+", "+"type: "+this.typestr()+(this.data?", "+this.data.toString():"")+" }"};var n={std:0};function o(){this.reset()}o.prototype.reset=function(){this.format_version=1;this.mode=n.std;this.title=this.title_unicode="";this.artist=this.artist_unicode="";this.creator="";this.version="";this.ar=undefined;this.cs=this.od=this.hp=5;this.sv=this.tick_rate=1;this.ncircles=this.nsliders=this.nspinners=0;if(!this.objects){this.objects=[]}else{this.objects.length=0}if(!this.timing_points){this.timing_points=[]}else{this.timing_points.length=0}return this};o.prototype.max_combo=function(){var t=this.ncircles+this.nspinners;var i=-1;var s=Number.NEGATIVE_INFINITY;var e=0;for(var r=0;r<this.objects.length;++r){var a=this.objects[r];if(!(a.type&u.slider)){continue}while(a.time>=s){++i;if(this.timing_points.length>i+1){s=this.timing_points[i+1].time}else{s=Number.POSITIVE_INFINITY}var n=this.timing_points[i];var o=1;if(!n.change&&n.ms_per_beat<0){o=-100/n.ms_per_beat}if(this.format_version<8){e=this.sv*100}else{e=this.sv*100*o}}var h=a.data;var p=h.distance*h.repetitions/e;var c=Math.ceil((p-.1)/h.repetitions*this.tick_rate);--c;c*=h.repetitions;c+=h.repetitions+1;t+=Math.max(0,c)}return t};o.prototype.toString=function(){var t=this.artist+" - "+this.title+" [";if(this.title_unicode||this.artist_unicode){t+="("+this.artist_unicode+" - "+this.title_unicode+")"}t+=this.version+"] mapped by "+this.creator+"\n"+"\n"+"AR"+parseFloat(this.ar.toFixed(2))+" "+"OD"+parseFloat(this.od.toFixed(2))+" "+"CS"+parseFloat(this.cs.toFixed(2))+" "+"HP"+parseFloat(this.hp.toFixed(2))+"\n"+this.ncircles+" circles, "+this.nsliders+" sliders, "+this.nspinners+" spinners"+"\n"+this.max_combo()+" max combo"+"\n";return t};function h(){this.map=new o;this.reset()}h.prototype.reset=function(){this.map.reset();this.nline=0;this.curline="";this.lastpos="";this.section="";return this};h.prototype.feed_line=function(t){this.curline=this.lastpos=t;++this.nline;if(t.startsWith(" ")||t.startsWith("_")){return this}t=this.curline=t.trim();if(t.length<=0){return this}if(t.startsWith("//")){return this}if(t.startsWith("[")){if(this.section=="Difficulty"&&R(this.map.ar)){this.map.ar=this.map.od}this.section=t.substring(1,t.length-1);return this}if(!t){return this}switch(this.section){case"Metadata":this._metadata();break;case"General":this._general();break;case"Difficulty":this._difficulty();break;case"TimingPoints":this._timing_points();break;case"HitObjects":this._objects();break;default:var i=t.indexOf("file format v");if(i<0){break}this.map.format_version=parseInt(t.substring(i+13));break}return this};h.prototype.feed=function(t){var i=i=t.split("\n");for(var s=0;s<i.length;++s){this.feed_line(i[s])}return this};h.prototype.toString=function(){return"at line "+this.nline+"\n"+this.curline+"\n"+"-> "+this.lastpos+" <-"};h.prototype._setpos=function(t){this.lastpos=t.trim();return this.lastpos};h.prototype._warn=function(){t.warn.apply(null,Array.prototype.slice.call(arguments));t.warn(this.toString())};h.prototype._property=function(){var t=this.curline.split(":",2);t[0]=t[0]&&this._setpos(t[0]);t[1]=t[1]&&this._setpos(t[1]);return t};h.prototype._metadata=function(){var t=this._property();switch(t[0]){case"Title":this.map.title=t[1];break;case"TitleUnicode":this.map.title_unicode=t[1];break;case"Artist":this.map.artist=t[1];break;case"ArtistUnicode":this.map.artist_unicode=t[1];break;case"Creator":this.map.creator=t[1];break;case"Version":this.map.version=t[1];break;case"BeatmapID":this.map.beatmapId=parseInt(t[1]);break;case"BeatmapSetID":this.map.beatmapsetId=parseInt(t[1]);break}};h.prototype._general=function(){var t=this._property();if(t[0]!=="Mode"){return}this.map.mode=parseInt(this._setpos(t[1]))};h.prototype._difficulty=function(){var t=this._property();switch(t[0]){case"CircleSize":this.map.cs=parseFloat(this._setpos(t[1]));break;case"OverallDifficulty":this.map.od=parseFloat(this._setpos(t[1]));break;case"ApproachRate":this.map.ar=parseFloat(this._setpos(t[1]));break;case"HPDrainRate":this.map.hp=parseFloat(this._setpos(t[1]));break;case"SliderMultiplier":this.map.sv=parseFloat(this._setpos(t[1]));break;case"SliderTickRate":this.map.tick_rate=parseFloat(this._setpos(t[1]));break}};h.prototype._timing_points=function(){var t=this.curline.split(",");if(t.length>8){this._warn("timing point with trailing values")}else if(t.length<2){this._warn("ignoring malformed timing point");return}var i=new s({time:parseFloat(this._setpos(t[0])),ms_per_beat:parseFloat(this._setpos(t[1]))});if(t.length>=7){i.change=t[6].trim()!=="0"}this.map.timing_points.push(i)};h.prototype._objects=function(){var t=this.curline.split(",");var i;if(t.length>11){this._warn("object with trailing values")}else if(t.length<4){this._warn("ignoring malformed hitobject");return}var s=new a({time:parseFloat(this._setpos(t[2])),type:parseInt(this._setpos(t[3]))});if(isNaN(s.time)||isNaN(s.type)){this._warn("ignoring malformed hitobject");return}if((s.type&u.circle)!=0){++this.map.ncircles;i=s.data=new e({pos:[parseFloat(this._setpos(t[0])),parseFloat(this._setpos(t[1]))]});if(isNaN(i.pos[0])||isNaN(i.pos[1])){this._warn("ignoring malformed circle");return}}else if((s.type&osu.objtypes.spinner)!=0){++this.map.nspinners}else if((s.type&osu.objtypes.slider)!=0){if(t.length<8){this._warn("ignoring malformed slider");return}++this.map.nsliders;i=s.data=new r({pos:[parseFloat(this._setpos(t[0])),parseFloat(this._setpos(t[1]))],repetitions:parseInt(this._setpos(t[6])),distance:parseFloat(this._setpos(t[7]))});if(isNaN(i.pos[0])||isNaN(i.pos[1])||isNaN(i.repetitions)||isNaN(i.distance)){this._warn("ignoring malformed slider");return}}this.map.objects.push(s)};var q={nomod:0,nf:1<<0,ez:1<<1,td:1<<2,hd:1<<3,hr:1<<4,dt:1<<6,ht:1<<8,nc:1<<9,fl:1<<10,so:1<<12};q.from_string=function(t){var i=0;t=t.toLowerCase();while(t!=""){var s=1;for(var e in q){if(e.length!=2){continue}if(!q.hasOwnProperty(e)){continue}if(t.startsWith(e)){i|=q[e];s=2;break}}t=t.slice(s)}return i};q.string=function(t){var i="";for(var s in q){if(s.length!=2){continue}if(!q.hasOwnProperty(s)){continue}if(t&q[s]){i+=s.toUpperCase()}}if(i.indexOf("DT")>=0&&i.indexOf("NC")>=0){i=i.replace("DT","")}return i};q.speed_changing=q.dt|q.ht|q.nc;q.map_changing=q.hr|q.ez|q.speed_changing;var p=80;var c=20;var m=1800;var l=1200;var f=450;var d=(p-c)/10;var _=(m-l)/5;var v=(l-f)/5;function g(t,i,s){var e=t;e*=s;var r=e<5?m-_*e:l-v*(e-5);r=Math.min(m,Math.max(f,r));r/=i;e=r>l?(m-r)/_:5+(l-r)/v;return e}function b(t,i,s){var e=t;e*=s;var r=p-Math.ceil(d*e);r=Math.min(p,Math.max(c,r));r/=i;e=(p-r)/d;return e}function z(t){this.ar=t.ar;this.od=t.od;this.hp=t.hp;this.cs=t.cs;this.speed_mul=1;this._mods_cache={}}z.prototype.with_mods=function(t){if(this._mods_cache[t]){return this._mods_cache[t]}var i=this._mods_cache[t]=new z(this);if(!(t&q.map_changing)){return i}if(t&(q.dt|q.nc)){i.speed_mul=1.5}if(t&q.ht){i.speed_mul*=.75}var s=1;if(t&q.hr)s=1.4;if(t&q.ez)s*=.5;if(i.ar){i.ar=g(i.ar,i.speed_mul,s)}if(i.od){i.od=b(i.od,i.speed_mul,s)}if(i.cs){if(t&q.hr)i.cs*=1.3;if(t&q.ez)i.cs*=.5;i.cs=Math.min(10,i.cs)}if(i.hp){i.hp*=s;i.hp=Math.min(10,i.hp)}return i};function y(t){this.obj=t;this.reset()}y.prototype.reset=function(){this.strains=[0,0];this.normpos=[0,0];this.angle=0;this.is_single=false;this.delta_time=0;this.d_distance=0;return this};y.prototype.toString=function(){return"{ strains: ["+i(this.strains,2)+"], normpos: ["+i(this.normpos,2)+"], is_single: "+this.is_single+" }"};function M(t,i){return[t[0]-i[0],t[1]-i[1]]}function w(t,i){return[t[0]*i[0],t[1]*i[1]]}function x(t){return Math.sqrt(t[0]*t[0]+t[1]*t[1])}function j(t,i){return t[0]*i[0]+t[1]*i[1]}var F=0;var N=1;var I=125;var k=[.3,.15];var S=[1400,26.25];var T=.9;var E=400;var O=30;var P=.0675;var A=[512,384];var D=w(A,[.5,.5]);var C=.5;function V(){this.objects=[];this.reset();this.map=undefined;this.mods=q.nomod;this.singletap_threshold=125}V.prototype.reset=function(){this.total=0;this.aim=0;this.aim_difficulty=0;this.aim_length_bonus=0;this.speed=0;this.speed_difficulty=0;this.speed_length_bonus=0;this.nsingles=0;this.nsingles_threshold=0};V.prototype._length_bonus=function(t,i){return.32+.5*(Math.log10(i+t)-Math.log10(t))};V.prototype.calc=function(t){var i=this.map=t.map||this.map;if(!i){throw new TypeError("no map given")}var s=this.mods=t.mods||this.mods;var e=this.singletap_threshold=t.singletap_threshold||e;var r=new z({cs:i.cs}).with_mods(s);var a=r.speed_mul;this._init_objects(this.objects,i,r.cs);var n=this._calc_individual(F,this.objects,a);this.speed=n.difficulty;this.speed_difficulty=n.total;var o=this._calc_individual(N,this.objects,a);this.aim=o.difficulty;this.aim_difficulty=o.total;this.aim_length_bonus=this._length_bonus(this.aim,this.aim_difficulty);this.speed_length_bonus=this._length_bonus(this.speed,this.speed_difficulty);this.aim=Math.sqrt(this.aim)*P;this.speed=Math.sqrt(this.speed)*P;if(s&q.td){this.aim=Math.pow(this.aim,.8)}this.total=this.aim+this.speed+Math.abs(this.speed-this.aim)*C;this.nsingles=0;this.nsingles_threshold=0;for(var h=1;h<this.objects.length;++h){var p=this.objects[h].obj;var c=this.objects[h-1].obj;if(this.objects[h].is_single){++this.nsingles}if(!(p.type&(u.circle|u.slider))){continue}var m=(p.time-c.time)/a;if(m>=e){++this.nsingles_threshold}}return this};V.prototype.toString=function(){return this.total.toFixed(2)+" stars ("+this.aim.toFixed(2)+" aim, "+this.speed.toFixed(2)+" speed)"};var W=75;var H=45;var U=90;var B=107;var G=5*Math.PI/6;var Y=Math.PI/3;V.prototype._spacing_weight=function(t,i,s,e,r,a){var n;var o=Math.max(s,50);switch(t){case N:{var h=Math.max(r,50);var p=0;if(a!==null&&a>Y){n=Math.sqrt(Math.max(e-U,0)*Math.pow(Math.sin(a-Y),2)*Math.max(i-U,0));p=1.5*Math.pow(Math.max(0,n),.99)/Math.max(B,h)}var c=Math.pow(i,.99);return Math.max(p+c/Math.max(B,o),c/o)}case F:{i=Math.min(i,I);s=Math.max(s,H);var m=1;if(s<W){m+=Math.pow((W-s)/40,2)}n=1;if(a!==null&&a<G){var l=Math.sin(1.5*(G-a));n+=Math.pow(l,2)/3.57;if(a<Math.PI/2){n=1.28;if(i<U&&a<Math.PI/4){n+=(1-n)*Math.min((U-i)/10,1)}else if(i<U){n+=(1-n)*Math.min((U-i)/10,1)*Math.sin((Math.PI/2-a)*4/Math.PI)}}}return(1+(m-1)*.75)*n*(.95+m*Math.pow(i/I,3.5))/o}}throw{name:"NotImplementedError",message:"this difficulty type does not exist"}};V.prototype._calc_strain=function(t,i,s,e){var r=i.obj;var a=s.obj;var n=0;var o=(r.time-a.time)/e;var h=Math.pow(k[t],o/1e3);i.delta_time=o;if((r.type&(u.slider|u.circle))!=0){var p=x(M(i.normpos,s.normpos));i.d_distance=p;if(t==F){i.is_single=p>I}n=this._spacing_weight(t,p,o,s.d_distance,s.delta_time,i.angle);n*=S[t]}i.strains[t]=s.strains[t]*h+n};V.prototype._calc_individual=function(t,i,s){var e=[];var r=E*s;var a=Math.ceil(i[0].obj.time/r)*r;var n=0;var o;for(o=0;o<i.length;++o){if(o>0){this._calc_strain(t,i[o],i[o-1],s)}while(i[o].obj.time>a){e.push(n);if(o>0){var h=Math.pow(k[t],(a-i[o-1].obj.time)/1e3);n=i[o-1].strains[t]*h}else{n=0}a+=r}n=Math.max(n,i[o].strains[t])}e.push(n);var p=1;var c=0;var m=0;e.sort(function(t,i){return i-t});for(o=0;o<e.length;++o){c+=Math.pow(e[o],1.2);m+=e[o]*p;p*=T}return{difficulty:m,total:c}};V.prototype._normalizer_vector=function(t){var i=A[0]/16*(1-.7*(t-5)/5);var s=52/i;if(i<O){s*=1+Math.min(O-i,5)/50}return[s,s]};V.prototype._init_objects=function(t,i,s){if(t.length!=i.objects.length){t.length=i.objects.length}var e=this._normalizer_vector(s);var r=w(D,e);for(var a=0;a<t.length;++a){if(!t[a]){t[a]=new y(i.objects[a])}else{t[a].reset()}var n;var o=t[a].obj;if(o.type&u.spinner){t[a].normpos=r.slice()}else if(o.type&(u.slider|u.circle)){t[a].normpos=w(o.data.pos,e)}if(a>=2){var h=t[a-1];var p=t[a-2];var c=M(p.normpos,h.normpos);var m=M(t[a].normpos,h.normpos);var l=j(c,m);var f=c[0]*m[1]-c[1]*m[0];t[a].angle=Math.abs(Math.atan2(f,l))}else{t[a].angle=null}}};function J(){this.calculators=[];this.map=undefined}J.prototype.calc=function(t){var i;var s=this.map=t.map||this.map;if(!s){throw new TypeError("no map given")}if(!this.calculators[s.mode]){switch(s.mode){case n.std:i=new V;break;default:throw{name:"NotImplementedError",message:"this gamemode is not yet supported"}}this.calculators[s.mode]=i}else{i=this.calculators[s.mode]}return i.calc(t)};function L(t){this.nmiss=t.nmiss||0;if(t.n300===undefined){this.n300=-1}else{this.n300=t.n300}this.n100=t.n100||0;this.n50=t.n50||0;var i;if(t.nobjects){var s=this.n300;i=t.nobjects;var e;if(s<0){s=Math.max(0,i-this.n100-this.n50-this.nmiss)}e=s+this.n100+this.n50+this.nmiss;if(e>i){s-=Math.min(s,e-i)}e=s+this.n100+this.n50+this.nmiss;if(e>i){this.n100-=Math.min(this.n100,e-i)}e=s+this.n100+this.n50+this.nmiss;if(e>i){this.n50-=Math.min(this.n50,e-i)}e=s+this.n100+this.n50+this.nmiss;if(e>i){this.nmiss-=Math.min(this.nmiss,e-i)}this.n300=i-this.n100-this.n50-this.nmiss}if(t.percent!==undefined){i=t.nobjects;if(i===undefined){throw new TypeError("nobjects is required when specifying percent")}var r=i-this.nmiss;var a=new L({n300:r,n100:0,n50:0,nmiss:this.nmiss}).value()*100;var n=t.percent;n=Math.max(0,Math.min(a,n));this.n100=Math.round(-3*((n*.01-1)*i+this.nmiss)*.5);if(this.n100>r){this.n100=0;this.n50=Math.round(-6*((n*.01-1)*i+this.nmiss)*.5);this.n50=Math.min(r,this.n50)}this.n300=i-this.n100-this.n50-this.nmiss}}L.prototype.value=function(t){var i=this.n300;if(i<0){if(!t){throw new TypeError("either n300 or nobjects must be specified")}i=t-this.n100-this.n50-this.nmiss}else{t=i+this.n100+this.n50+this.nmiss}var s=(i*300+this.n100*100+this.n50*50)/(t*300);return Math.max(0,Math.min(s,1))};L.prototype.toString=function(){return(this.value()*100).toFixed(2)+"% "+this.n100+"x100 "+this.n50+"x50 "+this.nmiss+"xmiss"};function K(){this.aim=0;this.speed=0;this.acc=0;this.computed_accuracy=undefined}K.prototype.calc=function(t){var i=t.stars;var s=t.map;var e,r,a,n,o,h;var p;var c,m;if(i){s=i.map}if(s){e=s.max_combo();r=s.nsliders;a=s.ncircles;n=s.objects.length;o=s.ar;h=s.od;if(!i){i=(new V).calc(t)}}else{e=t.max_combo;if(!e||e<0){throw new TypeError("max_combo must be > 0")}r=t.nsliders;a=t.ncircles;n=t.nobjects;if([r,a,n].some(isNaN)){throw new TypeError("nsliders, ncircles, nobjects are required (must be numbers) ")}if(n<r+a){throw new TypeError("nobjects must be >= nsliders + ncircles")}o=t.base_ar;if(R(o))o=5;h=t.base_od;if(R(h))h=5}if(i){p=i.mods;c=i.aim;m=i.speed}else{p=t.mods||q.nomod;c=t.aim_stars;m=t.speed_stars}if([c,m].some(isNaN)){throw new TypeError("aim and speed stars required (must be numbers)")}var l=t.nmiss||0;var f=t.n50||0;var u=t.n100||0;var d=t.n300;if(d===undefined){d=n-u-f-l}var _=t.combo;if(_===undefined){_=e-l}var v=t.score_version||1;var g=n/2e3;var b=.95+.4*Math.min(1,g);if(n>2e3){b+=Math.log10(g)*.5}var y=Math.pow(_,.8)/Math.pow(e,.8);var M=new z({ar:o,od:h}).with_mods(p);this.computed_accuracy=new L({percent:t.acc_percent,nobjects:n,n300:d,n100:u,n50:f,nmiss:l});d=this.computed_accuracy.n300;u=this.computed_accuracy.n100;f=this.computed_accuracy.n50;var w=Math.pow(.98,f<n/500?0:f-n/500);var x=this.computed_accuracy.value();var j=0;if(M.ar>10.33){j+=.4*(M.ar-10.33)}else if(M.ar<8){j+=.01*(8-M.ar)}j=1+Math.min(j,j*(n/1e3));var F=this._base(c);F*=b;if(l>0){F*=.97*Math.pow(1-Math.pow(l/n,.775),l)}F*=y;F*=j;var N=1;if(p&q.hd){N*=1+.04*(12-M.ar)}F*=N;if(p&q.fl){var I=1+.35*Math.min(1,n/200);if(n>200){I+=.3*Math.min(1,(n-200)/300)}if(n>500){I+=(n-500)/1200}F*=I}var k=.5+x/2;var S=Math.pow(M.od,2);var T=.98+S/2500;F*=k;F*=T;this.aim=F;var E=this._base(m);E*=b;if(l>0){E*=.97*Math.pow(1-Math.pow(l/n,.775),Math.pow(l,.875))}E*=w;E*=y;if(M.ar>10.33){E*=j}E*=N;E*=(.95+S/750)*Math.pow(x,(14.5-Math.max(M.od,8))/2);this.speed=E;var O=x;switch(v){case 1:var P=n-r-a;O=new L({n300:Math.max(0,d-r-P),n100:u,n50:f,nmiss:l}).value();O=Math.max(0,O);break;case 2:a=n;break;default:throw new{name:"NotImplementedError",message:"unsupported scorev"+v}}var A=Math.pow(1.52163,M.od)*Math.pow(O,24)*2.83;A*=Math.min(1.15,Math.pow(a/1e3,.3));if(p&q.hd)A*=1.08;if(p&q.fl)A*=1.02;this.acc=A;var D=1.12;if(p&q.nf)D*=Math.max(.9,1-.02*l);if(p&q.so)D*=1-Math.pow(P/n,.85);this.total=Math.pow(Math.pow(F,1.1)+Math.pow(E,1.1)+Math.pow(A,1.1),1/1.1)*D;return this};K.prototype.toString=function(){return this.total.toFixed(2)+" pp ("+this.aim.toFixed(2)+" aim, "+this.speed.toFixed(2)+" speed, "+this.acc.toFixed(2)+" acc)"};K.prototype._base=function(t){return Math.pow(5*Math.max(1,t/.0675)-4,3)/1e5};function Q(t){var i;if(t.map){i=t.map.mode}else{i=t.mode||n.std}switch(i){case n.std:return(new K).calc(t)}throw{name:"NotImplementedError",message:"this gamemode is not yet supported"}}osu.timing=s;osu.objtypes=u;osu.circle=e;osu.slider=r;osu.hitobject=a;osu.modes=n;osu.beatmap=o;osu.parser=h;osu.modbits=q;osu.std_beatmap_stats=z;osu.std_diff_hitobject=y;osu.std_diff=V;osu.diff=J;osu.std_accuracy=L;osu.std_ppv2=K;osu.ppv2=Q})();
+        return osu;
+    })();
+
     //https://i.imgur.com/87WeqCL.png
     var FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
         //UImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAA1VBMVEUAAACioqKbm5vy8vLX19fv7+/Ozs6ioqK0tLTR0dHJycmqqqqzs7Ojo6Oamprb29vT09Ourq6mpqb///8mJiYzMzMxMTEsLCwpKSkvLy81NTUjIyMgICAeHh5JSUlISEhRUVFFRUUZGRkcHBympqZaWlqrq6s6Ojo+Pj5WVlbExMSjo6NCQkI3NzfY2Ni4uLivr695eXlycnJMTEze3t66urqoqKj8/Pz4+Pjg4ODa2tq+vr60tLSbm5t+fn5ra2vk5OTj4+OTk5OMjIyFhYVpaWlmZmaYnrJ3AAAAE3RSTlMAUlL+8f7nQ6np562iS0jy8aRXW3S7rwAAAbZJREFUSMft1dlymzAYhuGmxnaapOtnLLGvNjgBL+DsW/f7v6T+mrrIbQXKccJzAqPROyAxGl71er2X4PhoiH8N3hw+JX33AWrGWNu+vsLykeV+npDc9/0gEhbfvmA41rXA3E0YRSxJLJ9QSQI/PIWhbc88z+OMMb67TISsYMzc4qO2/VssOEFgekmFI01blpYrsdoScR4EgRNbGHa3bv25cqUFampZQKZxDHS2jnOPrSMNcZYkXkT7VmQOx6CjTWn6HJCtC6zixPZJlpk/MOpoJ4TiScOhOOEhifK8WOK4qyVriiWKvUzEtOgVjI5WGZ/zvA6FFS7ftrb8N4q5RLFZZgG5Az4p2wPZ8jlgNa0F3NEHm3CeAgfqc3SFC/bHV2DDdngF3DuEX6hbYmDNGj9Btc0EuxL3Ik5b20PcTK1GucW+JaNta2vJCBtLqh9v9tuIhlrfmQyQyzabzWbf0/NT4TatTBqat7YEmEohxdF0n2zVTy6amcVMKPWtXPODuWOHC8E3G7JVO8F1ZqroW2LgNrNVyrWmJeMhrh+i/9Jis8QltbragNp7Okd6J6OB8g/T6/WevV831F5ngplDwwAAAABJRU5ErkJggg==",
@@ -554,6 +561,31 @@
             }
         });
     });
+
+    var getBeatmapsCache = (function(){
+        var callbacks = {},
+            beatmapsCache = {};
+
+        function getBeatmapsCache(params, callback){
+            var id = params.b;
+            if(id in beatmapsCache){
+                callback(beatmapsCache[id]);
+            }else if(id in callbacks){
+                callbacks[id].push(callback);
+            }else{
+                callbacks[id] = [callback];
+                getBeatmaps(params, function(response){
+                    beatmapsCache[id] = response;
+                    callbacks[id].forEach(function(cb){
+                        cb(response);
+                    });
+                    delete callbacks[id];
+                });
+            }
+        }
+
+        return getBeatmapsCache;
+    })();
 
     function isOldSite(url){
         if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/u\//) ||
@@ -2218,31 +2250,6 @@
             ));
         }
 
-        var getBeatmapsCache = (function(){
-            var callbacks = {},
-                beatmapsCache = {};
-
-            function getBeatmapsCache(params, callback){
-                var id = params.b;
-                if(id in beatmapsCache){
-                    callback(beatmapsCache[id]);
-                }else if(id in callbacks){
-                    callbacks[id].push(callback);
-                }else{
-                    callbacks[id] = [callback];
-                    getBeatmaps(params, function(response){
-                        beatmapsCache[id] = response;
-                        callbacks[id].forEach(function(cb){
-                            cb(response);
-                        });
-                        delete callbacks[id];
-                    });
-                }
-            }
-
-            return getBeatmapsCache;
-        })();
-
         function init(){
             addCss();
             userId = getUserId();
@@ -2712,7 +2719,7 @@
                         maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                         //starrating = $("<b>...&#9733;</b>"),
                         failClass = play.rank === "F" ? "failedScore" : "passScore",
-                        ppcalcData = {id: play.beatmap_id, mods: play.enabled_mods, combo: play.maxcombo, acc: acc, miss: play.countmiss};
+                        ppcalcData = makePpcalcData(gameMode, play, acc);
 
                     var profbeatmap = $("<div class='prof-beatmap'>").addClass(failClass).append(
                         $("<table>").append($("<tr>").append(
@@ -2822,31 +2829,6 @@
                 ));
             }
         }
-
-        var getBeatmapsCache = (function(){
-            var callbacks = {},
-                beatmapsCache = {};
-
-            function getBeatmapsCache(params, callback){
-                var id = params.b;
-                if(id in beatmapsCache){
-                    callback(beatmapsCache[id]);
-                }else if(id in callbacks){
-                    callbacks[id].push(callback);
-                }else{
-                    callbacks[id] = [callback];
-                    getBeatmaps(params, function(response){
-                        beatmapsCache[id] = response;
-                        callbacks[id].forEach(function(cb){
-                            cb(response);
-                        });
-                        delete callbacks[id];
-                    });
-                }
-            }
-
-            return getBeatmapsCache;
-        })();
 
         function init(){
             if($("#osuplusloaded").length) return;
@@ -3248,7 +3230,7 @@
                         //starrating = $("<b>...&#9733;</b>"),
                         failClass = play.rank === "F" ? "failedScore" : "passScore",
                         ppUnitSpan = "<span class='play-detail__pp-unit'>pp</span>",
-                        ppcalcData = {id: play.beatmap_id, mods: play.enabled_mods, combo: play.maxcombo, acc: acc, miss: play.countmiss};
+                        ppcalcData = makePpcalcData(gameMode, play, acc);
 
                     var detailrow = $(`<div class='play-detail play-detail--highlightable play-detail--compact ${failClass}'>`).append(
                         $("<div class='play-detail__group play-detail__group--top'></div>").append(
@@ -5565,6 +5547,18 @@
         }
     }
 
+    function intToRql(approvedInt) {
+        switch (Number(approvedInt)) {
+            case -2: return "graveyard";
+            case -1: return "WIP";
+            case 0: return "pending";
+            case 1: return "ranked";
+            case 2: return "approved";
+            case 3: return "qualified";
+            case 4: return "loved";
+        }
+    }
+
     function formatNumberSuffixed(num, precision){
         const suffixes = ["", "k", "m", "b", "t"];
         const k = 1000;
@@ -5590,7 +5584,102 @@
         return "expert-plus";
     }
 
-    function getPpCalc(params){
+    var getBeatmapFileCache = (() => {
+        var callbacks = {},
+            cache = {};
+
+        function getBeatmapFileCache(id, callback){
+            if(id in cache){
+                callback(cache[id]);
+            }else if(id in callbacks){
+                callbacks[id].push(callback);
+            }else{
+                callbacks[id] = [callback];
+                getBeatmapFile(id, function(response){
+                    cache[id] = response;
+                    callbacks[id].forEach(function(cb){
+                        cb(response);
+                    });
+                    delete callbacks[id];
+                });
+            }
+        }
+
+        return getBeatmapFileCache;
+    })();
+
+    function makePpcalcData(modeInt, play, acc) {
+        return {
+            mode: modeInt,
+            id: play.beatmap_id,
+            mods: Number(play.enabled_mods),
+            combo: Number(play.maxcombo),
+            n300: Number(play.count300),
+            n100: Number(play.count100),
+            n50: Number(play.count50),
+            nmiss: Number(play.countmiss),
+            acc: acc,
+        };
+    }
+
+    function debugValue(x) {
+        console.log(x);
+        return x;
+    }
+
+    function getPpCalc(ppcalcData) {
+        if (ppcalcData.mode == 0) {
+            var ppResult = new Promise(resolve => getBeatmapFileCache(ppcalcData.id, resolve))
+                .then(beatmapFile => {
+                    var parser = new ojsama.parser().feed(beatmapFile);
+                    console.log(parser.toString());
+                    console.log(parser.map.toString());
+
+                    return {
+                        pp: debugValue(ojsama.ppv2({
+                            map: parser.map,
+                            mode: ppcalcData.mode,
+                            mods: ppcalcData.mods,
+                            combo: ppcalcData.combo,
+                            n300: ppcalcData.n300,
+                            n100: ppcalcData.n100,
+                            n50: ppcalcData.n50,
+                            nmiss: ppcalcData.nmiss,
+                        })),
+                        // "pp if full combo" is defined here as max combo and every miss converted to 50.
+                        // the new n50 is not always (n50 + nmiss), because the play may have failed early.
+                        // TODO: full combo can actually have missed slider ends, should we miss some too?
+                        // TODO: should we convert to 300/100 as needed for similar acc?
+                        pp_fc: debugValue(ojsama.ppv2({
+                            map: parser.map,
+                            mode: ppcalcData.mode,
+                            mods: ppcalcData.mods,
+                            combo: parser.map.max_combo(),
+                            n300: ppcalcData.n300,
+                            n100: ppcalcData.n100,
+                            n50: parser.map.objects.length - ppcalcData.n300 - ppcalcData.n100,
+                            nmiss: 0,
+                        })),
+                    };
+                });
+
+            var getBeatmapsResult = new Promise(resolve => getBeatmapsCache({
+                b: ppcalcData.id,
+                m: ppcalcData.mode,
+                a: 1,
+            }, resolve));
+
+            return Promise.all([ppResult, getBeatmapsResult])
+                .then(([{pp, pp_fc}, [{approved}]]) => {
+                    debugValue([pp, pp_fc, approved]);
+                    return {
+                        pp: Math.round(pp.total),
+                        pp_fc: Math.round(pp_fc.total),
+                        rql: intToRql(approved),
+                    };
+                });
+        }
+
         /* see https://pp.osuck.net/pp
         id - beatmap id
         mods - mods number
@@ -5598,6 +5687,13 @@
         acc - accuracy
         miss - number of misses
         */
+        var params = {
+            id: ppcalcData.id,
+            mods: String(ppcalcData.mods),
+            combo: String(ppcalcData.combo),
+            acc: String(ppcalcData.acc),
+            miss: String(ppcalcData.miss),
+        };
         var promise = new Promise((resolve, reject) => {
             var ppcalcurl = getUrl("https://pp.osuck.net/pp", params);
             getRequest(ppcalcurl, function(response){
@@ -5777,6 +5873,10 @@
         var url = "https://osu.ppy.sh/api/get_user_best";
         params.k = apikey;
         getRequest(getUrl(url, params), callback, reqTracker);
+    }
+
+    function getBeatmapFile(beatmapId, callback, reqTracker){
+        GetPage(`https://osu.ppy.sh/osu/${beatmapId}`, callback, reqTracker);
     }
 
     function getUrl(url, params){
