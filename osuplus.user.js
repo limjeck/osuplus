@@ -138,6 +138,14 @@
         siteType = OLDSITE,
         osuPink = "#cc2e8a";
 
+    const GRAVEYARD = -2;
+    const WIP = -1;
+    const PENDING = 0;
+    const RANKED = 1;
+    const APPROVED = 2;
+    const QUALIFIED = 3;
+    const LOVED = 4;
+
     var modnames = [
             {val: 1, name: "No Fail", short: "NF"},
             {val: 2, name: "Easy", short: "EZ"},
@@ -2754,7 +2762,7 @@
                         me.find(".pp-display b").text("...pp");
                         me.find(".pp-display-weight").text("(...)");
                         var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                        getPpCalc(ppcalcData).then((result) => {
+                        doPpcalc(ppcalcData).then((result) => {
                             me.find(".pp-display b").text(`${result.pp}pp`);
                             me.find(".pp-display-weight").text(`(${result.pp_fc}pp if FC)`);
                         });
@@ -3274,7 +3282,7 @@
                         var me = $(this);
                         me.html(`...${ppUnitSpan}<br>(...)`);
                         var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                        getPpCalc(ppcalcData).then((result) => {
+                        doPpcalc(ppcalcData).then((result) => {
                             me.html(`${result.pp}${ppUnitSpan}<br>(${result.pp_fc}${ppUnitSpan} if FC)`);
                         });
                     });
@@ -4174,8 +4182,8 @@
                     var me = $(this);
                     me.find("span").text("(...)");
                     var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                    getPpCalc(ppcalcData).then((result) => {
-                        if(result.rql == "ranked" || result.rql == "qualified"){
+                    doPpcalc(ppcalcData).then((result) => {
+                        if([RANKED, QUALIFIED].includes(Number(result.approved))){
                             me.find("span").text(`(${result.pp_fc} if FC)`);
                         }else{
                             me.html(`<span>${result.pp} (${result.pp_fc} if FC)</span>`);
@@ -4541,8 +4549,8 @@
                     var me = $(this);
                     me.find(".if-fc-span").text("(...)");
                     var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                    getPpCalc(ppcalcData).then((result) => {
-                        if(result.rql == "ranked" || result.rql == "qualified"){
+                    doPpcalc(ppcalcData).then((result) => {
+                        if([RANKED, QUALIFIED].includes(Number(result.approved))){
                             me.find(".if-fc-span").text(`(${result.pp_fc} if FC)`);
                         }else{
                             me.html(`<span class="if-fc-span">${result.pp} (${result.pp_fc} FC)</span>`);
@@ -5547,18 +5555,6 @@
         }
     }
 
-    function intToRql(approvedInt) {
-        switch (Number(approvedInt)) {
-            case -2: return "graveyard";
-            case -1: return "WIP";
-            case 0: return "pending";
-            case 1: return "ranked";
-            case 2: return "approved";
-            case 3: return "qualified";
-            case 4: return "loved";
-        }
-    }
-
     function formatNumberSuffixed(num, precision){
         const suffixes = ["", "k", "m", "b", "t"];
         const k = 1000;
@@ -5622,85 +5618,59 @@
         };
     }
 
-    function getPpCalc(ppcalcData) {
-        if (ppcalcData.mode == 0) {
-            var ppResult = new Promise(resolve => getBeatmapFileCache(ppcalcData.id, resolve))
-                .then(beatmapFile => {
-                    var parser = new ojsama.parser().feed(beatmapFile);
-                    debugValue(parser.toString());
-                    debugValue(parser.map.toString());
+    function doPpcalc(ppcalcData) {
+        if (ppcalcData.mode != 0)
+            throw new Error(`mode not supported: ${ppcalcData.mode}`);
 
-                    return {
-                        pp: debugValue(ojsama.ppv2({
-                            map: parser.map,
-                            mode: ppcalcData.mode,
-                            mods: ppcalcData.mods,
-                            combo: ppcalcData.combo,
-                            n300: ppcalcData.n300,
-                            n100: ppcalcData.n100,
-                            n50: ppcalcData.n50,
-                            nmiss: ppcalcData.nmiss,
-                        })),
-                        // "pp if full combo" is defined here as max combo and every miss converted to 50.
-                        // the new n50 is not always (n50 + nmiss), because the play may have failed early.
-                        // TODO: full combo can actually have missed slider ends, should we miss some too?
-                        // TODO: should we convert to 300/100 as needed for similar acc?
-                        pp_fc: debugValue(ojsama.ppv2({
-                            map: parser.map,
-                            mode: ppcalcData.mode,
-                            mods: ppcalcData.mods,
-                            combo: parser.map.max_combo(),
-                            n300: ppcalcData.n300,
-                            n100: ppcalcData.n100,
-                            n50: parser.map.objects.length - ppcalcData.n300 - ppcalcData.n100,
-                            nmiss: 0,
-                        })),
-                    };
-                });
+        var ppResult = new Promise(resolve => getBeatmapFileCache(ppcalcData.id, resolve))
+            .then(beatmapFile => {
+                var parser = new ojsama.parser().feed(beatmapFile);
+                debugValue(parser.toString());
+                debugValue(parser.map.toString());
 
-            var getBeatmapsResult = new Promise(resolve => getBeatmapsCache({
-                b: ppcalcData.id,
-                m: ppcalcData.mode,
-                a: 1,
-            }, resolve));
-
-            return Promise.all([ppResult, getBeatmapsResult])
-                .then(([{pp, pp_fc}, [{approved}]]) => {
-                    debugValue([pp, pp_fc, approved]);
-                    return {
-                        pp: Math.round(pp.total),
-                        pp_fc: Math.round(pp_fc.total),
-                        rql: intToRql(approved),
-                    };
-                });
-        }
-
-        /* see https://pp.osuck.net/pp
-        id - beatmap id
-        mods - mods number
-        combo - combo
-        acc - accuracy
-        miss - number of misses
-        */
-        var params = {
-            id: ppcalcData.id,
-            mods: String(ppcalcData.mods),
-            combo: String(ppcalcData.combo),
-            acc: String(ppcalcData.acc),
-            miss: String(ppcalcData.miss),
-        };
-        var promise = new Promise((resolve, reject) => {
-            var ppcalcurl = getUrl("https://pp.osuck.net/pp", params);
-            getRequest(ppcalcurl, function(response){
-                var ans = {
-                    pp: parseFloat(response.pp.current), 
-                    pp_fc: parseFloat(response.pp.fc),
-                    rql: response.status.name // ranked|qualified|loved|pending|graveyard etc
+                return {
+                    pp: debugValue(ojsama.ppv2({
+                        map: parser.map,
+                        mode: ppcalcData.mode,
+                        mods: ppcalcData.mods,
+                        combo: ppcalcData.combo,
+                        n300: ppcalcData.n300,
+                        n100: ppcalcData.n100,
+                        n50: ppcalcData.n50,
+                        nmiss: ppcalcData.nmiss,
+                    })),
+                    // "pp if full combo" is defined here as max combo and every miss converted to 50.
+                    // the new n50 is not always (n50 + nmiss), because the play may have failed early.
+                    // TODO: full combo can actually have missed slider ends, should we miss some too?
+                    // TODO: should we convert to 300/100 as needed for similar acc?
+                    pp_fc: debugValue(ojsama.ppv2({
+                        map: parser.map,
+                        mode: ppcalcData.mode,
+                        mods: ppcalcData.mods,
+                        combo: parser.map.max_combo(),
+                        n300: ppcalcData.n300,
+                        n100: ppcalcData.n100,
+                        n50: parser.map.objects.length - ppcalcData.n300 - ppcalcData.n100,
+                        nmiss: 0,
+                    })),
                 };
-                resolve(ans);
             });
-        });
-        return promise;
+
+        var getBeatmapsResult = new Promise(resolve => getBeatmapsCache({
+            b: ppcalcData.id,
+            m: ppcalcData.mode,
+            a: 1,
+        }, resolve));
+
+        return Promise.all([ppResult, getBeatmapsResult])
+            .then(([{pp, pp_fc}, [{approved}]]) => {
+                debugValue([pp, pp_fc, approved]);
+                return {
+                    pp: Math.round(pp.total),
+                    pp_fc: Math.round(pp_fc.total),
+                    approved: approved,
+                };
+            });
     }
 
     function getRequest(url, callback, reqTracker){
