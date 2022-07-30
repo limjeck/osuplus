@@ -8,7 +8,6 @@
 // @include      https://osu.ppy.sh*
 // @include      http://old.ppy.sh*
 // @include      https://old.ppy.sh*
-// @connect      pp.osuck.net
 
 // @noframes
 // @grant        GM.xmlHttpRequest
