@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.7
+// @version      2.3.8
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
-// @include      http://osu.ppy.sh*
-// @include      https://osu.ppy.sh*
-// @include      http://old.ppy.sh*
-// @include      https://old.ppy.sh*
-// @connect      pp.osuck.net
+// @match        http://osu.ppy.sh/*
+// @match        https://osu.ppy.sh/*
+// @match        http://old.ppy.sh/*
+// @match        https://old.ppy.sh/*
 
 // @noframes
 // @grant        GM.xmlHttpRequest
@@ -44,6 +43,18 @@
         GMX = GM;
     }
 
+    /*eslint-disable*/
+    var ojsama = (() => {
+        // ojsama 2.2.0 (https://github.com/Francesco149/ojsama/)
+        // https://github.com/Francesco149/ojsama/blob/d3631e35192fe30dfbf782f70f3c058a694f287e/ojsama.min.js
+        var osu={};if(typeof exports!=="undefined"){osu=exports}(function(){osu.VERSION_MAJOR=2;osu.VERSION_MINOR=2;osu.VERSION_PATCH=0;var t={warn:Function.prototype};if(typeof exports!=="undefined"){t=console}var i=function(t,i){var s=new Array(t.length);for(var e=0;e<s.length;++e){s[e]=t[e].toFixed(i)}return s};function R(t){return typeof t==="undefined"}function s(t){this.time=t.time||0;this.ms_per_beat=t.ms_per_beat;if(this.ms_per_beat===undefined){this.ms_per_beat=600}this.change=t.change;if(this.change===undefined){this.change=true}}s.prototype.toString=function(){return"{ time: "+this.time.toFixed(2)+", "+"ms_per_beat: "+this.ms_per_beat.toFixed(2)+" }"};var u={circle:1<<0,slider:1<<1,spinner:1<<3};function e(t){this.pos=t.pos||[0,0]}e.prototype.toString=function(){return"pos: ["+i(this.pos,2)+"]"};function r(t){this.pos=t.pos||[0,0];this.distance=t.distance||0;this.repetitions=t.repetitions||1}r.prototype.toString=function(){return"pos: "+i(this.pos,2)+", "+"distance: "+this.distance.toFixed(2)+", "+"repetitions: "+this.repetitions};function a(t){this.time=t.time||0;this.type=t.type||0;if(!R(t.data))this.data=t.data}a.prototype.typestr=function(){var t="";if(this.type&u.circle)t+="circle | ";if(this.type&u.slider)t+="slider | ";if(this.type&u.spinner)t+="spinner | ";return t.substring(0,Math.max(0,t.length-3))};a.prototype.toString=function(){return"{ time: "+this.time.toFixed(2)+", "+"type: "+this.typestr()+(this.data?", "+this.data.toString():"")+" }"};var n={std:0};function o(){this.reset()}o.prototype.reset=function(){this.format_version=1;this.mode=n.std;this.title=this.title_unicode="";this.artist=this.artist_unicode="";this.creator="";this.version="";this.ar=undefined;this.cs=this.od=this.hp=5;this.sv=this.tick_rate=1;this.ncircles=this.nsliders=this.nspinners=0;if(!this.objects){this.objects=[]}else{this.objects.length=0}if(!this.timing_points){this.timing_points=[]}else{this.timing_points.length=0}return this};o.prototype.max_combo=function(){var t=this.ncircles+this.nspinners;var i=-1;var s=Number.NEGATIVE_INFINITY;var e=0;for(var r=0;r<this.objects.length;++r){var a=this.objects[r];if(!(a.type&u.slider)){continue}while(a.time>=s){++i;if(this.timing_points.length>i+1){s=this.timing_points[i+1].time}else{s=Number.POSITIVE_INFINITY}var n=this.timing_points[i];var o=1;if(!n.change&&n.ms_per_beat<0){o=-100/n.ms_per_beat}if(this.format_version<8){e=this.sv*100}else{e=this.sv*100*o}}var h=a.data;var p=h.distance*h.repetitions/e;var c=Math.ceil((p-.1)/h.repetitions*this.tick_rate);--c;c*=h.repetitions;c+=h.repetitions+1;t+=Math.max(0,c)}return t};o.prototype.toString=function(){var t=this.artist+" - "+this.title+" [";if(this.title_unicode||this.artist_unicode){t+="("+this.artist_unicode+" - "+this.title_unicode+")"}t+=this.version+"] mapped by "+this.creator+"\n"+"\n"+"AR"+parseFloat(this.ar.toFixed(2))+" "+"OD"+parseFloat(this.od.toFixed(2))+" "+"CS"+parseFloat(this.cs.toFixed(2))+" "+"HP"+parseFloat(this.hp.toFixed(2))+"\n"+this.ncircles+" circles, "+this.nsliders+" sliders, "+this.nspinners+" spinners"+"\n"+this.max_combo()+" max combo"+"\n";return t};function h(){this.map=new o;this.reset()}h.prototype.reset=function(){this.map.reset();this.nline=0;this.curline="";this.lastpos="";this.section="";return this};h.prototype.feed_line=function(t){this.curline=this.lastpos=t;++this.nline;if(t.startsWith(" ")||t.startsWith("_")){return this}t=this.curline=t.trim();if(t.length<=0){return this}if(t.startsWith("//")){return this}if(t.startsWith("[")){if(this.section=="Difficulty"&&R(this.map.ar)){this.map.ar=this.map.od}this.section=t.substring(1,t.length-1);return this}if(!t){return this}switch(this.section){case"Metadata":this._metadata();break;case"General":this._general();break;case"Difficulty":this._difficulty();break;case"TimingPoints":this._timing_points();break;case"HitObjects":this._objects();break;default:var i=t.indexOf("file format v");if(i<0){break}this.map.format_version=parseInt(t.substring(i+13));break}return this};h.prototype.feed=function(t){var i=i=t.split("\n");for(var s=0;s<i.length;++s){this.feed_line(i[s])}return this};h.prototype.toString=function(){return"at line "+this.nline+"\n"+this.curline+"\n"+"-> "+this.lastpos+" <-"};h.prototype._setpos=function(t){this.lastpos=t.trim();return this.lastpos};h.prototype._warn=function(){t.warn.apply(null,Array.prototype.slice.call(arguments));t.warn(this.toString())};h.prototype._property=function(){var t=this.curline.split(":",2);t[0]=t[0]&&this._setpos(t[0]);t[1]=t[1]&&this._setpos(t[1]);return t};h.prototype._metadata=function(){var t=this._property();switch(t[0]){case"Title":this.map.title=t[1];break;case"TitleUnicode":this.map.title_unicode=t[1];break;case"Artist":this.map.artist=t[1];break;case"ArtistUnicode":this.map.artist_unicode=t[1];break;case"Creator":this.map.creator=t[1];break;case"Version":this.map.version=t[1];break;case"BeatmapID":this.map.beatmapId=parseInt(t[1]);break;case"BeatmapSetID":this.map.beatmapsetId=parseInt(t[1]);break}};h.prototype._general=function(){var t=this._property();if(t[0]!=="Mode"){return}this.map.mode=parseInt(this._setpos(t[1]))};h.prototype._difficulty=function(){var t=this._property();switch(t[0]){case"CircleSize":this.map.cs=parseFloat(this._setpos(t[1]));break;case"OverallDifficulty":this.map.od=parseFloat(this._setpos(t[1]));break;case"ApproachRate":this.map.ar=parseFloat(this._setpos(t[1]));break;case"HPDrainRate":this.map.hp=parseFloat(this._setpos(t[1]));break;case"SliderMultiplier":this.map.sv=parseFloat(this._setpos(t[1]));break;case"SliderTickRate":this.map.tick_rate=parseFloat(this._setpos(t[1]));break}};h.prototype._timing_points=function(){var t=this.curline.split(",");if(t.length>8){this._warn("timing point with trailing values")}else if(t.length<2){this._warn("ignoring malformed timing point");return}var i=new s({time:parseFloat(this._setpos(t[0])),ms_per_beat:parseFloat(this._setpos(t[1]))});if(t.length>=7){i.change=t[6].trim()!=="0"}this.map.timing_points.push(i)};h.prototype._objects=function(){var t=this.curline.split(",");var i;if(t.length>11){this._warn("object with trailing values")}else if(t.length<4){this._warn("ignoring malformed hitobject");return}var s=new a({time:parseFloat(this._setpos(t[2])),type:parseInt(this._setpos(t[3]))});if(isNaN(s.time)||isNaN(s.type)){this._warn("ignoring malformed hitobject");return}if((s.type&u.circle)!=0){++this.map.ncircles;i=s.data=new e({pos:[parseFloat(this._setpos(t[0])),parseFloat(this._setpos(t[1]))]});if(isNaN(i.pos[0])||isNaN(i.pos[1])){this._warn("ignoring malformed circle");return}}else if((s.type&osu.objtypes.spinner)!=0){++this.map.nspinners}else if((s.type&osu.objtypes.slider)!=0){if(t.length<8){this._warn("ignoring malformed slider");return}++this.map.nsliders;i=s.data=new r({pos:[parseFloat(this._setpos(t[0])),parseFloat(this._setpos(t[1]))],repetitions:parseInt(this._setpos(t[6])),distance:parseFloat(this._setpos(t[7]))});if(isNaN(i.pos[0])||isNaN(i.pos[1])||isNaN(i.repetitions)||isNaN(i.distance)){this._warn("ignoring malformed slider");return}}this.map.objects.push(s)};var q={nomod:0,nf:1<<0,ez:1<<1,td:1<<2,hd:1<<3,hr:1<<4,dt:1<<6,ht:1<<8,nc:1<<9,fl:1<<10,so:1<<12};q.from_string=function(t){var i=0;t=t.toLowerCase();while(t!=""){var s=1;for(var e in q){if(e.length!=2){continue}if(!q.hasOwnProperty(e)){continue}if(t.startsWith(e)){i|=q[e];s=2;break}}t=t.slice(s)}return i};q.string=function(t){var i="";for(var s in q){if(s.length!=2){continue}if(!q.hasOwnProperty(s)){continue}if(t&q[s]){i+=s.toUpperCase()}}if(i.indexOf("DT")>=0&&i.indexOf("NC")>=0){i=i.replace("DT","")}return i};q.speed_changing=q.dt|q.ht|q.nc;q.map_changing=q.hr|q.ez|q.speed_changing;var p=80;var c=20;var m=1800;var l=1200;var f=450;var d=(p-c)/10;var _=(m-l)/5;var v=(l-f)/5;function g(t,i,s){var e=t;e*=s;var r=e<5?m-_*e:l-v*(e-5);r=Math.min(m,Math.max(f,r));r/=i;e=r>l?(m-r)/_:5+(l-r)/v;return e}function b(t,i,s){var e=t;e*=s;var r=p-Math.ceil(d*e);r=Math.min(p,Math.max(c,r));r/=i;e=(p-r)/d;return e}function z(t){this.ar=t.ar;this.od=t.od;this.hp=t.hp;this.cs=t.cs;this.speed_mul=1;this._mods_cache={}}z.prototype.with_mods=function(t){if(this._mods_cache[t]){return this._mods_cache[t]}var i=this._mods_cache[t]=new z(this);if(!(t&q.map_changing)){return i}if(t&(q.dt|q.nc)){i.speed_mul=1.5}if(t&q.ht){i.speed_mul*=.75}var s=1;if(t&q.hr)s=1.4;if(t&q.ez)s*=.5;if(i.ar){i.ar=g(i.ar,i.speed_mul,s)}if(i.od){i.od=b(i.od,i.speed_mul,s)}if(i.cs){if(t&q.hr)i.cs*=1.3;if(t&q.ez)i.cs*=.5;i.cs=Math.min(10,i.cs)}if(i.hp){i.hp*=s;i.hp=Math.min(10,i.hp)}return i};function y(t){this.obj=t;this.reset()}y.prototype.reset=function(){this.strains=[0,0];this.normpos=[0,0];this.angle=0;this.is_single=false;this.delta_time=0;this.d_distance=0;return this};y.prototype.toString=function(){return"{ strains: ["+i(this.strains,2)+"], normpos: ["+i(this.normpos,2)+"], is_single: "+this.is_single+" }"};function M(t,i){return[t[0]-i[0],t[1]-i[1]]}function w(t,i){return[t[0]*i[0],t[1]*i[1]]}function x(t){return Math.sqrt(t[0]*t[0]+t[1]*t[1])}function j(t,i){return t[0]*i[0]+t[1]*i[1]}var F=0;var N=1;var I=125;var k=[.3,.15];var S=[1400,26.25];var T=.9;var E=400;var O=30;var P=.0675;var A=[512,384];var D=w(A,[.5,.5]);var C=.5;function V(){this.objects=[];this.reset();this.map=undefined;this.mods=q.nomod;this.singletap_threshold=125}V.prototype.reset=function(){this.total=0;this.aim=0;this.aim_difficulty=0;this.aim_length_bonus=0;this.speed=0;this.speed_difficulty=0;this.speed_length_bonus=0;this.nsingles=0;this.nsingles_threshold=0};V.prototype._length_bonus=function(t,i){return.32+.5*(Math.log10(i+t)-Math.log10(t))};V.prototype.calc=function(t){var i=this.map=t.map||this.map;if(!i){throw new TypeError("no map given")}var s=this.mods=t.mods||this.mods;var e=this.singletap_threshold=t.singletap_threshold||e;var r=new z({cs:i.cs}).with_mods(s);var a=r.speed_mul;this._init_objects(this.objects,i,r.cs);var n=this._calc_individual(F,this.objects,a);this.speed=n.difficulty;this.speed_difficulty=n.total;var o=this._calc_individual(N,this.objects,a);this.aim=o.difficulty;this.aim_difficulty=o.total;this.aim_length_bonus=this._length_bonus(this.aim,this.aim_difficulty);this.speed_length_bonus=this._length_bonus(this.speed,this.speed_difficulty);this.aim=Math.sqrt(this.aim)*P;this.speed=Math.sqrt(this.speed)*P;if(s&q.td){this.aim=Math.pow(this.aim,.8)}this.total=this.aim+this.speed+Math.abs(this.speed-this.aim)*C;this.nsingles=0;this.nsingles_threshold=0;for(var h=1;h<this.objects.length;++h){var p=this.objects[h].obj;var c=this.objects[h-1].obj;if(this.objects[h].is_single){++this.nsingles}if(!(p.type&(u.circle|u.slider))){continue}var m=(p.time-c.time)/a;if(m>=e){++this.nsingles_threshold}}return this};V.prototype.toString=function(){return this.total.toFixed(2)+" stars ("+this.aim.toFixed(2)+" aim, "+this.speed.toFixed(2)+" speed)"};var W=75;var H=45;var U=90;var B=107;var G=5*Math.PI/6;var Y=Math.PI/3;V.prototype._spacing_weight=function(t,i,s,e,r,a){var n;var o=Math.max(s,50);switch(t){case N:{var h=Math.max(r,50);var p=0;if(a!==null&&a>Y){n=Math.sqrt(Math.max(e-U,0)*Math.pow(Math.sin(a-Y),2)*Math.max(i-U,0));p=1.5*Math.pow(Math.max(0,n),.99)/Math.max(B,h)}var c=Math.pow(i,.99);return Math.max(p+c/Math.max(B,o),c/o)}case F:{i=Math.min(i,I);s=Math.max(s,H);var m=1;if(s<W){m+=Math.pow((W-s)/40,2)}n=1;if(a!==null&&a<G){var l=Math.sin(1.5*(G-a));n+=Math.pow(l,2)/3.57;if(a<Math.PI/2){n=1.28;if(i<U&&a<Math.PI/4){n+=(1-n)*Math.min((U-i)/10,1)}else if(i<U){n+=(1-n)*Math.min((U-i)/10,1)*Math.sin((Math.PI/2-a)*4/Math.PI)}}}return(1+(m-1)*.75)*n*(.95+m*Math.pow(i/I,3.5))/o}}throw{name:"NotImplementedError",message:"this difficulty type does not exist"}};V.prototype._calc_strain=function(t,i,s,e){var r=i.obj;var a=s.obj;var n=0;var o=(r.time-a.time)/e;var h=Math.pow(k[t],o/1e3);i.delta_time=o;if((r.type&(u.slider|u.circle))!=0){var p=x(M(i.normpos,s.normpos));i.d_distance=p;if(t==F){i.is_single=p>I}n=this._spacing_weight(t,p,o,s.d_distance,s.delta_time,i.angle);n*=S[t]}i.strains[t]=s.strains[t]*h+n};V.prototype._calc_individual=function(t,i,s){var e=[];var r=E*s;var a=Math.ceil(i[0].obj.time/r)*r;var n=0;var o;for(o=0;o<i.length;++o){if(o>0){this._calc_strain(t,i[o],i[o-1],s)}while(i[o].obj.time>a){e.push(n);if(o>0){var h=Math.pow(k[t],(a-i[o-1].obj.time)/1e3);n=i[o-1].strains[t]*h}else{n=0}a+=r}n=Math.max(n,i[o].strains[t])}e.push(n);var p=1;var c=0;var m=0;e.sort(function(t,i){return i-t});for(o=0;o<e.length;++o){c+=Math.pow(e[o],1.2);m+=e[o]*p;p*=T}return{difficulty:m,total:c}};V.prototype._normalizer_vector=function(t){var i=A[0]/16*(1-.7*(t-5)/5);var s=52/i;if(i<O){s*=1+Math.min(O-i,5)/50}return[s,s]};V.prototype._init_objects=function(t,i,s){if(t.length!=i.objects.length){t.length=i.objects.length}var e=this._normalizer_vector(s);var r=w(D,e);for(var a=0;a<t.length;++a){if(!t[a]){t[a]=new y(i.objects[a])}else{t[a].reset()}var n;var o=t[a].obj;if(o.type&u.spinner){t[a].normpos=r.slice()}else if(o.type&(u.slider|u.circle)){t[a].normpos=w(o.data.pos,e)}if(a>=2){var h=t[a-1];var p=t[a-2];var c=M(p.normpos,h.normpos);var m=M(t[a].normpos,h.normpos);var l=j(c,m);var f=c[0]*m[1]-c[1]*m[0];t[a].angle=Math.abs(Math.atan2(f,l))}else{t[a].angle=null}}};function J(){this.calculators=[];this.map=undefined}J.prototype.calc=function(t){var i;var s=this.map=t.map||this.map;if(!s){throw new TypeError("no map given")}if(!this.calculators[s.mode]){switch(s.mode){case n.std:i=new V;break;default:throw{name:"NotImplementedError",message:"this gamemode is not yet supported"}}this.calculators[s.mode]=i}else{i=this.calculators[s.mode]}return i.calc(t)};function L(t){this.nmiss=t.nmiss||0;if(t.n300===undefined){this.n300=-1}else{this.n300=t.n300}this.n100=t.n100||0;this.n50=t.n50||0;var i;if(t.nobjects){var s=this.n300;i=t.nobjects;var e;if(s<0){s=Math.max(0,i-this.n100-this.n50-this.nmiss)}e=s+this.n100+this.n50+this.nmiss;if(e>i){s-=Math.min(s,e-i)}e=s+this.n100+this.n50+this.nmiss;if(e>i){this.n100-=Math.min(this.n100,e-i)}e=s+this.n100+this.n50+this.nmiss;if(e>i){this.n50-=Math.min(this.n50,e-i)}e=s+this.n100+this.n50+this.nmiss;if(e>i){this.nmiss-=Math.min(this.nmiss,e-i)}this.n300=i-this.n100-this.n50-this.nmiss}if(t.percent!==undefined){i=t.nobjects;if(i===undefined){throw new TypeError("nobjects is required when specifying percent")}var r=i-this.nmiss;var a=new L({n300:r,n100:0,n50:0,nmiss:this.nmiss}).value()*100;var n=t.percent;n=Math.max(0,Math.min(a,n));this.n100=Math.round(-3*((n*.01-1)*i+this.nmiss)*.5);if(this.n100>r){this.n100=0;this.n50=Math.round(-6*((n*.01-1)*i+this.nmiss)*.5);this.n50=Math.min(r,this.n50)}this.n300=i-this.n100-this.n50-this.nmiss}}L.prototype.value=function(t){var i=this.n300;if(i<0){if(!t){throw new TypeError("either n300 or nobjects must be specified")}i=t-this.n100-this.n50-this.nmiss}else{t=i+this.n100+this.n50+this.nmiss}var s=(i*300+this.n100*100+this.n50*50)/(t*300);return Math.max(0,Math.min(s,1))};L.prototype.toString=function(){return(this.value()*100).toFixed(2)+"% "+this.n100+"x100 "+this.n50+"x50 "+this.nmiss+"xmiss"};function K(){this.aim=0;this.speed=0;this.acc=0;this.computed_accuracy=undefined}K.prototype.calc=function(t){var i=t.stars;var s=t.map;var e,r,a,n,o,h;var p;var c,m;if(i){s=i.map}if(s){e=s.max_combo();r=s.nsliders;a=s.ncircles;n=s.objects.length;o=s.ar;h=s.od;if(!i){i=(new V).calc(t)}}else{e=t.max_combo;if(!e||e<0){throw new TypeError("max_combo must be > 0")}r=t.nsliders;a=t.ncircles;n=t.nobjects;if([r,a,n].some(isNaN)){throw new TypeError("nsliders, ncircles, nobjects are required (must be numbers) ")}if(n<r+a){throw new TypeError("nobjects must be >= nsliders + ncircles")}o=t.base_ar;if(R(o))o=5;h=t.base_od;if(R(h))h=5}if(i){p=i.mods;c=i.aim;m=i.speed}else{p=t.mods||q.nomod;c=t.aim_stars;m=t.speed_stars}if([c,m].some(isNaN)){throw new TypeError("aim and speed stars required (must be numbers)")}var l=t.nmiss||0;var f=t.n50||0;var u=t.n100||0;var d=t.n300;if(d===undefined){d=n-u-f-l}var _=t.combo;if(_===undefined){_=e-l}var v=t.score_version||1;var g=n/2e3;var b=.95+.4*Math.min(1,g);if(n>2e3){b+=Math.log10(g)*.5}var y=Math.pow(_,.8)/Math.pow(e,.8);var M=new z({ar:o,od:h}).with_mods(p);this.computed_accuracy=new L({percent:t.acc_percent,nobjects:n,n300:d,n100:u,n50:f,nmiss:l});d=this.computed_accuracy.n300;u=this.computed_accuracy.n100;f=this.computed_accuracy.n50;var w=Math.pow(.98,f<n/500?0:f-n/500);var x=this.computed_accuracy.value();var j=0;if(M.ar>10.33){j+=.4*(M.ar-10.33)}else if(M.ar<8){j+=.01*(8-M.ar)}j=1+Math.min(j,j*(n/1e3));var F=this._base(c);F*=b;if(l>0){F*=.97*Math.pow(1-Math.pow(l/n,.775),l)}F*=y;F*=j;var N=1;if(p&q.hd){N*=1+.04*(12-M.ar)}F*=N;if(p&q.fl){var I=1+.35*Math.min(1,n/200);if(n>200){I+=.3*Math.min(1,(n-200)/300)}if(n>500){I+=(n-500)/1200}F*=I}var k=.5+x/2;var S=Math.pow(M.od,2);var T=.98+S/2500;F*=k;F*=T;this.aim=F;var E=this._base(m);E*=b;if(l>0){E*=.97*Math.pow(1-Math.pow(l/n,.775),Math.pow(l,.875))}E*=w;E*=y;if(M.ar>10.33){E*=j}E*=N;E*=(.95+S/750)*Math.pow(x,(14.5-Math.max(M.od,8))/2);this.speed=E;var O=x;switch(v){case 1:var P=n-r-a;O=new L({n300:Math.max(0,d-r-P),n100:u,n50:f,nmiss:l}).value();O=Math.max(0,O);break;case 2:a=n;break;default:throw new{name:"NotImplementedError",message:"unsupported scorev"+v}}var A=Math.pow(1.52163,M.od)*Math.pow(O,24)*2.83;A*=Math.min(1.15,Math.pow(a/1e3,.3));if(p&q.hd)A*=1.08;if(p&q.fl)A*=1.02;this.acc=A;var D=1.12;if(p&q.nf)D*=Math.max(.9,1-.02*l);if(p&q.so)D*=1-Math.pow(P/n,.85);this.total=Math.pow(Math.pow(F,1.1)+Math.pow(E,1.1)+Math.pow(A,1.1),1/1.1)*D;return this};K.prototype.toString=function(){return this.total.toFixed(2)+" pp ("+this.aim.toFixed(2)+" aim, "+this.speed.toFixed(2)+" speed, "+this.acc.toFixed(2)+" acc)"};K.prototype._base=function(t){return Math.pow(5*Math.max(1,t/.0675)-4,3)/1e5};function Q(t){var i;if(t.map){i=t.map.mode}else{i=t.mode||n.std}switch(i){case n.std:return(new K).calc(t)}throw{name:"NotImplementedError",message:"this gamemode is not yet supported"}}osu.timing=s;osu.objtypes=u;osu.circle=e;osu.slider=r;osu.hitobject=a;osu.modes=n;osu.beatmap=o;osu.parser=h;osu.modbits=q;osu.std_beatmap_stats=z;osu.std_diff_hitobject=y;osu.std_diff=V;osu.diff=J;osu.std_accuracy=L;osu.std_ppv2=K;osu.ppv2=Q})();
+
+        // avoid shadowing osu global in page!
+        return osu;
+    })();
+    /*eslint-enable*/
+
+
     //https://i.imgur.com/87WeqCL.png
     var FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
         //UImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAA1VBMVEUAAACioqKbm5vy8vLX19fv7+/Ozs6ioqK0tLTR0dHJycmqqqqzs7Ojo6Oamprb29vT09Ourq6mpqb///8mJiYzMzMxMTEsLCwpKSkvLy81NTUjIyMgICAeHh5JSUlISEhRUVFFRUUZGRkcHBympqZaWlqrq6s6Ojo+Pj5WVlbExMSjo6NCQkI3NzfY2Ni4uLivr695eXlycnJMTEze3t66urqoqKj8/Pz4+Pjg4ODa2tq+vr60tLSbm5t+fn5ra2vk5OTj4+OTk5OMjIyFhYVpaWlmZmaYnrJ3AAAAE3RSTlMAUlL+8f7nQ6np562iS0jy8aRXW3S7rwAAAbZJREFUSMft1dlymzAYhuGmxnaapOtnLLGvNjgBL+DsW/f7v6T+mrrIbQXKccJzAqPROyAxGl71er2X4PhoiH8N3hw+JX33AWrGWNu+vsLykeV+npDc9/0gEhbfvmA41rXA3E0YRSxJLJ9QSQI/PIWhbc88z+OMMb67TISsYMzc4qO2/VssOEFgekmFI01blpYrsdoScR4EgRNbGHa3bv25cqUFampZQKZxDHS2jnOPrSMNcZYkXkT7VmQOx6CjTWn6HJCtC6zixPZJlpk/MOpoJ4TiScOhOOEhifK8WOK4qyVriiWKvUzEtOgVjI5WGZ/zvA6FFS7ftrb8N4q5RLFZZgG5Az4p2wPZ8jlgNa0F3NEHm3CeAgfqc3SFC/bHV2DDdngF3DuEX6hbYmDNGj9Btc0EuxL3Ik5b20PcTK1GucW+JaNta2vJCBtLqh9v9tuIhlrfmQyQyzabzWbf0/NT4TatTBqat7YEmEohxdF0n2zVTy6amcVMKPWtXPODuWOHC8E3G7JVO8F1ZqroW2LgNrNVyrWmJeMhrh+i/9Jis8QltbragNp7Okd6J6OB8g/T6/WevV831F5ngplDwwAAAABJRU5ErkJggg==",
@@ -54,8 +65,8 @@
 
         loaderImg = "data:image/gif;base64,R0lGODlhEAAQAPIAAKmp/wAAAIGBwisrQgAAAEFBYlZWgmFhkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==",
 
-        subImg = "data:image/png;base64,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",
-        subbedImg = "data:image/png;base64,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",
+        //subImg = "data:image/png;base64,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",
+        //subbedImg = "data:image/png;base64,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",
 
         settingsImg = "data:image/png;base64,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",
 
@@ -131,6 +142,16 @@
         siteType = OLDSITE,
         osuPink = "#cc2e8a";
 
+    /* eslint-disable no-unused-vars */
+    const GRAVEYARD = -2;
+    const WIP = -1;
+    const PENDING = 0;
+    const RANKED = 1;
+    const APPROVED = 2;
+    const QUALIFIED = 3;
+    const LOVED = 4;
+    /* eslint-enable no-unused-vars */
+
     var modnames = [
             {val: 1, name: "No Fail", short: "NF"},
             {val: 2, name: "Easy", short: "EZ"},
@@ -176,7 +197,7 @@
         showMirror2: false,
         showMirror3: false,
         showMirror4: false,
-        showSubscribeMap: true,
+        //showSubscribeMap: false,
         apikey: null,
         failedChecked: true,
         showDates: true,
@@ -192,6 +213,7 @@
         pp2dp: true,
         showSiteSwitcher: false,
         showMpGrades: true,
+        showRecent: true,
     };
 
     var settings = {};
@@ -299,237 +321,9 @@
     })($);
     /*eslint-enable*/
 
-    var subscriberManager = (function(){
-        var MAPPER = 0,
-            MAP = 1;
+    $(document).ready(reloadOsuplus);
 
-        function isSubscribed(list, id){
-            if(getIndex(list, id) === -1) return false;
-            else return true;
-        }
-
-        function add(list, params, type){
-            if(getIndex(list, params.id) === -1){
-                var x = {};
-                for(var p in params){
-                    x[p] = params[p];
-                }
-                list.push(x);
-                sortList(list, type);
-            }
-            return list;
-        }
-
-        function remove(list, id){
-            var index = getIndex(list, id);
-            if(index === -1) return;
-            else{
-                list.splice(index, 1);
-            }
-        }
-
-        function getIndex(list, id){
-            for(var i=0; i<list.length; i++){
-                if(list[i].id === id){
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        function sortList(list, type){
-            if(type === MAPPER){
-                list.sort(function(a, b){
-                    return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
-                });
-            }else if(type === MAP){
-                list.sort(function(a, b){
-                    if(a.artist.toLowerCase() < b.artist.toLowerCase()) return -1;
-                    else if(a.artist.toLowerCase() > b.artist.toLowerCase()) return 1;
-                    else if(a.title.toLowerCase() < b.title.toLowerCase()) return -1;
-                    else if(a.title.toLowerCase() > b.title.toLowerCase()) return 1;
-                    else return a.creator.toLowerCase() < b.creator.toLowerCase() ? -1 : 1;
-                });
-            }
-        }
-
-        async function getList(type){
-            if(type === MAPPER){
-                return JSON.parse(await GMX.getValue("mapperSubList", "[]"));
-            }else{
-                return JSON.parse(await GMX.getValue("mapSubList", "[]"));
-            }
-        }
-
-        async function saveList(list, type){
-            if(type === MAPPER){
-                await GMX.setValue("mapperSubList", JSON.stringify(list));
-            }else{
-                await GMX.setValue("mapSubList", JSON.stringify(list));
-            }
-        }
-
-        var me = {
-            mapper: {
-                isSubscribed: async function(id){
-                    return isSubscribed(await getList(MAPPER), id);
-                },
-                add: async function(id, username){
-                    var list = await getList(MAPPER);
-                    add(list, {id: id, name: username}, MAPPER);
-                    await saveList(list, MAPPER);
-                },
-                remove: async function(id){
-                    var list = await getList(MAPPER);
-                    remove(list, id);
-                    await saveList(list, MAPPER);
-                },
-                removeList: async function(ls){
-                    var list = await getList(MAPPER);
-                    ls.forEach((id) => { remove(list, id); });
-                    await saveList(list, MAPPER);
-                },
-                getList: async function(){
-                    return getList(MAPPER);
-                }
-            },
-            map: {
-                isSubscribed: async function(id){
-                    return isSubscribed(await getList(MAP), id);
-                },
-                add: async function(id, artist, title, creator, creator_id){
-                    var list = await getList(MAP);
-                    add(list, {id: id, artist: artist, title: title, creator: creator, creator_id: creator_id}, MAP);
-                    await saveList(list, MAP);
-                },
-                remove: async function(id){
-                    var list = await getList(MAP);
-                    remove(list, id);
-                    await saveList(list, MAP);
-                },
-                removeList: async function(ls){
-                    var list = await getList(MAP);
-                    ls.forEach((id) => { remove(list, id); });
-                    await saveList(list, MAP);
-                },
-                getList: async function(){
-                    return getList(MAP);
-                }
-            },
-            util: {
-                retrieveBeatmaps: async function(){
-                    var result = [];
-                    return Promise.all([subscriberManager.mapper.getList(), subscriberManager.map.getList()]).then(([mapperList, mapList]) => {
-                        var promises = [];
-                        mapperList.forEach(function(sub, index){
-                            promises.push(new Promise((resolve, reject) => {
-                                getBeatmaps({u: sub.id, type: "id"}, function(beatmaps){
-                                    beatmaps.forEach(function(beatmap){
-                                        beatmap.creator_id = sub.id;
-                                    });
-                                    result = result.concat(beatmaps);
-                                    resolve();
-                                });
-                            }));
-                        });
-                        mapList.forEach(function(map, index){
-                            promises.push(new Promise((resolve, reject) => {
-                                getBeatmaps({s: map.id}, function(beatmaps){
-                                    beatmaps.forEach(function(beatmap){
-                                        beatmap.creator_id = map.creator_id;
-                                    });
-                                    result = result.concat(beatmaps);
-                                    resolve();
-                                });
-                            }));
-                        });
-                        return Promise.all(promises);
-                    }).then(() => {
-                        return result;
-                    });
-                },
-                mergeBeatmaps: function(beatmaps){
-                    function addDifficulty(difficulties, beatmap){
-                        for(var i=0; i<difficulties.length; i++){
-                            if(difficulties[i].beatmap_id === beatmap.beatmap_id){
-                                return;
-                            }
-                        }
-                        difficulties.push({
-                            beatmap_id: beatmap.beatmap_id,
-                            version: beatmap.version,
-                            mode: beatmap.mode,
-                            playcount: beatmap.playcount,
-                            difficultyrating: beatmap.difficultyrating
-                        });
-                    }
-
-                    var merged = [];
-                    beatmaps.forEach(function(beatmap){
-                        var mergedlen = merged.length;
-                        var index = -1;
-                        for(var i=0; i<mergedlen; i++){
-                            if(beatmap.beatmapset_id === merged[i].beatmapset_id){
-                                index = i;
-                                break;
-                            }
-                        }
-                        if(index === -1){
-                            merged.push({
-                                beatmapset_id: beatmap.beatmapset_id,
-                                approved: beatmap.approved,
-                                last_update: beatmap.last_update,
-                                artist: beatmap.artist,
-                                title: beatmap.title,
-                                creator: beatmap.creator,
-                                creator_id: beatmap.creator_id,
-                                source: beatmap.source,
-                                favourite_count: beatmap.favourite_count,
-                                difficulties: []
-                            });
-                            addDifficulty(merged[mergedlen].difficulties, beatmap);
-                        }else{
-                            addDifficulty(merged[index].difficulties, beatmap);
-                        }
-                    });
-
-                    //Sort
-                    merged.forEach(function(map){
-                        map.difficulties.sort(function(a, b){
-                            if(a.mode < b.mode) return -1;
-                            if(a.mode > b.mode) return 1;
-                            if(parseFloat(a.difficultyrating) < parseFloat(b.difficultyrating)) return -1;
-                            else return 1;
-                        });
-                    });
-                    merged.sort(function(a, b){
-                        var date1 = new Date(a.last_update.replace(" ","T") + "+0800");
-                        var date2 = new Date(b.last_update.replace(" ","T") + "+0800");
-                        if(date1 > date2) return -1;
-                        else return 1;
-                    });
-                    return merged;
-                },
-                addMapperName: async function(mapper){
-                    return new Promise((resolve, reject) => {
-                        getUser({u: mapper, type: "string"}, function(result){
-                            if(result.length){
-                                var id = result[0].user_id;
-                                me.mapper.add(id, result[0].username).then(() => {
-                                    resolve(id);
-                                });
-                            }else{
-                                reject(Error(`mapper ${mapper} not found`));
-                            }
-                        });
-                    });
-                }
-            }
-        };
-        return me;
-    })();
-
-    $(document).ready(function(){
+    function reloadOsuplus(){
         initSettings().then((_settings) => {
             settings = _settings;
             var url = window.location.href;
@@ -553,7 +347,32 @@
                 osuplusNew().init();
             }
         });
-    });
+    }
+
+    var getBeatmapsCache = (function(){
+        var callbacks = {},
+            beatmapsCache = {};
+
+        function getBeatmapsCache(params, callback){
+            var id = params.b;
+            if(id in beatmapsCache){
+                callback(beatmapsCache[id]);
+            }else if(id in callbacks){
+                callbacks[id].push(callback);
+            }else{
+                callbacks[id] = [callback];
+                getBeatmaps(params, function(response){
+                    beatmapsCache[id] = response;
+                    callbacks[id].forEach(function(cb){
+                        cb(response);
+                    });
+                    delete callbacks[id];
+                });
+            }
+        }
+
+        return getBeatmapsCache;
+    })();
 
     function isOldSite(url){
         if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/u\//) ||
@@ -567,6 +386,7 @@
     }
 
     function mainInit(){
+        $(".osuplus").remove();
         apikey = settings.apikey;
         if(apikey !== null){
             hasKey = true;
@@ -590,7 +410,7 @@
         }
 
         if(!$(".osuplus-settings-style").length){
-            $(document.head).append($("<style class='osuplus-settings-style'></style>").html(
+            $(document.head).append($("<style class='osuplus osuplus-settings-style'></style>").html(
                 `#osuplusSettingsBtn {background:rgba(0,0,0,0.2) url(${settingsImg}) no-repeat 5px 10px; position:fixed; width:42px; height:47px; right:80px; cursor:pointer; z-index:10000;}
                 #osuplusModalOverlay {position:fixed; top:0px; width:100%; height:100%; z-index:19999; background:rgba(0,0,0,0.5);}
                 #osuplusModal {position:fixed; width:600px; z-index:20000; top:30px; background:white; 
@@ -605,10 +425,10 @@
             ));
         }
 
-        $(document.body).prepend("<div id='osuplusSettingsBtn'></div>");
+        $(document.body).prepend("<div id='osuplusSettingsBtn' class='osuplus'></div>");
         $(document.body).append(
-            $("<div id='osuplusModalOverlay' style='display:none;'></div>"),
-            $("<div id='osuplusModal' style='display:none;'></div>").append(
+            $("<div id='osuplusModalOverlay' class='osuplus' style='display:none;'></div>"),
+            $("<div id='osuplusModal' class='osuplus' style='display:none;'></div>").append(
                 "<h1>osuplus settings</h1>",
                 "<button class='osuplusModalClose'>x</button>",
                 $("<div class='osuplusSettingsContent'>").append(
@@ -627,7 +447,6 @@
                             makeSettingRow("Show Sayobot mirror", null, makeCheckboxOption("showMirror2")),
                             makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
                             makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
-                            makeSettingRow("Show subscribe map", null, makeCheckboxOption("showSubscribeMap")),
                             makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
                             makeSettingRow("Fetch player countries outside top 50", "disable to load faster, but some players' countries won't be loaded", makeCheckboxOption("fetchPlayerCountries")),
@@ -638,6 +457,7 @@
                     $("<div>").append(
                         "<h2>Userpage</h2>",
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
+                            makeSettingRow("Show recent 24h", "", makeCheckboxOption("showRecent")),
                             makeSettingRow("Show failed scores", "", makeCheckboxOption("failedChecked")),
                             makeSettingRow("Show detailed hit count", "", makeCheckboxOption("showDetailedHitCount")),
                             makeSettingRow("Show hits per play", "", makeCheckboxOption("showHitsPerPlay")),
@@ -667,8 +487,9 @@
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = [
-                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showSubscribeMap", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
-                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", "showMpGrades"
+                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
+                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
+                        "showMpGrades", "showRecent"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -743,25 +564,35 @@
             if(settings.showSiteSwitcher){
                 $(document.body).append("<script src='//s.ppy.sh/js/site-switcher.js'></script>");
             }
+
+            function reInit(){
+                currentBody = document.body;
+                mainInit();
+                var url = window.location.href;
+                var pathname = window.location.pathname;
+                if(pathname == "/beatmapsets"){
+                    setNewOsuplus(osuplusNewBeatmapListing);
+                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/beatmapsets\//)){
+                    setNewOsuplus(osuplusNewBeatmap);
+                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/users\//)){
+                    setNewOsuplus(osuplusNewUserpage);
+                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/rankings\//)){
+                    setNewOsuplus(osuplusNewPpRanking);
+                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/community\/matches/)){
+                    setNewOsuplus(osuplusNewMp);
+                }
+            }
+
             setInterval(function(){
                 if(currentBody != document.body){
-                    currentBody = document.body;
-                    mainInit();
-                    var url = window.location.href;
-                    var pathname = window.location.pathname;
-                    if(pathname == "/beatmapsets"){
-                        setNewOsuplus(osuplusNewBeatmapListing);
-                    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/beatmapsets\//)){
-                        setNewOsuplus(osuplusNewBeatmap);
-                    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/users\//)){
-                        setNewOsuplus(osuplusNewUserpage);
-                    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/rankings\//)){
-                        setNewOsuplus(osuplusNewPpRanking);
-                    }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/community\/matches/)){
-                        setNewOsuplus(osuplusNewMp);
-                    }
+                    reInit();
                 }
             }, 1000);
+
+            // handle back and forward history
+            $(document).on("turbolinks:load", function(){
+                reInit();
+            });
         }
 
         function setNewOsuplus(newOsuplus){
@@ -770,8 +601,12 @@
             currentOsuplus.init();
         }
 
-        $(window).unload(function(){
-            currentOsuplus.destroy();
+        $(document).on("turbolinks:visit", function(){
+            $("#osuplusloaded").remove();
+        });
+        
+        $(window).unload(function(){    
+            currentOsuplus.destroy();   
         });
 
         return {init: init};
@@ -820,11 +655,11 @@
 
         function init(){
             if($("#osuplusloaded").length) return;
-            $("body").append("<a hidden id='osuplusloaded'></a>");
+            $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
             jsonEvents = JSON.parse($("#json-events").text());
             mpId = jsonEvents.match.id;
-            mpDiv = $(`<div class='osuplus-mp-container'>
+            mpDiv = $(`<div class='osuplus osuplus-mp-container'>
                 <div class='js-spoilerbox bbcode-spoilerbox'>
                     <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'>
                         <span class="bbcode-spoilerbox__link-icon"></span>Match costs
@@ -1197,31 +1032,6 @@
     }
 
     function osuplusBeatmapListing(){
-        var subsTitle = null,
-            subsContent = null,
-            beatmaplistingTitle = null,
-            loadingNotice = null,
-            beatmaplistingContent = null,
-            mappersSelect = null,
-            mappersRemoveBtn = null,
-            mapsSelect = null,
-            mapsRemoveBtn = null,
-            subsTxtbox = null,
-            subsAddBtn = null,
-            pageLefts = null,
-            pageRights = null,
-            pageDisplays = null,
-            subsBeatmaplist = null,
-            beatmapList = [],
-            pages = 1,
-            curPage = 1,
-            pageSize = 40,
-            refreshBtn = null;
-
-        //0: unloaded
-        //1: loading
-        //2: loaded
-        var subLoadingStatus = 0;
         
         function addCss(){
             $(document.head).append($("<style></style>").html(
@@ -1243,350 +1053,22 @@
 
         function init(){
             addCss();
-            beatmaplistingContent = $(".content-with-bg");
-            subsTitle = $("<a class='maintitle'>Subscriptions</a>");
-            subsContent = $("<div class='subContent content-with-bg'></div>").hide();
-            beatmaplistingTitle = $("<a class='maintitle selected'>Beatmap Listing</a>");
-            loadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
-            subsTitle.click(function(){
-                subsTitle.addClass("selected");
-                subsContent.show();
-                beatmaplistingTitle.removeClass("selected");
-                beatmaplistingContent.hide();
-                if(subLoadingStatus === 0){
-                    loadSubs();
-                }
-            });
-            beatmaplistingTitle.click(function(){
-                beatmaplistingTitle.addClass("selected");
-                beatmaplistingContent.show();
-                subsTitle.removeClass("selected");
-                subsContent.hide();
-            });
-            beatmaplistingContent.before($("<div class='maintitlediv small-content-with-bg'>").append(beatmaplistingTitle, subsTitle));
-            beatmaplistingContent.after(subsContent);
-            $(".newHeader").remove();
-
-            mappersSelect = $("<select id='mappersSelect' multiple size=5>");
-            mappersRemoveBtn = $("<button id='mappersRemoveBtn' class='subsBtn'>Remove</button>");
-            mapsSelect = $("<select id='mapsSelect' multiple size=5>");
-            mapsRemoveBtn = $("<button id='mapsRemoveBtn' class='subsBtn'>Remove</button>");
-            subsTxtbox = $("<input id='subsTxtbox' class='subsTxt'>");
-            subsAddBtn = $("<button id='subsAddBtn' class='subsBtn'>Add</button>");
-            var pageLeft = $("<button class='subsBtn'>&lt;</button>");
-            var pageRight = $("<button class='subsBtn'>&gt;</button>");
-            var pageDisplay = $("<span class='pageDisplay'>Page 1/1</span>");
-            var pageLeft2 = $("<button class='subsBtn'>&lt;</button>");
-            var pageRight2 = $("<button class='subsBtn'>&gt;</button>");
-            var pageDisplay2 = $("<span class='pageDisplay'>Page 1/1</span>");
-            pageLefts = $.merge(pageLeft, pageLeft2);
-            pageRights = $.merge(pageRight, pageRight2);
-            pageDisplays = $.merge(pageDisplay, pageDisplay2);
-            subsBeatmaplist = $("<div class='beatmapListing'>");
-            refreshBtn = $("<button class='subsBtn'>Refresh</button>");
-
-            pageLefts.click(function(){
-                if(curPage > 1){
-                    curPage--;
-                    refreshPage();
-                }
-            });
-            pageRights.click(function(){
-                if(curPage < pages){
-                    curPage++;
-                    refreshPage();
-                }
-            });
-            refreshBtn.click(function(){
-                if(subLoadingStatus !== 1){
-                    loadSubs();
-                }
-            });
-
-            subsContent.append(
-                $("<div id='subsControl'>").append(
-                    $("<table style='width:100%;'>").append(
-                        $("<tr>").append(
-                            $("<th>Subscribed mappers:</th>"),
-                            $("<td>").append(
-                                mappersSelect, "<br>", mappersRemoveBtn
-                            ),
-                            $("<th>Subscribed maps:</th>"),
-                            $("<td>").append(
-                                mapsSelect, "<br>", mapsRemoveBtn
-                            )
-                        ),
-                        $("<tr>").append(
-                            $("<th>Add mapper:</th>"),
-                            $("<td>").append(
-                                subsTxtbox, "&nbsp;", subsAddBtn
-                            )
-                        )
-                    )
-                ),
-                $("<div class='pagination'>").append(
-                    refreshBtn, "<br>", 
-                    pageLeft, pageDisplay, pageRight
-                ),
-                loadingNotice,
-                subsBeatmaplist,
-                $("<div class='pagination'>").append(
-                    pageLeft2, pageDisplay2, pageRight2
-                )
-            );
-            refreshMappersSub();
-            refreshMapsSub();
-
-            subsAddBtn.click(function(){
-                subscriberManager.util.addMapperName(subsTxtbox.val()).then(refreshMappersSub)
-                    .catch((e) => {
-                        alert("User does not exist!");
-                    });
-            });
-            mappersRemoveBtn.click(function(){
-                var selected = mappersSelect.find(":selected");
-                var toRemove = [];
-                selected.each(function(i, ele){
-                    toRemove.push(ele.value);
-                });
-                subscriberManager.mapper.removeList(toRemove).then(refreshMappersSub);
-            });
-            mapsRemoveBtn.click(function(){
-                var selected = mapsSelect.find(":selected");
-                var toRemove = [];
-                selected.each(function(i, ele){
-                    toRemove.push(ele.value);
-                });
-                subscriberManager.map.removeList(toRemove).then(refreshMapsSub);
-            });
 
             if(settings.forceShowDifficulties){
                 $(".initiallyHidden").removeClass("initiallyHidden");
             }
         }
 
-        function refreshPage(){
-            subsBeatmaplist.children().hide();
-            subsBeatmaplist.children().eq(curPage - 1).show();
-            pageDisplays.text("Page "+curPage+"/"+pages);
-        }
-
-        function loadSubs(){
-            subLoadingStatus = 1;
-            subsBeatmaplist.empty();
-            loadingNotice.show();
-            subscriberManager.util.retrieveBeatmaps().then((result) => {
-                beatmapList = subscriberManager.util.mergeBeatmaps(result);
-                if(beatmapList.length === 0) pages = 1;
-                else{
-                    pages = (((beatmapList.length-1) / pageSize) >> 0) + 1;
-                }
-                curPage = 1;
-                var pageContainer = $("<div class='beatmapListing'>").hide();
-                beatmapList.forEach(function(beatmapset, index){
-                    if(index % pageSize === 0){
-                        if(index > 0){
-                            subsBeatmaplist.append(pageContainer);
-                            pageContainer = $("<div class='beatmapListing'>").hide();
-                        }
-                    }
-                    pageContainer.append(makeBeatmapBox(beatmapset));
-                });
-                subsBeatmaplist.append(pageContainer);
-                refreshPage();
-
-                /*eslint-disable */
-                $(".timeago").timeago();
-                $(".sub-beatmap").hover(function() {
-                    $(this).find(".maintext").marquee({
-                        speed: 60
-                    });
-                    $(this).find(".initiallyHidden").stop().fadeTo(1, 100);
-                    $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
-                        width: 'show'
-                    }, 100);
-                }, function() {
-                    $(this).find(".initiallyHidden").fadeOut(400);
-                    $(this).find(".maintext").attr('stop', 1);
-                    $(this).find(".bmlist-options").clearQueue().stop().delay(500).animate({
-                        width: 'hide'
-                    }, 100);
-                }).click(function(event) {
-                    return load(this.id, event);
-                });
-                $(".sub-beatmap .bmlist-options .icon-heart").click(function() {
-                    $.ajax({
-                        url: "/web/favourite.php?localUserCheck=" + localUserCheck + "&a=" + $(this).parent().parent().parent().attr('id')
-                    }).done(function() {
-                        alert("Added as favourite!");
-                    });
-                    return false;
-                });
-                $(".sub-beatmap .bmlistt").click(function() {
-                    $('.sub-beatmap .bmlistt>.icon-pause').removeClass("icon-pause").addClass("icon-play");
-                    if (playBeatmapPreview($(this).parent().attr('id')))
-                        $(this).find('i').removeClass("icon-play").addClass("icon-pause");
-                    return false;
-                });
-                /*eslint-enable */
-
-                subLoadingStatus = 2;
-                loadingNotice.hide();
-            });
-        }
-
-        function makeBeatmapBox(beatmapset){
-            var id = beatmapset.beatmapset_id;
-            var lastupdate = new Date(beatmapset.last_update.replace(" ","T") + "+0800");
-            var initiallyHiddenClass = "initiallyHidden";
-            if(settings.forceShowDifficulties) initiallyHiddenClass = "";
-            var approved = "?";
-            switch(beatmapset.approved){
-            case "-2":
-                approved = "Graveyard"; break;
-            case "-1":
-                approved = "WIP"; break;
-            case "0":
-                approved = "Pending"; break;
-            case "1":
-                approved = "Ranked"; break;
-            case "2":
-                approved = "Approved"; break;
-            case "3":
-                approved = "Qualified"; break;
-            case "4":
-                approved = "Loved";
-            }
-            var source = "";
-            if(beatmapset.source !== ""){
-                source = `<div class='${initiallyHiddenClass}'><span class='light'>from</span> ${beatmapset.source}</div>`;
-            }
-            var difficulties = "";
-            beatmapset.difficulties.forEach(function(beatmap){
-                difficulties += `<div class='diffIcon ${getDifficultyClass(beatmap.mode, beatmap.difficultyrating)}'></div> `;
-            });
-
-            return $(
-                `<div class='beatmap sub-beatmap' id='${id}' style='width:420px;'>
-                    <div class='bmlistt' style='background: url(//b.ppy.sh/thumb/${id}.jpg)'>
-                        <i class='icon-play'></i>
-                    </div>
-                    <div class='bmlist-options'>
-                        <a href='#'><i class='icon-heart'></i></a>
-                        <a href='/beatmapsets/${id}/discussion'><i class="icon-comments"></i></a>
-                        <a class='require-login beatmap_download_link' href='/d/${id}'><i class='icon-download-alt'></i></a>
-                    </div>
-                    <div class='maintext'>
-                        <span class='artist'>${beatmapset.artist}</span> - <a href='/s/${id}' class='title'>${beatmapset.title}</span></a>
-                    </div>
-                    <div class='left-aligned'>
-                        <div><span class='light'>mapped by</span> <a href='/u/${beatmapset.creator_id}'>${beatmapset.creator}</a></div>
-                        ${source}
-                        <div class='difficulties ${initiallyHiddenClass}'>${difficulties} </div>
-                    </div>
-                    <div class='right-aligned'>
-                        <div class='status'><b>${approved}</b></div>
-                        <div class='small-details'>
-                            <div><time class='timeago' datetime='${lastupdate.toISOString()}'>${lastupdate.toLocaleString()}</time></div>
-                            <i class='icon-heart'></i> ${beatmapset.favourite_count}
-                        </div>
-                    </div>
-                </div>`
-            );
-        }
-
-        async function refreshMappersSub(id){
-            var optionsls = [];
-            var subscribedList = await subscriberManager.mapper.getList();
-            var sublen = subscribedList.length;
-            var focus = null;
-            mappersSelect.find("option").remove();
-            for(var i=0; i<sublen; i++){
-                var option = $(`<option value='${subscribedList[i].id}'>${subscribedList[i].name}</option>`);
-                if(subscribedList[i].id === id) focus = option;
-                optionsls.push(option);
-            }
-            mappersSelect.append(optionsls);
-            if(focus !== null){
-                focus.prop("selected", true);
-            }
-        }
-
-        async function refreshMapsSub(){
-            var optionsls = [];
-            var subscribedList = await subscriberManager.map.getList();
-            var sublen = subscribedList.length;
-            mapsSelect.find("option").remove();
-            for(var i=0; i<sublen; i++){
-                var map = subscribedList[i];
-                var option = $(`<option value='${map.id}'>${map.artist} - ${map.title}  (${map.creator})</option>`);
-                optionsls.push(option);
-            }
-            mapsSelect.append(optionsls);
-        }
-
-        function getDifficultyClass(mode, difficultyrating){
-            var diff = "?";
-            var rating = parseFloat(difficultyrating);
-            if(rating < 1.5) diff = "easy";
-            else if(rating < 2.25) diff = "normal";
-            else if(rating < 3.75) diff = "hard";
-            else if (rating < 5.25) diff = "insane";
-            else diff = "expert";
-            if(mode === "1") diff += "-t";
-            else if(mode === "2") diff += "-f";
-            else if(mode === "3") diff += "-m";
-            return diff;
-        }
-
         return {init: init};
     }
 
     function osuplusNewBeatmapListing(){
-        var subsTitle = null,
-            subsContent = null,
-            beatmaplistingTitle = null,
-            loadingNotice = null,
-            mappersSelect = null,
-            mappersRemoveBtn = null,
-            mapsSelect = null,
-            mapsRemoveBtn = null,
-            subsTxtbox = null,
-            subsAddBtn = null,
-            pageLefts = null,
-            pageRights = null,
-            pageDisplays = null,
-            subsBeatmaplist = null,
-            beatmapList = [],
-            pages = 1,
-            curPage = 1,
-            pageSize = 40,
-            refreshBtn = null;
-
-        //0: unloaded
-        //1: loading
-        //2: loaded
-        var subLoadingStatus = 0;
+        // Nothing for now
         
         function addCss(){
             if(!$(".osuplus-new-beatmaplisting-style").length){
                 $(document.head).append($("<style class='osuplus-new-beatmaplisting-style'></style>").html(
-                    `.small-content-with-bg {background-image: url(//s.ppy.sh/images/main-bg-new.png);}
-                    .maintitle {padding: 4px; margin-right: 10px; font-size: 25px;}
-                    .maintitle:hover {cursor: pointer;}
-                    #subsControl {padding: 20px;}
-                    #subsControl th {width: 80px; padding-right: 10px; float: left; text-align: right;}
-                    #mappersSelect {width: 180px;}
-                    #subsTxtbox {width: 140px;}
-                    #mapsSelect {width: 500px;}
-                    .subsBtn {font-size: 100%;}
-                    .subsTxt, #mappersSelect option, #mapsSelect option {font-size: 110%;}
-                    .pageDisplay {padding-left: 15px; padding-right: 15px;}
-                    .centered {display: block; margin-left: auto; margin-right: auto;}
-                    .subs-pagination {text-align: center; padding: 10px 0px;}
-                    .beatmapset-panel__date {bottom: 10px; right: 10px; text-align: right; position: absolute;}
-                    .op-sub-txt {color: white;}
-                    .subContent {color: black;}`
+                    ""
                 ));
             }
         }
@@ -1595,393 +1077,6 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded'></a>");
             addCss();
-            subLoadingStatus = 0;
-            subsContent = $("<div class='subContent'></div>").hide();
-            loadingNotice = $(`<div><img src='${loaderImg}' class='centered'></div>`);
-            $(".osu-page--beatmapsets-search-header").parent().before(
-                `<div class='osu-layout__section'>
-                    <div class='osu-page'>
-                        <ul class='page-mode'>
-                            <li class="page-mode__item">
-                                <a class="page-mode-link page-mode-link--is-active maintitle beatmaplisting-title">
-                                    Beatmap Listing
-                                    <span class="page-mode-link__stripe"></span>
-                                </a>
-                            </li>
-                            <li class="page-mode__item">
-                                <a class="page-mode-link maintitle subs-title">
-                                    Subscriptions
-                                    <span class="page-mode-link__stripe"></span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>`
-            );
-            subsTitle = $(".subs-title");
-            beatmaplistingTitle = $(".beatmaplisting-title");
-            subsTitle.click(function(){
-                subsTitle.addClass("page-mode-link--is-active");
-                subsContent.show();
-                beatmaplistingTitle.removeClass("page-mode-link--is-active");
-                $(".osu-layout__row--page-compact").hide();
-                $(".osu-page--beatmapsets-search-header").hide();
-                if(subLoadingStatus === 0){
-                    loadSubs();
-                }
-            });
-            beatmaplistingTitle.click(function(){
-                beatmaplistingTitle.addClass("page-mode-link--is-active");
-                $(".osu-layout__row--page-compact").show();
-                $(".osu-page--beatmapsets-search-header").show();
-                subsTitle.removeClass("page-mode-link--is-active");
-                subsContent.hide();
-            });
-            $(".js-react--beatmaps").append(
-                $("<div class='osu-layout__section'></div>").append(
-                    $("<div class='osu-page'></div>").append(subsContent)
-                )
-            );
-
-            mappersSelect = $("<select id='mappersSelect' multiple size=5>");
-            mappersRemoveBtn = $("<button id='mappersRemoveBtn' class='subsBtn'>Remove</button>");
-            mapsSelect = $("<select id='mapsSelect' multiple size=5>");
-            mapsRemoveBtn = $("<button id='mapsRemoveBtn' class='subsBtn'>Remove</button>");
-            subsTxtbox = $("<input id='subsTxtbox' class='subsTxt'>");
-            subsAddBtn = $("<button id='subsAddBtn' class='subsBtn'>Add</button>");
-            var pageLeft = $("<button class='subsBtn'>&lt;</button>");
-            var pageRight = $("<button class='subsBtn'>&gt;</button>");
-            var pageDisplay = $("<span class='pageDisplay op-sub-txt'>Page 1/1</span>");
-            var pageLeft2 = $("<button class='subsBtn'>&lt;</button>");
-            var pageRight2 = $("<button class='subsBtn'>&gt;</button>");
-            var pageDisplay2 = $("<span class='pageDisplay op-sub-txt'>Page 1/1</span>");
-            pageLefts = $.merge(pageLeft, pageLeft2);
-            pageRights = $.merge(pageRight, pageRight2);
-            pageDisplays = $.merge(pageDisplay, pageDisplay2);
-            subsBeatmaplist = $("<div class='beatmapsets'>");
-            refreshBtn = $("<button class='subsBtn'>Refresh</button>");
-
-            pageLefts.click(function(){
-                if(curPage > 1){
-                    curPage--;
-                    refreshPage();
-                }
-            });
-            pageRights.click(function(){
-                if(curPage < pages){
-                    curPage++;
-                    refreshPage();
-                }
-            });
-            refreshBtn.click(function(){
-                if(subLoadingStatus !== 1){
-                    loadSubs();
-                }
-            });
-
-            subsContent.append(
-                $("<div id='subsControl'>").append(
-                    $("<table style='width:100%;'>").append(
-                        $("<tr>").append(
-                            $("<th class='op-sub-txt'>Subscribed mappers:</th>"),
-                            $("<td>").append(
-                                mappersSelect, "<br>", mappersRemoveBtn
-                            ),
-                            $("<th class='op-sub-txt'>Subscribed maps:</th>"),
-                            $("<td>").append(
-                                mapsSelect, "<br>", mapsRemoveBtn
-                            )
-                        ),
-                        $("<tr>").append(
-                            $("<th class='op-sub-txt'>Add mapper:</th>"),
-                            $("<td>").append(
-                                subsTxtbox, "&nbsp;", subsAddBtn
-                            )
-                        )
-                    )
-                ),
-                $("<div class='subs-pagination'>").append(
-                    refreshBtn, "<br>", 
-                    pageLeft, pageDisplay, pageRight
-                ),
-                loadingNotice,
-                subsBeatmaplist,
-                $("<div class='subs-pagination'>").append(
-                    pageLeft2, pageDisplay2, pageRight2
-                )
-            );
-            refreshMappersSub();
-            refreshMapsSub();
-
-            subsAddBtn.click(function(){
-                subscriberManager.util.addMapperName(subsTxtbox.val()).then(refreshMappersSub)
-                    .catch(() => {
-                        alert("User does not exist!");
-                    });
-            });
-            mappersRemoveBtn.click(function(){
-                var selected = mappersSelect.find(":selected");
-                var toRemove = [];
-                selected.each(function(i, ele){
-                    toRemove.push(ele.value);
-                });
-                subscriberManager.mapper.removeList(toRemove).then(refreshMappersSub);
-            });
-            mapsRemoveBtn.click(function(){
-                var selected = mapsSelect.find(":selected");
-                var toRemove = [];
-                selected.each(function(i, ele){
-                    toRemove.push(ele.value);
-                });
-                subscriberManager.map.removeList(toRemove).then(refreshMapsSub);
-            });
-        }
-
-        function refreshPage(){
-            subsBeatmaplist.children().hide();
-            subsBeatmaplist.children().eq(curPage - 1).show();
-            pageDisplays.text("Page "+curPage+"/"+pages);
-        }
-
-        function loadSubs(){
-            subLoadingStatus = 1;
-            subsBeatmaplist.empty();
-            loadingNotice.show();
-            subscriberManager.util.retrieveBeatmaps().then((result) => {
-                beatmapList = subscriberManager.util.mergeBeatmaps(result);
-                if(beatmapList.length === 0) pages = 1;
-                else{
-                    pages = (((beatmapList.length-1) / pageSize) >> 0) + 1;
-                }
-                curPage = 1;
-                var pageContainer = $("<div class='beatmapListing-page'>").hide();
-                var pageRow = $("<div class='beatmapListing-row beatmapsets__items-row'>");
-                pageContainer.append(pageRow);
-                beatmapList.forEach(function(beatmapset, index){
-                    if(index % pageSize === 0){
-                        if(index > 0){
-                            subsBeatmaplist.append(pageContainer);
-                            pageContainer = $("<div class='beatmapListing-page'>").hide();
-                        }
-                    }
-                    if(index % 2 === 0 && index > 0){
-                        pageRow = $("<div class='beatmapListing-row beatmapsets__items-row'>");
-                        pageContainer.append(pageRow);
-                    }
-                    pageRow.append(makeBeatmapBox(beatmapset));
-                });
-                subsBeatmaplist.append(pageContainer);
-                refreshPage();
-                subLoadingStatus = 2;
-                loadingNotice.hide();
-            });
-        }
-
-        function makeBeatmapBox(beatmapset){
-            var id = beatmapset.beatmapset_id;
-            var approved = "?";
-            switch(beatmapset.approved){
-            case "-2":
-                approved = "Graveyard"; break;
-            case "-1":
-                approved = "WIP"; break;
-            case "0":
-                approved = "Pending"; break;
-            case "1":
-                approved = "Ranked"; break;
-            case "2":
-                approved = "Approved"; break;
-            case "3":
-                approved = "Qualified"; break;
-            case "4":
-                approved = "Loved";
-            }
-            var status = approved.toLowerCase();
-            var dateset =  beatmapset.last_update.replace(" ","T") + "+0000";
-            var playcount = 0;
-            for(let diff of beatmapset.difficulties){
-                playcount += parseInt(diff.playcount);
-            }
-
-            var beatmapGroup = [];
-            for(let m=0; m<4; m++){
-                let group = [];
-                for(let diff of beatmapset.difficulties){
-                    if(diff.mode == m.toString()){
-                        group.push(diff);
-                    }
-                }
-                if(group.length > 0){
-                    beatmapGroup.push({beatmaps: group, mode: m});
-                }
-            }
-
-            var transitionDuration = 150;
-
-            var beatmapBox = $(
-                `<div class="beatmapsets__item">
-                    <div class="beatmapset-panel js-audio--player" data-audio-url="//b.ppy.sh/preview/${id}.mp3" style="--beatmaps-popup-transition-duration:${transitionDuration}ms;">
-                        <a class="beatmapset-panel__cover-container" href="https://osu.ppy.sh/beatmapsets/${id}">
-                            <div class="beatmapset-panel__cover-col beatmapset-panel__cover-col--play">
-                                <div class="beatmapset-panel__cover beatmapset-panel__cover--default"></div>
-                                <img class="beatmapset-panel__cover" src="https://assets.ppy.sh/beatmaps/${id}/covers/list@2x.jpg">
-                            </div>
-                            <div class="beatmapset-panel__cover-col beatmapset-panel__cover-col--info">
-                                <div class="beatmapset-panel__cover beatmapset-panel__cover--default"></div>
-                                <img src="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg" srcset="https://assets.ppy.sh/beatmaps/${id}/covers/card.jpg 1x, https://assets.ppy.sh/beatmaps/${id}/covers/card@2x.jpg 2x" class="beatmapset-panel__cover">
-                            </div>
-                        </a>
-                        <div class="beatmapset-panel__content">
-                            <div class="beatmapset-panel__play-container">
-                                <button class="beatmapset-panel__play js-audio--play" type="button"></button>
-                                <div class="beatmapset-panel__play-progress">
-                                    <div class="circular-progress circular-progress--beatmapset-panel" title="0 / 1">
-                                        <div class="circular-progress__label">1</div>
-                                        <div class="circular-progress__slice">
-                                            <div class="circular-progress__circle"></div>
-                                            <div class="circular-progress__circle circular-progress__circle--fill"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="beatmapset-panel__play-icons"></div>
-                            </div>
-                            <div class="beatmapset-panel__info">
-                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--title"><a class="beatmapset-panel__main-link u-ellipsis-overflow" href="https://osu.ppy.sh/beatmapsets/${id}">${beatmapset.title}</a></div>
-                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--artist"><a class="beatmapset-panel__main-link u-ellipsis-overflow" href="https://osu.ppy.sh/beatmapsets/${id}">by ${beatmapset.artist}</a></div>
-                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--mapper">
-                                    <div class="u-ellipsis-overflow">mapped by <a class="js-usercard beatmapset-panel__mapper-link u-hover" data-user-id="${beatmapset.creator_id}" href="https://osu.ppy.sh/users/${beatmapset.creator_id}">${beatmapset.creator}</a></div>
-                                </div>
-                                <div class="beatmapset-panel__info-row beatmapset-panel__info-row--stats">
-                                    <div class="beatmapset-panel__stats-item" title="Playcount: ${commarise(playcount)}"><span class="beatmapset-panel__stats-item-icon"><i class="fas fa-play-circle"></i></span><span>${formatNumberSuffixed(playcount, 1)}</span></div>
-                                    <div class="beatmapset-panel__stats-item" title="Favourites: ${commarise(beatmapset.favourite_count)}"><span class="beatmapset-panel__stats-item-icon"><i class="far fa-heart"></i></span><span>${formatNumberSuffixed(parseInt(beatmapset.favourite_count), 1)}</span></div>
-                                    <div class="beatmapset-panel__stats-item"><span class="beatmapset-panel__stats-item-icon"><i class="fas fa-fw fa-check-circle"></i></span><time class="js-tooltip-time" title="${dateset}" datetime="${dateset}">${window.eval(`moment("${dateset}").format("ll")`)}</time></div>
-                                </div>
-                                <a class="beatmapset-panel__info-row beatmapset-panel__info-row--extra" href="https://osu.ppy.sh/beatmapsets/${id}">
-                                    <div class="beatmapset-panel__extra-item">
-                                        <div class="beatmapset-status beatmapset-status--panel" style="--bg:var(--beatmapset-${status}-bg); --colour:var(--beatmapset-${status}-colour);">${approved}</div>
-                                    </div>
-                                    ${beatmapGroup.map((group) => {
-                                        return `<div class="beatmapset-panel__extra-item beatmapset-panel__extra-item--dots">
-                                            <div class="beatmapset-panel__beatmap-icon"><i class="fal fa-extra-mode-${intToMode(group.mode)}"></i></div>
-                                    ${group.beatmaps.map((beatmap) => {
-                                        return `<div class="beatmapset-panel__beatmap-dot" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});"></div>`;
-                                    }).join("")}
-                                        </div>`;
-                                    }).join("")}
-                                </a>
-                            </div>
-                            <div class="beatmapset-panel__menu-container">
-                                <div class="beatmapset-panel__menu"><button class="beatmapset-panel__menu-item" title="Favourite this beatmapset" type="button"><span class="far fa-heart"></span></button><a class="beatmapset-panel__menu-item" data-turbolinks="false" href="https://osu.ppy.sh/beatmapsets/${id}/download" title="download"><span class="fas fa-file-download"></span></a></div>
-                            </div>
-                        </div>
-                        <button class="beatmapset-panel__mobile-expand" type="button"><span class="fas fa-angle-down"></span></button>
-                    </div>
-                </div>`
-            );
-
-            var popupTimeout = null,
-                popupHover = false,
-                popup = null;
-
-            function makePopup(){
-                var rect = beatmapBox.get(0).getBoundingClientRect();
-                var pup = $(`<div>
-                    <div class="beatmaps-popup" style="opacity: 1; transition-duration: ${transitionDuration}ms; top: ${window.scrollY + rect.bottom}px; left: ${window.scrollX + rect.left}px; width: ${rect.width}px;">
-                        <div class="beatmaps-popup__content">
-                            ${beatmapGroup.map((group) => {
-                                return `<div class="beatmaps-popup__group">
-                            ${group.beatmaps.map((beatmap) => {
-                                return `<a class="beatmaps-popup-item" href="https://osu.ppy.sh/beatmaps/${beatmap.beatmap_id}">
-                                    <span class="beatmaps-popup-item__col beatmaps-popup-item__col--mode">
-                                        <span class="fal fa-extra-mode-${intToMode(group.mode)}"></span>
-                                    </span>
-                                    <span class="beatmaps-popup-item__col beatmaps-popup-item__col--difficulty" style="--bg:var(--diff-${getDiffRating(beatmap.difficultyrating)});">
-                                        <span class="beatmaps-popup-item__difficulty-icon">
-                                            <span class="fas fa-star"></span>
-                                        </span>${parseFloat(beatmap.difficultyrating).toFixed(2)}
-                                    </span>
-                                    <span class="beatmaps-popup-item__col beatmaps-popup-item__col--name u-ellipsis-overflow">${beatmap.version}</span>
-                                </a>`;
-                            }).join("")}
-                                </div>`;
-                            }).join("")}
-                        </div>
-                    </div>
-                </div>`);
-                pup.mouseenter(() => {
-                    clearTimeout(popupTimeout);
-                    setPopupHover(true);
-                }).mouseleave(popupFastDelayedHide);
-                return pup;
-            }
-
-            function setPopupHover(val){
-                if(val == popupHover) return;
-                popupHover = val;
-                if(val){
-                    popup = makePopup();
-                    $(document.body).append(popup);
-                }else{
-                    popup.remove();
-                }
-            }
-
-            function popupDelayedShow(){
-                clearTimeout(popupTimeout);
-                if(popupHover) return;
-                popupTimeout = setTimeout(() => {
-                    setPopupHover(true);
-                }, 100);
-            }
-            function popupDelayedHide(){
-                clearTimeout(popupTimeout);
-                if(!popupHover) return;
-                popupTimeout = setTimeout(() => {
-                    setPopupHover(false);
-                }, 500);
-            }
-            function popupFastDelayedHide(){
-                clearTimeout(popupTimeout);
-                if(!popupHover) return;
-                popupTimeout = setTimeout(() => {
-                    setPopupHover(false);
-                }, 100);
-            }
-            beatmapBox.children().first().mouseleave(popupFastDelayedHide);
-            beatmapBox.find(".beatmapset-panel__info-row--extra").mouseenter(popupDelayedShow).mouseleave(popupDelayedHide);
-
-            return beatmapBox;
-        }
-
-        async function refreshMappersSub(id){
-            mappersSelect.find("option").remove();
-            var optionsls = [];
-            var subscribedList = await subscriberManager.mapper.getList();
-            var sublen = subscribedList.length;
-            var focus = null;
-            for(var i=0; i<sublen; i++){
-                var option = $("<option value='" + subscribedList[i].id + "'>" + subscribedList[i].name + "</option>");
-                if(subscribedList[i].id === id) focus = option;
-                optionsls.push(option);
-            }
-            mappersSelect.append(optionsls);
-            if(focus !== null){
-                focus.prop("selected", true);
-            }
-        }
-
-        async function refreshMapsSub(){
-            mapsSelect.find("option").remove();
-            var optionsls = [];
-            var subscribedList = await subscriberManager.map.getList();
-            var sublen = subscribedList.length;
-            for(var i=0; i<sublen; i++){
-                var map = subscribedList[i];
-                var option = $("<option value='" + map.id + "'>" + 
-                    map.artist+" - "+map.title+"  ("+map.creator+")</option>");
-                optionsls.push(option);
-            }
-            mapsSelect.append(optionsls);
         }
 
         function destroy(){
@@ -2099,7 +1194,7 @@
 
         function init(){
             if($("#osuplusloaded").length) return;
-            $("body").append("<a hidden id='osuplusloaded'></a>");
+            $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             var path = window.location.pathname.split("/");
             if(path[3] != "performance") return;
 
@@ -2177,25 +1272,16 @@
 
     function osuplusUserpage(){
         var userId = null,
-            username = null,
+            //username = null,
             gameMode = null,
             userInfo = [],
             mainTableBody = null,
             profileTabs = null,
             generalNode = null,
             userRecent = null,
-            //beatmapsCache = null,
             observer = null,
             generalObserver = null,
             topObserver = null,
-            //topSlider = null,
-            //topSliderLbl = null,
-            //topSliderCB = null,
-            //loadingTop = false,
-            subscribeBtn = null,
-            subscribed = false,
-            subscribedColour = "#ef77af",
-            unsubscribedColour = "#5db8ef",
             opModalContent = null;
 
         function addCss(){
@@ -2218,35 +1304,10 @@
             ));
         }
 
-        var getBeatmapsCache = (function(){
-            var callbacks = {},
-                beatmapsCache = {};
-
-            function getBeatmapsCache(params, callback){
-                var id = params.b;
-                if(id in beatmapsCache){
-                    callback(beatmapsCache[id]);
-                }else if(id in callbacks){
-                    callbacks[id].push(callback);
-                }else{
-                    callbacks[id] = [callback];
-                    getBeatmaps(params, function(response){
-                        beatmapsCache[id] = response;
-                        callbacks[id].forEach(function(cb){
-                            cb(response);
-                        });
-                        delete callbacks[id];
-                    });
-                }
-            }
-
-            return getBeatmapsCache;
-        })();
-
         function init(){
             addCss();
             userId = getUserId();
-            username = $(".profile-username").text().trim();
+            //username = $(".profile-username").text().trim();
             gameMode = getGameMode();
             mainTableBody = $(".beatmapListing").children();
             profileTabs = $(".profile-tabs").children().children();
@@ -2266,31 +1327,9 @@
 
             doGeneral();
             addMostPlayed();
-            addRecent();
-
-            //Subscribe button
-            subscriberManager.mapper.isSubscribed(userId).then((result) => {
-                subscribed = result;
-                subscribeBtn = $("<a class='btn'>");
-                updateSubscribeBtn(subscribed);
-                $(".playstyle-container").after($("<div class='centrep'>").append(subscribeBtn));
-
-                subscribeBtn.click(function(){
-                    var p;
-                    if(subscribed){
-                        p = subscriberManager.mapper.remove(userId).then(() => {
-                            subscribed = false;
-                            return subscribed;
-                        });
-                    }else{
-                        p = subscriberManager.mapper.add(userId, username).then(() => {
-                            subscribed = true;
-                            return subscribed;
-                        });
-                    }
-                    p.then(updateSubscribeBtn);
-                });
-            });
+            if(settings.showRecent){
+                addRecent();
+            }
 
             // Add modal
             $("body").append("<div class='opModalOverlay opModalOverride' id='opModalOverlay' style='display:none;''></div>");
@@ -2307,18 +1346,6 @@
             // :)
             if(userId === "1843447"){
                 $(".profile-username").parent().after("<div><b>osuplus creator</b></div>");
-            }
-        }
-
-        function updateSubscribeBtn(subscribed){
-            if(subscribed){
-                subscribeBtn.empty();
-                subscribeBtn.css("background", subscribedColour);
-                subscribeBtn.append("<i class='icon-heart'></i> Subscribed</a>");
-            }else{
-                subscribeBtn.empty();
-                subscribeBtn.css("background", unsubscribedColour);
-                subscribeBtn.append("<i class='icon-plus-sign'></i> Subscribe mapper</a>");
             }
         }
 
@@ -2712,7 +1739,7 @@
                         maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                         //starrating = $("<b>...&#9733;</b>"),
                         failClass = play.rank === "F" ? "failedScore" : "passScore",
-                        ppcalcData = {id: play.beatmap_id, mods: play.enabled_mods, combo: play.maxcombo, acc: acc, miss: play.countmiss};
+                        ppcalcData = makePpcalcData(gameMode, play, acc, play.beatmap_id);
 
                     var profbeatmap = $("<div class='prof-beatmap'>").addClass(failClass).append(
                         $("<table>").append($("<tr>").append(
@@ -2747,7 +1774,7 @@
                         me.find(".pp-display b").text("...pp");
                         me.find(".pp-display-weight").text("(...)");
                         var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                        getPpCalc(ppcalcData).then((result) => {
+                        doPpcalc(ppcalcData).then((result) => {
                             me.find(".pp-display b").text(`${result.pp}pp`);
                             me.find(".pp-display-weight").text(`(${result.pp_fc}pp if FC)`);
                         });
@@ -2781,10 +1808,6 @@
         var jsonUser = null,
             gameMode = null,
             userBest = null,
-            subscribeBtn = null,
-            subscribed = false,
-            subscribedColour = "#ef77af",
-            unsubscribedColour = "#5db8ef",
             opModalContent = null;
 
         function addCss(){
@@ -2823,41 +1846,18 @@
             }
         }
 
-        var getBeatmapsCache = (function(){
-            var callbacks = {},
-                beatmapsCache = {};
-
-            function getBeatmapsCache(params, callback){
-                var id = params.b;
-                if(id in beatmapsCache){
-                    callback(beatmapsCache[id]);
-                }else if(id in callbacks){
-                    callbacks[id].push(callback);
-                }else{
-                    callbacks[id] = [callback];
-                    getBeatmaps(params, function(response){
-                        beatmapsCache[id] = response;
-                        callbacks[id].forEach(function(cb){
-                            cb(response);
-                        });
-                        delete callbacks[id];
-                    });
-                }
-            }
-
-            return getBeatmapsCache;
-        })();
-
         function init(){
             if($("#osuplusloaded").length) return;
-            $("body").append("<a hidden id='osuplusloaded'></a>");
+            $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
             jsonUser = JSON.parse($(".js-react--profile-page").attr("data-initial-data")).user;
             gameMode = getGameMode();
 
             addDetailedTop();
             addGeneral();
-            addRecent();
+            if(settings.showRecent){
+                addRecent();
+            }
 
             // Add modal
             $("body").append("<div class='opModalOverlay opModalOverride' id='opModalOverlay' style='display:none;'></div>");
@@ -2868,30 +1868,6 @@
                 "<div class='opModalCloseBtnDiv' style='display: block;'><button class='opModalCloseBtn'>x</button></div>");
             $("#opModalOverlay, .opModalCloseBtn").click(function(){
                 closeModal();
-            });
-
-            //Subscribe button
-            subscriberManager.mapper.isSubscribed(jsonUser.id.toString()).then((result) => {
-                subscribed = result;
-                subscribeBtn = $("<button class='user-action-button sub-button' title='subscribe mapper'>subscribe</button>");
-                updateSubscribeBtn(subscribed);
-                $(".profile-header-extra--follower-meta").append(subscribeBtn);
-
-                subscribeBtn.click(function(){
-                    var p;
-                    if(subscribed){
-                        p = subscriberManager.mapper.remove(jsonUser.id.toString()).then(() => {
-                            subscribed = false;
-                            return subscribed;
-                        });
-                    }else{
-                        p = subscriberManager.mapper.add(jsonUser.id.toString(), jsonUser.username).then(() => {
-                            subscribed = true;
-                            return subscribed;
-                        });
-                    }
-                    p.then(updateSubscribeBtn);
-                });
             });
 
             // :)
@@ -2906,18 +1882,6 @@
 
         function destroy(){
             $(".osuplus-new-userpage-style").remove();
-        }
-
-        function updateSubscribeBtn(subscribed){
-            if(subscribed){
-                subscribeBtn.text("Subscribed");
-                subscribeBtn.css("background", subscribedColour);
-                subscribeBtn.attr("title", "unsubscribe mapper");
-            }else{
-                subscribeBtn.text("Subscribe");
-                subscribeBtn.css("background", unsubscribedColour);
-                subscribeBtn.attr("title", "subscribe mapper");
-            }
         }
 
         function getGameMode(){
@@ -3248,7 +2212,7 @@
                         //starrating = $("<b>...&#9733;</b>"),
                         failClass = play.rank === "F" ? "failedScore" : "passScore",
                         ppUnitSpan = "<span class='play-detail__pp-unit'>pp</span>",
-                        ppcalcData = {id: play.beatmap_id, mods: play.enabled_mods, combo: play.maxcombo, acc: acc, miss: play.countmiss};
+                        ppcalcData = makePpcalcData(gameMode, play, acc, play.beatmap_id);
 
                     var detailrow = $(`<div class='play-detail play-detail--highlightable play-detail--compact ${failClass}'>`).append(
                         $("<div class='play-detail__group play-detail__group--top'></div>").append(
@@ -3292,7 +2256,7 @@
                         var me = $(this);
                         me.html(`...${ppUnitSpan}<br>(...)`);
                         var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                        getPpCalc(ppcalcData).then((result) => {
+                        doPpcalc(ppcalcData).then((result) => {
                             me.html(`${result.pp}${ppUnitSpan}<br>(${result.pp_fc}${ppUnitSpan} if FC)`);
                         });
                     });
@@ -3347,8 +2311,7 @@
             modsEnabled = true,
             osupreviewLoaded = false,
             scoreReqs = [],
-            maxcomboSpan = null,
-            subscribed = false;
+            maxcomboSpan = null;
 
 
         function addCss(){
@@ -3414,8 +2377,6 @@
             songInfoRef.children().children().eq(2).children().eq(5).append("<br>", maxcomboSpan);
 
             addMirrors();
-            if(settings.showSubscribeMap)
-                addSubBtn();
             showMapValues();
             addOsuPreview();
 
@@ -3785,43 +2746,6 @@
             }
         }
 
-        async function addSubBtn(){
-            subscribed = await subscriberManager.map.isSubscribed(mapsetID);
-            var artist = songInfoRef.find("tr").first().children().eq(1).children().text();
-            var title = songInfoRef.find("tr").eq(1).children().eq(1).children().text();
-            var creator = songInfoRef.find("tr").eq(2).children().eq(1).children().text();
-            var temp = songInfoRef.find("tr").eq(2).children().eq(1).children().attr("href").split("/");
-            var creator_id = temp[temp.length-1];
-            $(".beatmapDownloadButton").first().before(
-                $("<div>").addClass("beatmapDownloadButton").append(
-                    $("<a>").addClass("beatmap_download_link")
-                        .append($("<img class='subImg'>"))
-                        .click(function(){
-                            if(subscribed){
-                                subscriberManager.map.remove(mapsetID).then(() => {
-                                    subscribed = false;
-                                    refreshSubImg(subscribed);
-                                });
-                            }else{
-                                subscriberManager.map.add(mapsetID, artist, title, creator, creator_id).then(() => {
-                                    subscribed = true;
-                                    refreshSubImg(subscribed);
-                                });
-                            }
-                        })
-                )
-            );
-            refreshSubImg(subscribed);
-        }
-
-        function refreshSubImg(subscribed){
-            if(subscribed){
-                $(".subImg").attr("src", subbedImg);
-            }else{
-                $(".subImg").attr("src", subImg);
-            }
-        }
-
         function putModButtons(){
             function genModBtns(modArray){
                 var modgroup = $("<div></div>").addClass("modIconGroup"),
@@ -4153,7 +3077,7 @@
             }else{
                 pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
             }
-            var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
+            var ppcalcData = makePpcalcData(mapMode, score, acc, mapID);
             
             var row = $(
                 `<tr class='${rowclass}'>
@@ -4192,8 +3116,8 @@
                     var me = $(this);
                     me.find("span").text("(...)");
                     var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                    getPpCalc(ppcalcData).then((result) => {
-                        if(result.rql == "ranked" || result.rql == "qualified"){
+                    doPpcalc(ppcalcData).then((result) => {
+                        if([RANKED, QUALIFIED].includes(Number(result.approved))){
                             me.find("span").text(`(${result.pp_fc} if FC)`);
                         }else{
                             me.html(`<span>${result.pp} (${result.pp_fc} if FC)</span>`);
@@ -4263,7 +3187,6 @@
             tableObserver = null,
             beatmapWaiter = null,
             beatmapObserver = null,
-            subscribed = null,
             currentUser = null;
 
         function addCss(){
@@ -4309,7 +3232,7 @@
 
         function init(){
             if($("#osuplusloaded").length) return;
-            $("body").append("<a hidden id='osuplusloaded'></a>");
+            $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
             //jsonCountries = JSON.parse($("#json-countries").text());
             jsonBeatmapset = JSON.parse($("#json-beatmapset").text());
@@ -4319,8 +3242,6 @@
 
             beatmapWaiter = waitForEl(".beatmapset-beatmap-picker", function(el){
                 addMirrors();
-                if(settings.showSubscribeMap)
-                    addSubBtn();
                 refreshBeatmapsetHeader();
                 beatmapObserver = whenBeatmapChange(() => {
                     refreshBeatmapsetHeader();
@@ -4473,7 +3394,7 @@
             }
             var userhref = `<a class='${cellClass}-content ${cellClass}-content--user-link js-usercard' data-user-id='${score.user_id}' href='/users/${score.user_id}/${mapModeStr}'>${score.username} ${pprank}</a>`;
             
-            var ppcalcData = {id: mapID, mods: score.enabled_mods, combo: score.maxcombo, acc: acc, miss: score.countmiss};
+            var ppcalcData = makePpcalcData(mapMode, score, acc, mapID);
             
             function makeTdLink(modifiers, content){
                 return `<td class=${cellClass}>
@@ -4559,8 +3480,8 @@
                     var me = $(this);
                     me.find(".if-fc-span").text("(...)");
                     var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                    getPpCalc(ppcalcData).then((result) => {
-                        if(result.rql == "ranked" || result.rql == "qualified"){
+                    doPpcalc(ppcalcData).then((result) => {
+                        if([RANKED, QUALIFIED].includes(Number(result.approved))){
                             me.find(".if-fc-span").text(`(${result.pp_fc} if FC)`);
                         }else{
                             me.html(`<span class="if-fc-span">${result.pp} (${result.pp_fc} FC)</span>`);
@@ -4931,11 +3852,12 @@
             });
         }
 
-        function makeMirror(url, name, newtab){
-            var mirror = `<a href="${url}" ${newtab ? "target='_blank'" : ""} data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
+        function makeMirror(url, topName, bottomName, newTab){
+            var mirror = `<a href="${url}" ${newTab ? "target='_blank'" : ""} data-turbolinks="false" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
                 <span class="btn-osu-big__content ">
                 <span class="btn-osu-big__left">
-                <span class="btn-osu-big__text-top">${name}</span>
+                <span class="btn-osu-big__text-top">${topName}</span>
+                ${bottomName === null ? "" : `<span class="btn-osu-big__text-bottom">${bottomName}</span>`}
                 </span><span class="btn-osu-big__icon">
                 <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`;
             if($(".beatmapset-header__more").length > 0){
@@ -4947,57 +3869,18 @@
 
         function addMirrors(){
             if(settings.showMirror){
-                makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", false);
+                makeMirror(`https://beatconnect.io/b/${jsonBeatmapset.id}`, "Beatconnect", null, false);
             }
             if(settings.showMirror2){
-                makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", false);
-                makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot NoVid", false);
+                makeMirror(`https://dl.sayobot.cn/beatmaps/download/full/${jsonBeatmapset.id}`, "Sayobot", null, false);
+                makeMirror(`https://dl.sayobot.cn/beatmaps/download/novideo/${jsonBeatmapset.id}`, "Sayobot", "no Video", false);
             }
             if(settings.showMirror3){
-                makeMirror(`https://nerina.pw/d/${jsonBeatmapset.id}`, "NeriNyan", false);
+                makeMirror(`https://api.nerinyan.moe/d/${jsonBeatmapset.id}`, "NeriNyan", null, false);
+                makeMirror(`https://api.nerinyan.moe/d/${jsonBeatmapset.id}?nv=1`, "NeriNyan", "no Video", false);
             }
             if(settings.showMirror4){
-                makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", false);
-            }
-        }
-
-        async function addSubBtn(){
-            subscribed = await subscriberManager.map.isSubscribed(jsonBeatmapset.id.toString());
-            $(".beatmapset-header__more").before(
-                `<a class='btn-osu-big btn-osu-big--beatmapset-header sub-button' title='Subscribe map'>
-                    <span class='btn-osu-big__content'>
-                        <span class='btn-osu-big__left'>
-                            <span class="btn-osu-big__text-top">Subscribe</span>
-                        </span>
-                        <span class="btn-osu-big__icon">
-                            <span class="fa-fw"><i class="far fa-heart"></i></span>
-                        </span>
-                    </span>
-                </a>`
-            );
-            $(".sub-button").click(function(){
-                if(subscribed){
-                    subscriberManager.map.remove(jsonBeatmapset.id.toString()).then(() => {
-                        subscribed = false;
-                        refreshSubImg(subscribed);
-                    });
-                }else{
-                    subscriberManager.map.add(jsonBeatmapset.id.toString(), jsonBeatmapset.artist, jsonBeatmapset.title, jsonBeatmapset.creator, jsonBeatmapset.user_id.toString()).then(() => {
-                        subscribed = true;
-                        refreshSubImg(subscribed);
-                    });
-                }
-            });
-            refreshSubImg(subscribed);
-        }
-
-        function refreshSubImg(subscribed){
-            if(subscribed){
-                $(".sub-button").addClass("subbed");
-                $(".sub-button").find(".btn-osu-big__text-top").text("Unsubscribe");
-            }else{
-                $(".sub-button").removeClass("subbed");
-                $(".sub-button").find(".btn-osu-big__text-top").text("Subscribe");
+                makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", null, false);
             }
         }
 
@@ -5275,7 +4158,7 @@
             `<div class="op-getkey">
                 <h1 id="osuplusnotice">
                     [osuplus] Click <a class="a-promptKey">here</a> to use your osu!API key.<br>
-                    Don't have API key? Get from <a href='https://old.ppy.sh/p/api' target="_blank">here</a>
+                    Don't have API key? Get from <a href='https://osu.ppy.sh/p/api' target="_blank">here</a> or <a href='https://old.ppy.sh/p/api' target="_blank">here</a>
                 </h1>
             </div>`
         );
@@ -5565,6 +4448,7 @@
         }
     }
 
+    // eslint-disable-next-line no-unused-vars
     function formatNumberSuffixed(num, precision){
         const suffixes = ["", "k", "m", "b", "t"];
         const k = 1000;
@@ -5580,6 +4464,7 @@
         return `${format(num / Math.pow(k, i))}${suffixes[i]}`;
     }
 
+    // eslint-disable-next-line no-unused-vars
     function getDiffRating(rating){
         rating = parseFloat(rating);
         if (rating < 2) return "easy";
@@ -5590,26 +4475,95 @@
         return "expert-plus";
     }
 
-    function getPpCalc(params){
-        /* see https://pp.osuck.net/pp
-        id - beatmap id
-        mods - mods number
-        combo - combo
-        acc - accuracy
-        miss - number of misses
-        */
-        var promise = new Promise((resolve, reject) => {
-            var ppcalcurl = getUrl("https://pp.osuck.net/pp", params);
-            getRequest(ppcalcurl, function(response){
-                var ans = {
-                    pp: parseFloat(response.pp.current), 
-                    pp_fc: parseFloat(response.pp.fc),
-                    rql: response.status.name // ranked|qualified|loved|pending|graveyard etc
+    var getBeatmapFileCache = (() => {
+        var callbacks = {},
+            cache = {};
+
+        function getBeatmapFileCache(id, callback){
+            if(id in cache){
+                callback(cache[id]);
+            }else if(id in callbacks){
+                callbacks[id].push(callback);
+            }else{
+                callbacks[id] = [callback];
+                getBeatmapFile(id, function(response){
+                    cache[id] = response;
+                    callbacks[id].forEach(function(cb){
+                        cb(response);
+                    });
+                    delete callbacks[id];
+                });
+            }
+        }
+
+        return getBeatmapFileCache;
+    })();
+
+    function makePpcalcData(modeInt, play, acc, beatmapId) {
+        return {
+            mode: modeInt,
+            id: beatmapId,
+            mods: Number(play.enabled_mods),
+            combo: Number(play.maxcombo),
+            n300: Number(play.count300),
+            n100: Number(play.count100),
+            n50: Number(play.count50),
+            nmiss: Number(play.countmiss),
+            acc: acc,
+        };
+    }
+
+    function doPpcalc(ppcalcData) {
+        if (ppcalcData.mode != 0)
+            throw new Error(`mode not supported: ${ppcalcData.mode}`);
+
+        var ppResult = new Promise(resolve => getBeatmapFileCache(ppcalcData.id, resolve))
+            .then(beatmapFile => {
+                var parser = new ojsama.parser().feed(beatmapFile);
+                //debugValue(parser.toString());
+                //debugValue(parser.map.toString());
+
+                return {
+                    pp: debugValue(ojsama.ppv2({
+                        map: parser.map,
+                        mode: ppcalcData.mode,
+                        mods: ppcalcData.mods,
+                        combo: ppcalcData.combo,
+                        n300: ppcalcData.n300,
+                        n100: ppcalcData.n100,
+                        n50: ppcalcData.n50,
+                        nmiss: ppcalcData.nmiss,
+                    })),
+                    // "pp if full combo" is defined here as max combo and every miss converted to 300.
+                    // the new n300 is not always (n300 + nmiss), because the play may have failed early.
+                    pp_fc: debugValue(ojsama.ppv2({
+                        map: parser.map,
+                        mode: ppcalcData.mode,
+                        mods: ppcalcData.mods,
+                        combo: parser.map.max_combo(),
+                        n300: parser.map.objects.length - ppcalcData.n100 - ppcalcData.n50,
+                        n100: ppcalcData.n100,
+                        n50: ppcalcData.n50,
+                        nmiss: 0,
+                    })),
                 };
-                resolve(ans);
             });
-        });
-        return promise;
+
+        var getBeatmapsResult = new Promise(resolve => getBeatmapsCache({
+            b: ppcalcData.id,
+            m: ppcalcData.mode,
+            a: 1,
+        }, resolve));
+
+        return Promise.all([ppResult, getBeatmapsResult])
+            .then(([{pp, pp_fc}, [{approved}]]) => {
+                //debugValue([pp, pp_fc, approved]);
+                return {
+                    pp: Math.round(pp.total),
+                    pp_fc: Math.round(pp_fc.total),
+                    approved: approved,
+                };
+            });
     }
 
     function getRequest(url, callback, reqTracker){
@@ -5779,6 +4733,10 @@
         getRequest(getUrl(url, params), callback, reqTracker);
     }
 
+    function getBeatmapFile(beatmapId, callback, reqTracker){
+        GetPage(`https://osu.ppy.sh/osu/${beatmapId}`, callback, reqTracker);
+    }
+
     function getUrl(url, params){
         if(params){
             var paramarray = [];
@@ -5874,6 +4832,12 @@
     //-------------------------------
     // javascript helper functions
     //-------------------------------
+
+    function debugValue(x) {
+        if (debug)
+            console.log(x);
+        return x;
+    }
 
     function waitForEl(selector, callback){
         var poller = setInterval(() => {
