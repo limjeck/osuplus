@@ -1,3 +1,16 @@
+# 2.3.8 (8 Aug 2022)
+
+## Features
+- Removed subscriptions (use the site's built-in mapper subscription system)
+- Updated NeriNyan mirror link
+- Added NeriNayn NoVid link
+- Added "Show recent 24h" option in settings
+
+## Bugfixes
+- Fixed some features not working when going back and forth in history
+- Updated pp if fc calculation (but still not up-to-date)
+- Added both API links (osu.ppy.sh/p/api and old.ppy.sh/p/api)
+
 # 2.3.7 (23 Mar 2022)
 
 ## Bugfixes
