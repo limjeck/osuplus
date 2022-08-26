@@ -3069,7 +3069,7 @@
 
             var countryImg = "";
             if(country !== "")
-                countryImg = "<img src=" + getCountryUrl(country) + ">";
+                countryImg = "<img src='//s.ppy.sh/images/flags/" + country + ".gif'>";
             var userhref = "<a href='/u/" + score.user_id +"''>" + score.username + "</a>";
             var pprank = "";
             if(score.user.pp_rank === undefined){
