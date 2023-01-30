@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.8
+// @version      2.3.9
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -1906,53 +1906,68 @@
                 }
             });
 
-            // Add firsts details
-            $("div[data-page-id=top_ranks] .play-detail-list").eq(2).find(".play-detail").each(function(i, ele){
-                addFirstDetails(ele);
-            });
-            if($("div[data-page-id=top_ranks] .play-detail-list")[2]){
-                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[2], {childList: true});
-            }
+            var lazyLoadedPromise = new Promise((resolve, reject) => {
+                if($("div[data-page-id=top_ranks] .play-detail-list").length >= 3){
+                    resolve();
+                }else{
+                    var lazyLoadObserver = new MutationObserver((mutationList) => {
+                        if($("div[data-page-id=top_ranks] .play-detail-list").length >= 3){
+                            lazyLoadObserver.disconnect();
+                            resolve();
+                        }
+                    });
 
-            // Add pinned details
-            $("div[data-page-id=top_ranks] .play-detail-list").eq(0).find(".play-detail").each(function(i, ele){
-                addFirstDetails(ele);
+                    lazyLoadObserver.observe($("div[data-page-id=top_ranks]")[0], {childList: true, subtree: true});
+                }
             });
-            if($("div[data-page-id=top_ranks] .play-detail-list")[0]){
-                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[0], {childList: true});
-            }            
 
             // Add bests details
             getUserBest({u: jsonUser.id, m: gameMode, type: "id", limit: 100}, function(scores){
                 userBest = scores;
-                $("div[data-page-id=top_ranks] .play-detail-list").eq(1).find(".play-detail").each(function(i, ele){
-                    addBestDetails(ele);
+                lazyLoadedPromise.then(() => {
+                    $("div[data-page-id=top_ranks] .play-detail-list").eq(1).find(".play-detail").each(function(i, ele){
+                        addBestDetails(ele);
+                    });
+                    if($("div[data-page-id=top_ranks] .play-detail-list")[1]){
+                        bestObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[1], {childList: true});
+                    }
                 });
-                if($("div[data-page-id=top_ranks] .play-detail-list")[1]){
-                    bestObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[1], {childList: true});
-                }
             });
 
-            // Add slider
-            var sliderDiv = createSlider(function(val, checked){
-                if(checked){
-                    var tops = $("div[data-page-id=top_ranks] .play-detail");
-                    var curTime = new Date();
-                    tops.each(function(index, top){
-                        top = $(top);
-                        var scoreTime = new Date(top.find("time").attr("datetime"));
-                        var diff = (curTime - scoreTime) / (1000*60*60*24);
-                        if(diff < val){
-                            top.addClass("recentscore");
-                        }else{
-                            top.removeClass("recentscore");
-                        }
-                    });
-                }else{
-                    $("div[data-page-id=top_ranks] .play-detail.recentscore").removeClass("recentscore");
-                }
+            lazyLoadedPromise.then(() => {
+                // Add firsts details
+                $("div[data-page-id=top_ranks] .play-detail-list").eq(2).find(".play-detail").each(function(i, ele){
+                    addFirstDetails(ele);
+                });
+                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[2], {childList: true});
+
+                // Add pinned details
+                $("div[data-page-id=top_ranks] .play-detail-list").eq(0).find(".play-detail").each(function(i, ele){
+                    addFirstDetails(ele);
+                });
+                firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[0], {childList: true});
+
+                // Add slider
+                var sliderDiv = createSlider(function(val, checked){
+                    if(checked){
+                        var tops = $("div[data-page-id=top_ranks] .play-detail");
+                        var curTime = new Date();
+                        tops.each(function(index, top){
+                            top = $(top);
+                            var scoreTime = new Date(top.find("time").attr("datetime"));
+                            var diff = (curTime - scoreTime) / (1000*60*60*24);
+                            if(diff < val){
+                                top.addClass("recentscore");
+                            }else{
+                                top.removeClass("recentscore");
+                            }
+                        });
+                    }else{
+                        $("div[data-page-id=top_ranks] .play-detail.recentscore").removeClass("recentscore");
+                    }
+                });
+                $("div[data-page-id=top_ranks] .title.title--page-extra-small").first().before(sliderDiv);
             });
-            $("div[data-page-id=top_ranks] .title.title--page-extra-small").first().before(sliderDiv);
         }
 
         function addBestDetails(ele){
@@ -1987,21 +2002,24 @@
 
             addRelativeRank(ele);
             // Obtain mods
-            let mods = ele.find(".play-detail__score-detail--mods .mod").map((_, x) => $(x).attr("class").split("mod--")[1]).get();
+            let mods = ele.find(".play-detail__score-detail--mods .mod").map((_, x) => $(x).attr("data-acronym")).get();
             let modnum = modArrayToNum(mods);
 
             if(settings.fetchFirstsInfo){
                 var beatmapId = beatmapIdOfDetailRow(ele);
-                getScores({b: beatmapId, u: jsonUser.id, type: "id", m: gameMode, a: 1, mods: modnum, limit: 1}, function(scores){
-                    if(scores.length){
-                        addDetails(ele, scores[0], beatmapId);
-                    }
-                });
+                if(beatmapId){ // may be undefined if you are moving pinned scores
+                    getScores({b: beatmapId, u: jsonUser.id, type: "id", m: gameMode, a: 1, mods: modnum, limit: 1}, function(scores){
+                        if(scores.length){
+                            addDetails(ele, scores[0], beatmapId);
+                        }
+                    });
+                }
             }
         }
 
         function beatmapIdOfDetailRow(ele){
             var href = ele.find(".play-detail__title").attr("href");
+            if(href == undefined) return undefined;
             var temp = href.split("/");
             temp = temp[temp.length - 1];
             return temp.split("?")[0];
@@ -2173,8 +2191,17 @@
 
         function addRecent(){
             $("div[data-page-id=recent_activity] .page-extra").append(
-                "<div class='div-24h'><h2 class='title title--page-extra'>Recent 24h</h2></div>",
-                $("<div id='op-recent'>Loading...</div>")
+                `<div class='div-24h'>
+                    <div class="js-spoilerbox bbcode-spoilerbox">
+                        <button class="js-spoilerbox__link bbcode-spoilerbox__link" type="button">
+                            <span class="bbcode-spoilerbox__link-icon"></span>
+                            <h2 class='title title--page-extra'>Recent 24h</h2>
+                        </button>
+                        <div class="bbcode-spoilerbox__body">
+                            <div id='op-recent'>Loading...</div>
+                        </div>
+                    </div>
+                </div>`
             );
             var container = $("#op-recent");
 
