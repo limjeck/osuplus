@@ -1,3 +1,11 @@
+# 2.3.9 (30 Jan 2023)
+
+## Features
+- Put recent 24h in a spoilerbox
+
+## Bugfixes
+- Fixed userpage scores not loading because of new lazy loading feature
+
 # 2.3.8 (8 Aug 2022)
 
 ## Features
