@@ -4185,7 +4185,7 @@
             `<div class="op-getkey">
                 <h1 id="osuplusnotice">
                     [osuplus] Click <a class="a-promptKey">here</a> to use your osu!API key.<br>
-                    Don't have API key? Get from <a href='https://osu.ppy.sh/p/api' target="_blank">here</a>
+                    Don't have API key? Get from <a href='https://osu.ppy.sh/home/account/edit#legacy-api' target="_blank">here</a>
                 </h1>
             </div>`
         );
