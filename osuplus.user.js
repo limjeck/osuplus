@@ -4613,7 +4613,7 @@
             response.forEach(function(score, index){
                 if(showPpRank){
                     funs.push(function(donecb){
-                        getUser({u: score.user_id, type: "id", m: mode}, function(userInfo){
+                        getUser({u: score.user_id, type: "id", m: mode, limit: 100}, function(userInfo){
                             response[index].user = userInfo[0];
                             savePlayerCountry(score.user_id, userInfo[0].country);
                             donecb();
