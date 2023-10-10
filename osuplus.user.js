@@ -1217,7 +1217,7 @@
 
                 //Get player list
                 var playerList = $(".ranking-page-table__row").map(function(i, ele){
-                    return $(ele).find(".ranking-page-table__user-link a").eq(1).attr("data-user-id");
+                    return $(ele).find(".ranking-page-table__user-link-text").attr("data-user-id");
                 });
                 var funs = [];
                 playerInfo = [];
