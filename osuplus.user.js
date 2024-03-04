@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.9
+// @version      2.3.10
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -474,7 +474,7 @@
                     $("<div>").append(
                         "<h2>Beatmap Listing</h2>",
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
-                            makeSettingRow("Force show difficulties", "so no need to hover over maps", makeCheckboxOption("forceShowDifficulties"))
+                            makeSettingRow("Force show difficulties", "so no need to hover over maps (legacy setting, no effect on new site)", makeCheckboxOption("forceShowDifficulties"))
                         )
                     ),
                     $("<div>").append(
@@ -3273,10 +3273,13 @@
                 beatmapObserver = whenBeatmapChange(() => {
                     refreshBeatmapsetHeader();
                 });
-                tableWaiter = waitForEl(".beatmap-scoreboard-table", function(el){
-                    refreshTable();
-                    tableObserver = whenScoreboardChange(refreshTable);
-                });
+                // only update scores if not in Lazer mode
+                if(currentUser.user_preferences.legacy_score_only){
+                    tableWaiter = waitForEl(".beatmap-scoreboard-table", function(el){
+                        refreshTable();
+                        tableObserver = whenScoreboardChange(refreshTable);
+                    });
+                }
             });
         }
 
