@@ -1,3 +1,8 @@
+# 2.3.10 (4 Mar 2024)
+
+## Bugfixes
+- Disabled updating scoreboard in beatmap page when in Lazer mode
+
 # 2.3.9 (30 Jan 2023)
 
 ## Features
