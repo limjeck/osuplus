@@ -1,3 +1,15 @@
+# 2.3.11 (1 Jul 2024)
+
+## Features
+- Added Mino mirror link (disabled by default; enable in settings)
+- Added osu! Web Beatmap Viewer as a beatmap preview alternative
+- Added setting options to disable both beatmap previews
+
+## Bugfixes
+- Fixed osuplus not working due to all requests instantly timing out
+- Fixed global/country ranking formatting
+- Removed some code for old site
+
 # 2.3.10 (4 Mar 2024)
 
 ## Bugfixes
