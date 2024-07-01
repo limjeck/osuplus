@@ -22,6 +22,7 @@ All features are available on both the old and new site.
 - Beatmap mirrors
 - Display numerical value of CS, AR, HP, OD
 - [osu!preview](https://osu.ppy.sh/forum/t/383371)
+- [osu! Web Beatmap Viewer](https://github.com/FukutoTojido/beatmap-viewer-web)
 - Display max combo value
 - Display recent plays (including failed scores) in userpage
 - Display top 100 most played maps in userpage
