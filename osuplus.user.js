@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.10
+// @version      2.3.11
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -10,6 +10,7 @@
 // @match        https://old.ppy.sh/*
 
 // @noframes
+// @connect      ppy.sh
 // @grant        GM.xmlHttpRequest
 // @grant        GM.setValue
 // @grant        GM.getValue
@@ -56,7 +57,7 @@
 
 
     //https://i.imgur.com/87WeqCL.png
-    var FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
+    var //FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
         //UImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAA1VBMVEUAAACioqKbm5vy8vLX19fv7+/Ozs6ioqK0tLTR0dHJycmqqqqzs7Ojo6Oamprb29vT09Ourq6mpqb///8mJiYzMzMxMTEsLCwpKSkvLy81NTUjIyMgICAeHh5JSUlISEhRUVFFRUUZGRkcHBympqZaWlqrq6s6Ojo+Pj5WVlbExMSjo6NCQkI3NzfY2Ni4uLivr695eXlycnJMTEze3t66urqoqKj8/Pz4+Pjg4ODa2tq+vr60tLSbm5t+fn5ra2vk5OTj4+OTk5OMjIyFhYVpaWlmZmaYnrJ3AAAAE3RSTlMAUlL+8f7nQ6np562iS0jy8aRXW3S7rwAAAbZJREFUSMft1dlymzAYhuGmxnaapOtnLLGvNjgBL+DsW/f7v6T+mrrIbQXKccJzAqPROyAxGl71er2X4PhoiH8N3hw+JX33AWrGWNu+vsLykeV+npDc9/0gEhbfvmA41rXA3E0YRSxJLJ9QSQI/PIWhbc88z+OMMb67TISsYMzc4qO2/VssOEFgekmFI01blpYrsdoScR4EgRNbGHa3bv25cqUFampZQKZxDHS2jnOPrSMNcZYkXkT7VmQOx6CjTWn6HJCtC6zixPZJlpk/MOpoJ4TiScOhOOEhifK8WOK4qyVriiWKvUzEtOgVjI5WGZ/zvA6FFS7ftrb8N4q5RLFZZgG5Az4p2wPZ8jlgNa0F3NEHm3CeAgfqc3SFC/bHV2DDdngF3DuEX6hbYmDNGj9Btc0EuxL3Ik5b20PcTK1GucW+JaNta2vJCBtLqh9v9tuIhlrfmQyQyzabzWbf0/NT4TatTBqat7YEmEohxdF0n2zVTy6amcVMKPWtXPODuWOHC8E3G7JVO8F1ZqroW2LgNrNVyrWmJeMhrh+i/9Jis8QltbragNp7Okd6J6OB8g/T6/WevV831F5ngplDwwAAAABJRU5ErkJggg==",
         FImgNew = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMywgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAzMiAxNiIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzIgMTY7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojQjlCOUI5O30KCS5zdDF7ZmlsbDojRkY1QTVBO2ZpbHRlcjp1cmwoI0Fkb2JlX09wYWNpdHlNYXNrRmlsdGVyKTt9Cgkuc3Qye21hc2s6dXJsKCNtYXNrMF8xXyk7fQoJLnN0M3tmaWxsOiNDNEM0QzQ7fQoJLnN0NHtmaWxsOiNBRkFGQUY7fQoJLnN0NXtmaWxsOiNBNEE0QTQ7fQoJLnN0NntmaWxsOiMzMzMzMzM7fQo8L3N0eWxlPgo8cGF0aCBjbGFzcz0ic3QwIiBkPSJNOCwwaDE2YzQuNCwwLDgsMy42LDgsOGwwLDBjMCw0LjQtMy42LDgtOCw4SDhjLTQuNCwwLTgtMy42LTgtOGwwLDBDMCwzLjYsMy42LDAsOCwweiIvPgo8ZGVmcz4KCTxmaWx0ZXIgaWQ9IkFkb2JlX09wYWNpdHlNYXNrRmlsdGVyIiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCI+CgkJPGZlQ29sb3JNYXRyaXggIHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIxIDAgMCAwIDAgIDAgMSAwIDAgMCAgMCAwIDEgMCAwICAwIDAgMCAxIDAiLz4KCTwvZmlsdGVyPgo8L2RlZnM+CjxtYXNrIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCIgaWQ9Im1hc2swXzFfIj4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik04LDBoMTZjNC40LDAsOCwzLjYsOCw4bDAsMGMwLDQuNC0zLjYsOC04LDhIOGMtNC40LDAtOC0zLjYtOC04bDAsMEMwLDMuNiwzLjYsMCw4LDB6Ii8+CjwvbWFzaz4KPGcgY2xhc3M9InN0MiI+Cgk8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTYtOWwxNy4zLDMwSC0xLjNMMTYtOXoiLz4KCTxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0yNy41LDNMMzQsMTQuMkgyMUwyNy41LDN6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNNy41LTJsMy45LDYuOEgzLjZMNy41LTJ6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNOS41LDEzbDMuOSw2LjhINS42TDkuNSwxM3oiLz4KPC9nPgo8Zz4KCTxwb2x5Z29uIGNsYXNzPSJzdDYiIHBvaW50cz0iMTEsMy45IDIxLjMsMy45IDIxLjMsNS4yIDEyLjUsNS4yIDEyLjUsNy41IDIwLjgsNy41IDIwLjgsOC44IDEyLjUsOC44IDEyLjUsMTIuMyAxMSwxMi4zIAkiLz4KPC9nPgo8L3N2Zz4K",
         v2Img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAgCAMAAACxWgF2AAAA4VBMVEVHcEwAAAAAAAAAAAD+yyEAAAAAAAAAAAAAAAAAAAANCwH3xiBIOQkAAADouh6HbBHarhz6yCD3xiDvvx+McBLLohruvh/muB6fgBS0kBfuvh/OpRsAAAD2xSD2xSAAAAA2KwephxYAAADFnhlkUA2FahHcsBzRpxuPchMtJAbbrxzhtB3tvh/qux6vjBfxwR8QDQKlhBUAAABiTgwWEgJxWg9FNwk5Lgf/zCFUVFTkuC2ag0X+yyHasTFkX1H2xSVzaE7uvyiBckvGozi8mzz7ySLQqjWOe0ixkz+mjELywyWzBV0HAAAAOHRSTlMAHQYI/Q0YIANgPNgQNOYIe/DKsR9TdaAUOsRdFPThJVCeLbppf9TIhlB+3unel9dOqlF+ZYVzcPZxy64AAAHkSURBVBgZhcCFQttQGAXgP2mSXmq4u7uz7Zy41Nj7P9B6I01hBT6pLG60LcxjtTcW5ZOtFXzgD1Bb2ZIPzFV84mOQ+CitmjJDrWOewQCldSW1Thvfa3dkSi3hJ0tKKmvL+MnympTMTWj+MPRQSJkB2SiM3xOUNk3JqW0LWuSRAbQh6WFELQxQsLaVaI0d5AYZ6UEbkcM+SS8lY5R2GjKhdlGKyDACkJAhUjIAUjJAaVeJSOcAFY/MAPTJd4QMAfTJPkoHHRF1g6mATAHEpIvMywCMyCEqN0rsR9RCMkFApiiMyThC5dEWx0JtTI7hkX3khiRdTFmOGBZqLhlHIRlBS0IyQ80yxLjHjJT0SA9alJLvmHFviPOAGRm1AJpHptB8FB4csVt3qEWciKH1yTCBNkDurmWLal5hhkdyjImAZN913QTwkbtqKhG7e4FaQDLBRMxSgMJF1xYR5ZxZqMUcQYtZCnxo1pmjZKJxcopa5CIXuYUEhdOThmhq72gfP9k/2lOSMw+P8SUfueNDU0p2q4fv9Vq2VJRxjpLvY55zQ8mU3b1Eyf87wH8uu7bUlHN9i6/dXjtKZpjNp+eehXms3vNT05QPGkbrZaHy9uf11+vvt4XCS8toyCfKdozmPIZjKyn9A+yZ82+JDdzhAAAAAElFTkSuQmCC",
@@ -197,6 +198,7 @@
         showMirror2: false,
         showMirror3: false,
         showMirror4: false,
+        showMirror5: false,
         //showSubscribeMap: false,
         apikey: null,
         failedChecked: true,
@@ -214,6 +216,8 @@
         showSiteSwitcher: false,
         showMpGrades: true,
         showRecent: true,
+        osupreview: true,
+        osupreview2: true
     };
 
     var settings = {};
@@ -334,15 +338,6 @@
             }
             if(siteType === OLDSITE){
                 mainInit();
-                if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/u\//)){ 
-                    osuplusUserpage().init();
-                }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/([bs]\/|p\/beatmap\?)/)){
-                    osuplusBeatmap().init();
-                }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/pp/)){
-                    osuplusPpRanking().init();
-                }else if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/p\/beatmaplist/)){
-                    osuplusBeatmapListing().init();
-                }
             }else{
                 osuplusNew().init();
             }
@@ -447,11 +442,14 @@
                             makeSettingRow("Show Sayobot mirror", null, makeCheckboxOption("showMirror2")),
                             makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
                             makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
+                            makeSettingRow("Show Mino mirror", null, makeCheckboxOption("showMirror5")),
                             makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
                             makeSettingRow("Fetch player countries outside top 50", "disable to load faster, but some players' countries won't be loaded", makeCheckboxOption("fetchPlayerCountries")),
                             makeSettingRow("Show top 100", "rather than top 50", makeCheckboxOption("showTop100")),
-                            makeSettingRow("pp 2 decimal places", "rather than 0 dp", makeCheckboxOption("pp2dp"))
+                            makeSettingRow("pp 2 decimal places", "rather than 0 dp", makeCheckboxOption("pp2dp")),
+                            makeSettingRow("Show osu!preview", null, makeCheckboxOption("osupreview")),
+                            makeSettingRow("Show osu! Web Beatmap Viewer", null, makeCheckboxOption("osupreview2"))
                         )
                     ),
                     $("<div>").append(
@@ -487,9 +485,9 @@
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", $("#settings-apikey").val());
                     var properties = [
-                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
+                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
-                        "showMpGrades", "showRecent"
+                        "showMpGrades", "showRecent", "osupreview", "osupreview2"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -1031,37 +1029,6 @@
         return {init: init, destroy: destroy};
     }
 
-    function osuplusBeatmapListing(){
-        
-        function addCss(){
-            $(document.head).append($("<style></style>").html(
-                ".small-content-with-bg {background-image: url(//s.ppy.sh/images/main-bg-new.png);}\n" +
-                ".maintitlediv {font-size: 160%; padding-left: 20px; padding-bottom: 30px;}\n" +
-                ".maintitle {padding: 4px; margin-right: 10px;}\n" +
-                ".maintitle:hover, .maintitle.selected {background-color: #A9A9FF; color: white; text-decoration: none;}\n" +
-                "#subsControl {padding: 20px;}\n" +
-                "#subsControl th {width: 80px; padding-right: 10px; float: left; text-align: right;}\n" +
-                "#mappersSelect {width: 140px;}\n" +
-                "#subsTxtbox {width: 100px;}\n" +
-                "#mapsSelect {width: 450px;}\n" +
-                ".subsBtn {font-size: 100%;}\n" +
-                ".subsTxt, #mappersSelect option, #mapsSelect option {font-size: 110%;}\n" +
-                "#pageDisplay {padding-left: 15px; padding-right: 15px;}\n" +
-                ".centered {display: block; margin-left: auto; margin-right: auto;}\n"
-            ));
-        }
-
-        function init(){
-            addCss();
-
-            if(settings.forceShowDifficulties){
-                $(".initiallyHidden").removeClass("initiallyHidden");
-            }
-        }
-
-        return {init: init};
-    }
-
     function osuplusNewBeatmapListing(){
         // Nothing for now
         
@@ -1084,96 +1051,6 @@
         }
 
         return {init: init, destroy: destroy};
-    }
-
-    function osuplusPpRanking(){
-        var isGlobal = true,
-            mode = null,
-            tableBody = null,
-            tableLoadingNotice = null,
-            playerInfo = [];
-
-
-        function addCss(){
-            $(document.head).append($("<style></style>").html(
-                ".centered {display: block; margin-left: auto; margin-right: auto;}"
-            ));
-        }
-
-        function init(){
-            addCss();
-            if(window.location.search === ""){
-                isGlobal = true;
-                mode = 0;
-            }else{
-                var searchObj = searchParser(window.location.search);
-                if(searchObj.c === undefined){
-                    isGlobal = true;
-                }else{
-                    isGlobal = false;
-                }
-                if(searchObj.m === undefined){
-                    mode = 0;
-                }else{
-                    mode = searchObj.m;
-                }
-            }
-            tableBody = $(".beatmapListing > tbody");
-
-            //Add Loader
-            tableLoadingNotice = $(`<div><img src='${loaderImg}' class='centered'></div>`).hide();
-            $("#tablist").before(tableLoadingNotice);
-
-            //Add global/country ranking
-            if(settings.rankingVisible){
-                tableLoadingNotice.show();
-
-                //Get player list
-                var playerList = [];
-                tableBody.children().first().nextAll().each(function(index, ele){
-                    var href = $(ele).children().eq(1).children().eq(1).attr("href");
-                    playerList[index] = href.split("/")[2];
-                });
-                var funs = [];
-                playerList.forEach(function(id, index){
-                    funs.push(function(donecb){
-                        getUser({u: id, m: mode, type: "id"}, function(response){
-                            playerInfo[index] = response[0];
-                            donecb();
-                        });
-                    });
-                });
-                doManyFunc(funs, function(){
-                    tableLoadingNotice.hide();
-                    
-                    //Add new headers
-                    var newHeader = isGlobal ? "Country" : "Global";
-                    tableBody.children().first().children().first().after("<th class='rank2col'>" + newHeader + "</th>");
-
-                    //Add new ranks
-                    tableBody.children().first().nextAll().each(function(index, row){
-                        row = $(row);
-                        var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
-                        row.children().first().after("<td class='rank2col'>#" + newRank + "</td>");
-                    });
-                });
-            }
-        }
-
-        function searchParser(str){
-            if(str[0] === "?") str = str.slice(1);
-            var arr = str.split("&");
-            var rtn = {};
-            arr.forEach(function(x){
-                var xsplit = x.split("=");
-                if(xsplit.length > 1){
-                    rtn[xsplit[0]] = xsplit[1];
-                }
-            });
-            return rtn;
-        }
-
-        return {init: init};
     }
 
     function osuplusNewPpRanking(){
@@ -1217,7 +1094,7 @@
 
                 //Get player list
                 var playerList = $(".ranking-page-table__row").map(function(i, ele){
-                    return $(ele).find(".ranking-page-table__user-link a").eq(1).attr("data-user-id");
+                    return $(ele).find(".ranking-page-table__user-link-text").attr("data-user-id");
                 });
                 var funs = [];
                 playerInfo = [];
@@ -1235,14 +1112,14 @@
                     
                     //Add new header
                     var newHeader = isGlobal ? "Country" : "Global";
-                    $(".ranking-page-table__heading--main").before(`<th class='ranking-page-table__heading'>${newHeader}</th>`);
+                    $(".ranking-page-table th").first().after(`<th class='ranking-page-table__heading'>${newHeader}</th>`);
 
                     //Add new ranks
                     $(".ranking-page-table__row").each(function(index, row){
                         row = $(row);
                         var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
                         row.find(".ranking-page-table__column--rank").after(
-                            `<td class='rank2col'>#${newRank}</td>`
+                            `<td class='ranking-page-table__column ranking-page-table__column--rank'>#${newRank}</td>`
                         );
                     });
                 });
@@ -1268,540 +1145,6 @@
         }
 
         return {init: init, destroy: destroy};
-    }
-
-    function osuplusUserpage(){
-        var userId = null,
-            //username = null,
-            gameMode = null,
-            userInfo = [],
-            mainTableBody = null,
-            profileTabs = null,
-            generalNode = null,
-            userRecent = null,
-            observer = null,
-            generalObserver = null,
-            topObserver = null,
-            opModalContent = null;
-
-        function addCss(){
-            $(document.head).append($("<style></style>").html(
-                `.pc-display {text-align: right; font-size: 175%; color: #9492dc; text-shadow: #b5c6cb 2px 0px 3px; padding-right: 5px;}
-                .pc-img {width: 80px;}
-                .pc-imgcol {width: 90px;}
-                #opslider {width: 250px;}
-                .recentscore {background-color: greenyellow;}
-                .star-display {text-align: right; color: #444444; padding-right: 5px;}
-                .prof-beatmap {position: relative;}
-                .modalBtn {position: absolute; right: -1px; top: -1px; background: white; padding: 3px; width: 10px; text-align: center; border-style: solid; border-width: 1px;}
-                .opModalCloseBtnDiv {position: absolute; right: 10px;}
-                .opModal {width:700px;position: fixed; display: none;z-index: 10000;padding: 15px 20px 10px;-webkit-border-radius: 10px;-moz-border-radius: 10px;border-radius: 10px;background: #fff; left: 50%; top:50%; transform: translate(-50%, -50%);}
-                .opModalOverlay {position: fixed;top: 0;left: 0;bottom:0;right:0;width: 100%;height: 100%;z-index: 9999;background: #000;display: none;-ms-filter: 'alpha(Opacity=50)';-moz-opacity: .5;-khtml-opacity: .5;opacity: .5;}
-                .tableAttr {width: 50px;}
-                .modal-hr {color: red;}
-                .modal-ez {color: green;}
-                .ppcalc-pp {cursor: pointer;}`
-            ));
-        }
-
-        function init(){
-            addCss();
-            userId = getUserId();
-            //username = $(".profile-username").text().trim();
-            gameMode = getGameMode();
-            mainTableBody = $(".beatmapListing").children();
-            profileTabs = $(".profile-tabs").children().children();
-            generalNode = $("#general");
-
-            //Listen for change in game mode
-            observer = new MutationObserver(function(mutations){
-                changeGameMode(getGameMode());
-            });
-            observer.observe($(".profileGameModes")[0], {attributes:true, subtree:true});
-
-            //Listen for expand top ranks
-            topObserver = new MutationObserver(function(mutations){
-                detailedTop();
-            });
-            topObserver.observe($("#leader")[0], {attributes:true, subtree:true});
-
-            doGeneral();
-            addMostPlayed();
-            if(settings.showRecent){
-                addRecent();
-            }
-
-            // Add modal
-            $("body").append("<div class='opModalOverlay opModalOverride' id='opModalOverlay' style='display:none;''></div>");
-            $("body").append("<div class='opModal' id='opModal' style='display:none;'></div>");
-            opModalContent = $("<div id='opModalContent'>");
-            $("#opModal").append(
-                "<div class='opModalCloseBtnDiv' style='display: block;''><button class='opModalCloseBtn'>x</button></div>", 
-                opModalContent
-            );
-            $("#opModalOverlay, .opModalCloseBtn").click(function(){
-                closeModal();
-            });
-
-            // :)
-            if(userId === "1843447"){
-                $(".profile-username").parent().after("<div><b>osuplus creator</b></div>");
-            }
-        }
-
-        function getGameMode(){
-            return parseInt($(".profileGameModeButton.active").attr("id")[3]);
-        }
-
-        function getUserId(){
-            var line = $("script").text().match(/var userId = \d*;/)[0];
-            return line.slice(13, line.length-1);
-        }
-
-        function changeGameMode(gm){
-            if(gameMode !== gm){
-                //Clear recent
-                $("#recent").removeClass("loaded").empty();
-                gameMode = gm;
-            }
-        }
-
-        function detailedTop(){
-            //Put slider
-            if($("#leader").find("#opslider").length === 0){
-                var sliderDiv = createSlider(function(val, checked){
-                    if(checked){
-                        var tops = $(".prof-beatmap");
-                        var curTime = new Date();
-                        tops.each(function(index, top){
-                            top = $(top);
-                            if(!top.attr("id")) return;
-                            var scoreTime = new Date(top.find("time").attr("datetime"));
-                            var diff = (curTime - scoreTime) / (1000*60*60*24);
-                            if(diff < val){
-                                top.find("table").addClass("recentscore");
-                            }else{
-                                top.find("table").removeClass("recentscore");
-                            }
-                        });
-                    }else{
-                        $(".prof-beatmap > table").removeClass("recentscore");
-                    }
-                });
-                $("#leader").find("h2").first().after(sliderDiv);
-            }
-
-            //Update tops
-            var topsBest = $("#leader h2").last().prevAll().find(".prof-beatmap").addBack(".prof-beatmap").filter(":not(.oploading,.oploaded)");
-            var topsFirst = $("#leader h2").last().nextAll().find(".prof-beatmap").addBack(".prof-beatmap").filter(":not(.oploading,.oploaded)");
-            topsBest.each(function(index, top){
-                $(top).addClass("oploading");
-            });
-            topsFirst.each(function(index, top){
-                $(top).addClass("oploading");
-            });
-            if(topsBest.length > 0){
-                getUserBest({u: userId, m: gameMode, type: "id", limit: 100}, function(scores){
-                    topsBest.each(function(index, top){
-                        top = $(top);
-                        var mapId = top.attr("id");
-                        if(!mapId) return;
-                        mapId = mapId.split("-")[1];
-                        var score = null;
-                        for(var i in scores){
-                            if(scores[i].beatmap_id == mapId){
-                                score = scores[i];
-                                break;
-                            }
-                        }
-                        if(score !== null){
-                            addModalBtn(top, mapId);
-                            if(settings.fetchUserpageMaxCombo){
-                                getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
-                                    if(beatmap.length < 1) return;
-                                    else{
-                                        detailify(top, score, beatmap[0]);
-                                    }
-                                });
-                            }else{
-                                detailify(top, score);
-                            }
-                        }
-                    });
-                });
-            }
-            topsFirst.each(function(index, top){
-                top = $(top);
-                var mapId = top.attr("id");
-                if(!mapId) return;
-                mapId = mapId.split("-")[1];
-                addModalBtn(top, mapId);
-                if(settings.fetchFirstsInfo){
-                    getScores({b: mapId, u: userId, type: "id", m: gameMode, a: 1, limit: 1}, function(scores){
-                        if(scores.length < 1) return;
-                        if(settings.fetchUserpageMaxCombo){
-                            getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
-                                if(beatmap.length < 1) return;
-                                else detailify($(top), scores[0], beatmap[0]);
-                            });
-                        }else{
-                            scores[0].beatmap_id = mapId;
-                            detailify($(top), scores[0]);
-                        }
-                    });
-                }
-            });
-        }
-
-        function detailify(top, score, beatmap){
-            var maxmapcombo = $("<span></span>").css("color", "#b7b1e5");
-            if(beatmap && beatmap.max_combo !== null){
-                maxmapcombo.text("(" + beatmap.max_combo + "x)");
-            }
-            var h = top.find(".h");
-            if(score.perfect === "1"){
-                h.append("(FC)");
-            }
-            h.append(makeScoreStats(score, maxmapcombo));
-        }
-
-        function makeScoreStats(score, maxmapcombo){
-            return $("<div>").append(
-                $("<b>").append(
-                    `${commarise(score.score)} / ${score.maxcombo}x`,
-                    maxmapcombo
-                ),
-                gameMode <= 1 ? // Standard/Taiko
-                    ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countmiss} }` :
-                    gameMode == 2 ? // CTB
-                        ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countkatu} / ${score.countmiss} }` :
-                        // Mania
-                        ` { ${score.countgeki} / ${score.count300} / ${score.countkatu} / ${score.count100} / ${score.count50} / ${score.countmiss} }`
-            );
-        }
-
-        function addModalBtn(top, beatmap_id){
-            var modalBtn = $("<a class='modalBtn'>?</a>").hide();
-            modalBtn.click(function(){
-                openModal($(this).parent().find(".identifier").val());
-            });
-            top.append(modalBtn, $("<input type=hidden class='identifier' value='"+beatmap_id+"'>"));
-            top.removeClass("oploading").addClass("oploaded");
-            top.hover(function(){
-                $(this).find(".modalBtn").show();
-            }, function(){
-                $(this).find(".modalBtn").hide();
-            });
-        }
-
-        function openModal(id){
-            if(id === undefined) return;
-            var opModalContent = $("#opModalContent");
-            opModalContent.empty();
-            getBeatmapsCache({b: id, m: gameMode, a: 1}, function(beatmap){
-                beatmap = beatmap[0];
-                opModalContent.append(
-                    `<h1>${beatmap.artist} - <a href=/s/${beatmap.beatmapset_id}>${beatmap.title}</a> [<a href=/b/${beatmap.beatmap_id}>${beatmap.version}</a>]</h1>
-                    <input type="radio" name="mods" value="none" checked="">Nomod
-                    <input type="radio" name="mods" value="hr">HR
-                    <input type="radio" name="mods" value="ez">EZ
-                    <table id='songinfo' style='width:100%;'>
-                        <tr>
-                            <td rowspan=5 style='width:1%'><a onclick='playBeatmapPreview(${beatmap.beatmapset_id})'><img class='bmt' src=//b.ppy.sh/thumb/${beatmap.beatmapset_id}l.jpg></a></td>
-                            <td class='tableAttr'>CS:</td><td>${beatmap.diff_size} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_size)*1.3, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_size)/2).toFixed(2)})</span></td>
-                            <td class='tableAttr'>AR:</td><td>${beatmap.diff_approach} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_approach)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_approach)/2).toFixed(2)})</span></td>
-                        </tr>
-                        <tr>
-                            <td class='tableAttr'>HP:</td><td>${beatmap.diff_drain} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_drain)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_drain)/2).toFixed(2)})</span></td>
-                            <td class='tableAttr'>Stars:</td><td>${beatmap.difficultyrating}</td>
-                        </tr>
-                        <tr>
-                            <td class='tableAttr'>OD:</td><td>${beatmap.diff_overall} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_overall)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_overall)/2).toFixed(2)})</span></td>
-                            <td class='tableAttr'>Length:</td>
-                            <td>${secsToMins(parseInt(beatmap.total_length))} (${secsToMins(parseInt(beatmap.hit_length))} drain)${beatmap.max_combo === null ? "" : `<br>${beatmap.max_combo}x combo`}</td>
-                        </tr>
-                        <tr>
-                            <td class='tableAttr'>Creator:</td><td>${beatmap.creator}</td>
-                            <td class='tableAttr'>BPM:</td><td>${beatmap.bpm}</td>
-                        </tr>
-                        <tr>
-                            <td colspan=4><a href=/d/${beatmap.beatmapset_id}>Download</a><br>
-                                <a href='https://beatconnect.io/b/${beatmap.beatmapset_id}'>Beatconnect mirror</a><br>
-                                <a href='https://osu.sayobot.cn/home?search=${beatmap.beatmapset_id}' target='_blank'>Sayobot</a>
-                            </td>
-                        </tr>
-                    </table>`
-                );
-                opModalContent.find("input[type=radio][name=mods]").change(function(){
-                    if(this.value == "none"){
-                        $(".modal-hr").hide();
-                        $(".modal-ez").hide();
-                    }else if(this.value == "hr"){
-                        $(".modal-hr").css("display", "inline");
-                        $(".modal-ez").hide();
-                    }else{
-                        $(".modal-hr").hide();
-                        $(".modal-ez").css("display", "inline");
-                    }
-                });
-            });
-            $("#opModalOverlay").fadeIn(200);
-            $("#opModal").fadeIn(200);
-        }
-        
-        function closeModal(){
-            $("#opModalOverlay").fadeOut(200);
-            $("#opModal").fadeOut(200);
-        }
-
-        function doGeneral(){
-            addGeneral();
-            generalObserver = new MutationObserver(function(mutations){
-                addGeneral();
-            });
-            generalObserver.observe(generalNode[0], {childList:true});
-        }
-
-        function addGeneral(){
-            function useUserInfo(user){
-                if(settings.showDetailedHitCount){
-                    var c300 = parseInt(user.count300), c100 = parseInt(user.count100), c50 = parseInt(user.count50),
-                        ctotal = c300 + c100 + c50;
-                    generalNode.find(".profileStatLine").eq(7).append(
-                        $("<span></span>").text(
-                            " (" + commarise(c300) + " x300 / " + commarise(c100) + " x100 / " + commarise(c50) + " x50) (" +
-                                (100*c300/ctotal).toFixed(2) + "% / " + (100*c100/ctotal).toFixed(2) + "% / " + (100*c50/ctotal).toFixed(2) + "%)"
-                        )
-                    );
-                }
-
-                if(settings.showHitsPerPlay){
-                    generalNode.find(".profileStatLine").eq(7).after(
-                        "<br>",
-                        $("<div class='profileStatLine'></div>").append(
-                            "<b>Hits/play</b>: " + (ctotal/parseInt(user.playcount)).toFixed(2)
-                        )
-                    );
-                }
-            }
-
-            if(generalNode.find("#general-check").length === 0 && $(".profileStatLine").length > 0){
-                generalNode.append($("<div id='general-check'></div>").hide());
-
-                if(userInfo[gameMode]){
-                    useUserInfo(userInfo[gameMode]);
-                }else{
-                    getUser({u: userId, m: gameMode, type: "id"}, function(response){
-                        userInfo[gameMode] = response[0];
-                        useUserInfo(userInfo[gameMode]);
-                    });
-                }
-            }
-        }
-
-        function addMostPlayed(){
-            mainTableBody.append(
-                $("<tr>").click(function(){ expandProfile("mostplayed", addMostPlayedContent); })
-                    .append($("<td class='sectionHeading' id='_mostplayed'>Most Played</td>")),
-                $("<tr><td class='sectionContents'><div id='mostplayed'></div></td></tr>")
-            );
-            profileTabs.append($("<td>Most Played</td>").click(function(){
-                expandProfile("mostplayed", addMostPlayedContent, true);
-            }));
-        }
-
-        function addRecent(){
-            mainTableBody.append(
-                $("<tr>").click(function(){ expandProfile("recent", addRecentContent); })
-                    .append($("<td class='sectionHeading' id='_recent'>Recent</td>")),
-                $("<tr><td class='sectionContents'><div id='recent'></div></td></tr>")
-            );
-            profileTabs.append($("<td>Recent</td>").click(function(){
-                expandProfile("recent", addRecentContent, true);
-            }));
-        }
-
-        function expandProfile(id, addContent, forceExpand){
-            var content = $("#" + id);
-            if(!content.hasClass("expanded") || forceExpand){
-                content.addClass("expanded");
-                content.slideDown(500);
-                if(forceExpand){
-                    //window.location.hash = "#_" + id;
-                }
-                if(!content.hasClass("loaded")){
-                    addContent(content);
-                    content.addClass("loaded");
-                }
-            }else{
-                content.slideUp(500);
-                content.removeClass("expanded");
-            }
-        }
-
-        function addMostPlayedContent(container){
-            function makeItem(beatmapInfo){
-                var maplink = $("<a href='/b/" + beatmapInfo.beatmap.id + "'></a>"),
-                    mapperlink = $("<a href='/u/" + beatmapInfo.beatmapset.user_id + "'>" + beatmapInfo.beatmapset.creator + "</a>");
-                maplink.append(
-                    beatmapInfo.beatmapset.artist + " - ",
-                    beatmapInfo.beatmapset.title,
-                    " [" + beatmapInfo.beatmap.version + "]"
-                );
-
-                return $("<div class='prof-beatmap'></div>").append(
-                    $("<table></table>").append($("<tr></tr>").append(
-                        $("<td class='pc-imgcol'></td>").append(
-                            $("<img class='pc-img' src='" + beatmapInfo.beatmapset.covers.list + "'></img>")
-                        ),
-                        $("<td></td>").append(
-                            $("<div></div>").append(
-                                $("<b></b>").append(
-                                    maplink
-                                )
-                            ),
-                            $("<div></div>").append(
-                                "mapped by ",
-                                mapperlink
-                            )
-                        ),
-                        $("<td></td>").append(
-                            $("<div class='pc-display'><b>" + beatmapInfo.count + " plays</b></div>"),
-                            $("<div class='star-display'>" + beatmapInfo.beatmap.difficulty_rating.toFixed(2) + "&#9733;</div>")
-                        )
-                    ))
-                );
-            }
-
-            gameMode = getGameMode();
-
-            function extendMostPlayed(offset){
-                retrieveMostPlayed(offset, 50, function(beatmaps){
-                    beatmaps.forEach(function(beatmapInfo){
-                        container.append(makeItem(beatmapInfo));
-                    });
-                    if(beatmaps.length){
-                        container.append(
-                            $("<div class='more-most'></div>").append(
-                                $("<div class='prof-beatmap'></div>").append(
-                                    $(`<a data-most-offset=${offset+50}></a>`).append(
-                                        "<b>Show me more!</b>"
-                                    ).click(function(){
-                                        var curoffset = parseInt($(this).attr("data-most-offset"));
-                                        $(".more-most").remove();
-                                        extendMostPlayed(curoffset);
-                                    })
-                                )
-                            )
-                        );
-                    }
-                });
-            }
-            container.append("<h2>Most Played</h2>");
-            extendMostPlayed(0);
-        }
-
-        function retrieveMostPlayed(offset, limit, callback){
-            GetPage(`https://osu.ppy.sh/users/${userId}/beatmapsets/most_played?offset=${offset}&limit=${limit}`, function(response){
-                callback(JSON.parse(response));
-            });
-        }
-
-        function addRecentContent(container){
-            gameMode = getGameMode();
-            getUserRecent({u: userId, m: gameMode, limit: 50, type: "id"}, function(response){
-                userRecent = response;
-                var failedCheckbox = $("<input type=checkbox id='failedCheckbox'/>"),
-                    failedChecked = settings.failedChecked;
-
-                failedCheckbox.prop("checked", failedChecked).click(function(){
-                    var me = $(this);
-                    failedChecked = me.prop("checked");
-                    if(failedChecked){
-                        $(".failedScore").show();
-                    }else{
-                        $(".failedScore").hide();
-                    }
-                });
-
-                container.append(
-                    "<h2>Recent Plays</h2>",
-                    $("<label></label>").append(
-                        failedCheckbox, "Show failed scores"
-                    )
-                );
-
-                userRecent.forEach(function(play){
-                    var modstr = getMods(play.enabled_mods),
-                        acc = calcAcc(play, gameMode),
-                        dateset = new Date(play.date.replace(" ","T") + "+0000"), // dates from API in GMT+0
-                        maplink = $("<a href='/b/" + play.beatmap_id + "?m=" + gameMode + "'></a>").text("Loading..."),
-                        maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
-                        //starrating = $("<b>...&#9733;</b>"),
-                        failClass = play.rank === "F" ? "failedScore" : "passScore",
-                        ppcalcData = makePpcalcData(gameMode, play, acc, play.beatmap_id);
-
-                    var profbeatmap = $("<div class='prof-beatmap'>").addClass(failClass).append(
-                        $("<table>").append($("<tr>").append(
-                            $("<td>").append(
-                                $("<div class='h'>").append(
-                                    getRankImg(play.rank), "\n",
-                                    $("<b>").append(
-                                        maplink,
-                                        modstr === "None" ? " " : " +" + modstr
-                                    ),
-                                    " (" + acc.toFixed(2) + "%)" + (play.perfect === "1" ? " (FC)" : "") + "\n"
-                                ),
-                                makeScoreStats(play, maxmapcombo),
-                                $("<div class='c'>").append(
-                                    $("<time class='timeago'>")
-                                        .attr("datetime", dateset.toISOString())
-                                        .text(dateset.toLocaleString())
-                                )
-                            ),
-                            gameMode == 0 ? 
-                                $(`<td class='ppcalc-pp'>
-                                    <div class='pp-display'><b>pp</b></div>
-                                    <div class='pp-display-weight'></div>
-                                </td>
-                                <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>`) :
-                                ""
-                        ))
-                    );
-                    addModalBtn(profbeatmap, play.beatmap_id);
-                    profbeatmap.find(".ppcalc-pp").click(function(event){
-                        var me = $(this);
-                        me.find(".pp-display b").text("...pp");
-                        me.find(".pp-display-weight").text("(...)");
-                        var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                        doPpcalc(ppcalcData).then((result) => {
-                            me.find(".pp-display b").text(`${result.pp}pp`);
-                            me.find(".pp-display-weight").text(`(${result.pp_fc}pp if FC)`);
-                        });
-                    });
-
-                    container.append(profbeatmap);
-                    
-                    getBeatmapsCache({b: play.beatmap_id, m: gameMode, a: 1}, function(response){
-                        var r = response[0];
-                        maplink.text(r.artist + " - " + r.title + " [" + r.version + "]");
-                        if(r.max_combo !== null){
-                            maxmapcombo.text("(" + r.max_combo + "x)");
-                        }
-                        //starrating.html(parseFloat(r.difficultyrating).toFixed(2) + "&#9733;");
-                        profbeatmap.find(".identifier").val(r.beatmap_id);
-                    });
-                });
-                $(".timeago").timeago();
-                if(failedChecked){
-                    $(".failedScore").show();
-                }else{
-                    $(".failedScore").hide();
-                }
-            });
-        }
-
-        return {init: init};
     }
 
     function osuplusNewUserpage(){
@@ -2317,885 +1660,6 @@
         return {init: init, destroy: destroy};
     }
 
-    function osuplusBeatmap(){
-        var result = null,
-            mapID = null,
-            mapsetID = null,
-            mapMode = null,
-            beatmapInfo = null,
-            timeDelay = 1000,
-            timeoutID = null,
-            songInfoRef = null,
-            //modBtns = [],
-            localUser = null,
-            localUsername = null,
-            localScore = null,
-            friends = null,
-            scoreListing = null,
-            scoreListingTitlerow = null,
-            tableLoadingNotice = null,
-            showDates = true,
-            modsEnabled = true,
-            osupreviewLoaded = false,
-            scoreReqs = [],
-            maxcomboSpan = null;
-
-
-        function addCss(){
-            $(document.head).append(`<style>
-                .modIconGroup {display: inline-block; margin: 2px;}
-                .modIcon {overflow: hidden; position: relative; width: 40px; height: 40px;}
-                .modIconOption, .modIconOption img, .modIcon img { width: 100%; height: 100%; }
-                .modIconOption {overflow: hidden; position: absolute; transform: skewX(-45deg);}
-                .modIconOption:first-child {left: 0px; transform-origin: 100% 0;}
-                .modIconOption:last-child {right: 0px; transform-origin: 0 100%;}
-                .modIconOption img {transform: skewX(45deg); transform-origin: inherit;}
-                .notSelected {border: 3px solid transparent;}
-                .isSelected {border: 3px solid red;}
-                .partialSelected {border: 3px dashed red;}
-                .osupreview {width: 425px; height: 344px;}
-                .count-display {text-align: right;}
-                #opslider {width: 250px;}
-                .recentscore {background-color: greenyellow;}
-                .recentscore:hover {background: #fde1ff; cursor: pointer;}
-                .centered {display: block; margin-left: auto; margin-right: auto;}
-                .greyedout {opacity: 0.5;}
-                .ppcalc-pp {cursor: pointer;}
-                .slider-export-container {display: flex;}
-                .export-container {flex: 1; text-align: right;}
-                .export-btn {cursor: pointer; padding-right: 5px;}
-                </style>`
-            );
-        }
-
-        function init(){
-            var temp;
-
-            addCss();
-            songInfoRef = $("#songinfo");
-            scoreListing = $(".beatmapListing");
-            scoreListingTitlerow = $(".titlerow");
-            temp = $(".beatmapTab.active").attr("href").split("&")[0].split("/");
-            mapID = temp[temp.length - 1];
-            temp = $(".bmt").attr("src").split("/");
-            mapsetID = temp[temp.length - 1].split("l")[0];
-            mapMode = getMapmode();
-
-            minePlayerCountries();
-            showDates = settings.showDates;
-            temp = $(".content-infoline").children("div").children("b");
-            if(temp.length > 0){
-                temp = temp.children("a");
-                localUsername = temp.text();
-                temp = temp.attr("href").split("/");
-                localUser = temp[temp.length - 1];
-                GMX.getValue("friends", []).then((temp) => {
-                    friends = temp;
-                    getFriends(function(response){
-                        friends = response;
-                        GMX.setValue("friends", friends);
-                    });
-                });
-            }else{
-                localUser = null;
-                friends = [];
-            }
-            maxcomboSpan = $("<span></span>").hide();
-            songInfoRef.children().children().eq(2).children().eq(5).append("<br>", maxcomboSpan);
-
-            addMirrors();
-            showMapValues();
-            addOsuPreview();
-
-            if(hasKey){
-                putModButtons();
-                putRankingType();
-                addSlider();
-                addTableLoadingNotice();
-                modifyTableHeaders();
-                addSearchUser();
-                doManyFunc([
-                    function(callback){
-                        getBeatmapInfo(function(response){
-                            beatmapInfo = response;
-                            if(beatmapInfo.max_combo !== null){
-                                maxcomboSpan.text(beatmapInfo.max_combo + "x combo");
-                                maxcomboSpan.show();
-                            }
-
-                            callback();
-                        });
-                    },
-                    function(callback){
-                        getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
-                            result = response;
-                            callback();
-                        });
-                    }
-                ], function(){
-                    modifyTableHeadersMaxcombo();
-                    addScoreLeaderpp();
-                    updateScoresTable();
-                });
-            }
-
-            $(window).unload(function(){
-                // save player's countries
-                GMX.setValue("playerCountries", JSON.stringify(playerCountries));
-            });
-        }
-
-        function addSlider(){ // and export button
-            scoreListing.before(
-                $("<div class='slider-export-container'></div>").append(
-                    createSlider(function(val, checked){
-                        var rows = scoreListingTitlerow.nextAll();
-                        if(checked){
-                            var curTime = new Date();
-                            rows.each(function(index, row){
-                                row = $(row);
-                                var scoreTime = new Date(row.find("time").attr("datetime"));
-                                var diff = (curTime - scoreTime) / (1000*60*60*24);
-                                if(diff < val){
-                                    row.addClass("recentscore");
-                                }else{
-                                    row.removeClass("recentscore");
-                                }
-                            });
-                        }else{
-                            rows.removeClass("recentscore");
-                        }
-                    }).addClass("slider-container"),
-                    "<div class='export-container'><a class='export-btn'>export to csv</a></div>"
-                )
-            );
-            $(".export-btn").click(function(){
-                downloadFile(scoresToCsv(result, mapMode), "scores.csv");
-            });
-        }
-
-        function abortReqs(){
-            while(scoreReqs.length > 0){
-                scoreReqs.pop().abort();
-            }
-        }
-
-        function addOsuPreview(){
-            songInfoRef.parent().next().after(
-                $("<div class='spoiler'></div>").html(
-                    "<div class='spoiler_head' onclick='return toggleSpoiler(this);'>osu!preview</div>" +
-                    "<div class='spoiler_body'><div id='osupreview'></div></div>"
-                ).click(function(){
-                    if(osupreviewLoaded) return;
-                    $("#osupreview").html(
-                        "If below doesn't work, <a href='http://jmir.xyz/osu/preview.html#" + mapID + "' target='_blank'>open in new tab</a><br>" +
-                        "<iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#" + mapID + "' allowfullscreen></iframe>"
-                    );
-                    osupreviewLoaded = true;
-                })
-            );
-        }
-
-        function getBeatmapInfo(callback){
-            getBeatmaps({b: mapID, m: mapMode, a: 1}, function(response){
-                callback(response[0]);
-            });
-        }
-
-        function addTableLoadingNotice(){
-            tableLoadingNotice = $("<div><img src='" + loaderImg + "' class='centered'></div>");
-            scoreListing.before(tableLoadingNotice);
-        }
-
-        function addSearchUser(){
-            $(".content-with-bg").children("h2").before(
-                $("<div></div>").attr("id", "searchuser")
-                    .append(
-                        $("<strong>Search user: </strong>"),
-                        $("<input type='text' id='searchusertxt' name='searchusertxt'>")
-                            .val(localUsername)
-                            .bind("enterKey", searchUserEnter)
-                            .keyup(function(e){
-                                if(e.keyCode == 13)
-                                {
-                                    $(this).trigger("enterKey");
-                                }
-                            }),
-                        $("<div id='searchuserinfo'>Searching...</div>").hide(),
-                        $("<div></div>").attr("class","beatmapListing")
-                            .attr("id", "searchuserresult")
-                            .append(
-                                $("<table width=100% cellspacing=0></table>").append("<tbody></tbody>").append(
-                                    scoreListingTitlerow.clone()
-                                )
-                            ).hide()
-                    )
-            );
-        }
-
-        function searchUserEnter(){
-            $("#searchuserinfo").text("Searching...").show();
-            $("#searchuserresult").hide();
-            var searchusernames = $("#searchusertxt").val().split(",");
-            var promises = searchusernames.map((username) => new Promise(function(resolve, reject){
-                getScoresWithPlayerInfo({b:mapID, u:username, m:mapMode, type:"string"}, settings.showPpRank, resolve);
-            }));
-            Promise.all(promises).then((responses) => {
-                var response = [];
-                for(let r of responses){
-                    response = response.concat(r);
-                }
-                response.sort((a,b) => parseInt(b.score) - parseInt(a.score));
-                if(response.length > 0){
-                    $("#searchuserresult").find(".titlerow").nextAll().remove();
-                    response.forEach(function(score, index){
-                        var tableRow = makeScoreTableRow(score, index+1);
-                        $("#searchuserresult").find(".titlerow").parent().children().last().after(tableRow);
-                    });
-                    
-                    $(".timeago").timeago();
-                    $("#searchuserinfo").hide();
-                    $("#searchuserresult").show();
-                }else{
-                    $("#searchuserinfo").text("No scores found :(");
-                }
-            });
-        }
-
-        function putRankingType(){
-            $(".content-with-bg").children("h2").after(
-                $("<div></div>").attr("id", "rankingtype").append(
-                    $("<label></label>").append(
-                        $("<input>")
-                            .attr({
-                                type: "radio",
-                                name: "rankingtype",
-                                value: "global"})
-                            .prop("checked", true)
-                            .change(rankingTypeChanged),
-                        "Global"
-                    ),
-                    $("<label></label>").append(
-                        $("<input>")
-                            .attr({
-                                type: "radio",
-                                name: "rankingtype",
-                                value: "friends"})
-                            .change(rankingTypeChanged),
-                        "Friends"
-                    ),
-                    //Show date button
-                    $("<label></label>").append(
-                        $("<input>")
-                            .attr({
-                                type: "checkbox",
-                                id: "showdatebox"})
-                            .change(showDateChanged)
-                            .prop("checked", showDates),
-                        "Show date"
-                    )
-                )
-            );
-        }
-
-        function showDateChanged(){
-            showDates = $("#showdatebox").prop("checked");
-            updateShowDate();
-        }
-
-        function updateShowDate(){
-            if(showDates) $(".datecol").show();
-            else $(".datecol").hide();
-        }
-
-        function rankingTypeChanged(){
-            var rankingType = $("input[name=rankingtype]:checked").val();
-
-            if(rankingType == "global"){
-                modsEnabled = true;
-                if(timeoutID !== null) clearTimeout(timeoutID);
-                updateModScores();
-            }else if(rankingType == "friends"){
-                modsEnabled = false;
-                if(timeoutID !== null) clearTimeout(timeoutID);
-                updateFriendsScores();
-            }
-        }
-
-        function updateFriendsScores(){
-            clearScoresTable();
-            abortReqs();
-
-            // Make copy of friends including yourself
-            var friends2 = friends.slice(0);
-            if(!inArray(friends2, localUser)){
-                friends2.push(localUser);
-            }
-
-            var funs = [];
-            for(var i=0; i<friends2.length; i++){
-                funs.push(function(uid){
-                    return function(callback){
-                        getScoresWithPlayerInfo({b:mapID, u:uid, m:mapMode, type:"id"}, settings.showPpRank, function(response){
-                            if(response.length > 0){
-                                result.push(response[0]);
-                            }
-                            callback();
-                        }, scoreReqs);
-                    };
-                }(friends2[i]));
-            }
-            doManyFunc(funs, function(){
-                sortResult("score");
-                updateScoresTable();
-            });
-        }
-
-        function sortResult(sortby){
-            if(sortby === "score"){
-                result.sort(function(a,b){
-                    var ascore = parseInt(a.score),
-                        bscore = parseInt(b.score);
-                    if(ascore < bscore){
-                        return 1;
-                    }else if(ascore > bscore){
-                        return -1;
-                    }else{
-                        return getTime(a.date) - getTime(b.date);
-                    }
-                });
-            }else if(sortby === "pp"){
-                result.sort(function(a,b){
-                    var ascore = parseFloat(a.pp),
-                        bscore = parseFloat(b.pp);
-                    if(ascore < bscore){
-                        return 1;
-                    }else if(ascore > bscore){
-                        return -1;
-                    }else{
-                        ascore = parseFloat(a.score);
-                        bscore = parseFloat(b.score);
-                        if(ascore < bscore){
-                            return 1;
-                        }else if(ascore > bscore){
-                            return -1;
-                        }else{
-                            return getTime(a.date) - getTime(b.date);
-                        }
-                    }
-                });
-            }
-        }
-
-        function getFriends(callback){
-            GetPage("https://old.ppy.sh/p/friends", function(response){
-                var friends = [];
-                response = response.replace(/<img[^>]*>/g,"");
-                $(response).find(".paddingboth").children("div").each(function(ind, ele){
-                    friends.push($(ele).attr("user_id"));
-                });
-                callback(friends);
-            });
-        }
-
-        function isFriend(uid){
-            for(var i=0; i<friends.length; i++){
-                if(friends[i] == uid) return true;
-            }
-            return false;
-        }
-
-        function addScoreLeaderpp(){
-            var scoreLeaders = $(".scoreLeader");
-            if(scoreLeaders.length > 0) updateScoreLeaderpp(scoreLeaders.first(), result[0]);
-            if(scoreLeaders.length > 1){
-                getScoresWithPlayerInfo({b:mapID, u:localUser, m:mapMode, type:"id"}, settings.showPpRank, function(response){
-                    if(response.length > 0){
-                        localScore = response[0];
-                        updateScoreLeaderpp(scoreLeaders.eq(1), localScore);
-                    }
-                });
-            }
-        }
-
-        function updateScoreLeaderpp(scoreLeader, score){
-            var rows = scoreLeader.children().children();
-            var numrows = rows.length;
-            rows.eq(1).children().last().attr("rowspan", numrows);
-            var rowclass = "row" + ((numrows+1)%2+1) + "p";
-            scoreLeader.children().append(
-                $("<tr></tr>")
-                    .attr("class", rowclass)
-                    .append($("<td><strong>pp</strong></td>"))
-                    .append($("<td></td>").text(parseFloat(score.pp).toFixed(2)))
-            );
-        }
-
-
-        function showMapValues(){
-            var basewidth = 140;
-            var csele = songInfoRef.children().children().eq(0).children().eq(3).children(),
-                arele = songInfoRef.children().children().eq(0).children().eq(5).children(),
-                hpele = songInfoRef.children().children().eq(1).children().eq(3).children(),
-                odele = songInfoRef.children().children().eq(2).children().eq(3).children();
-            var csval = 10 * csele.children().width() / basewidth,
-                arval = 10 * arele.children().width() / basewidth,
-                hpval = 10 * hpele.children().width() / basewidth,
-                odval = 10 * odele.children().width() / basewidth;
-            csele.after("\n(" + csval.toFixed(1) + ")");
-            arele.after("\n(" + arval.toFixed(1) + ")");
-            hpele.after("\n(" + hpval.toFixed(1) + ")");
-            odele.after("\n(" + odval.toFixed(1) + ")");
-
-            // Bold star difficulty
-            var starparent = songInfoRef.children().children().eq(1).children().last();
-            var star = starparent.text();
-            starparent.contents().filter(function(){
-                return this.nodeType === 3;
-            }).remove();
-            starparent.append($("<strong>" + star + "</strong>"));
-        }
-
-        function addMirrors(){
-            if(settings.showMirror){
-                if(mapsetID !== null){
-                    $("#songinfo td").eq(-2).append(
-                        `<a href="https://beatconnect.io/b/${mapsetID}">Beatconnect Mirror</a><br>`
-                    );
-                }
-            }
-            if(settings.showMirror2){
-                if(mapsetID !== null){
-                    $("#songinfo td").eq(-2).append(
-                        `<a href="https://osu.sayobot.cn/home?search=${mapsetID}" target="_blank">Sayobot Mirror</a><br>`
-                    );
-                }
-            }
-        }
-
-        function putModButtons(){
-            function genModBtns(modArray){
-                var modgroup = $("<div></div>").addClass("modIconGroup"),
-                    modgroupArr = [];
-                for(var i=0; i<modArray.length; i++){
-                    var modinfo = modArray[i];
-                    var modimg;
-                    if(modinfo.mods.length === 1){
-                        modimg = $("<div></div>")
-                            .addClass("modIcon")
-                            .append($("<img>").attr("src", modIconImgs[modinfo.mods[0]]))
-                            .attr("value", modinfo.mods[0]);
-                    }else{
-                        modimg = $("<div></div>").addClass("modIcon").append(
-                            $("<div></div>").addClass("modIconOption").append(
-                                $("<img>").attr("src", modIconImgs[modinfo.mods[0]])
-                            ),
-                            $("<div></div>").addClass("modIconOption").append(
-                                $("<img>").attr("src", modIconImgs[modinfo.mods[1]])
-                            )
-                        )
-                            .attr("value", modinfo.mods.join(","));
-                    }
-                    if(i > 0) modimg.hide();
-
-                    if(modinfo.mods[0] === "NM"){
-                        modimg.click(nomodIconClick);
-                        modimg.addClass("nomodIcon");
-                    }else{
-                        modimg.click(modIconClick);
-                    }
-
-                    if(modinfo.selection === 0){
-                        modimg.addClass("notSelected");
-                        modimg.attr("value", "XX");
-                    }else if(modinfo.selection === 1){
-                        modimg.addClass("isSelected");
-                        modimg.attr("value", modinfo.mods.join(","));
-                    }else{ // modinfo.selection === 2
-                        modimg.addClass("partialSelected");
-                        modimg.attr("value", ["XX"].concat(modinfo.mods).join(","));
-                    }
-                    modgroupArr.push(modimg);
-                }
-                modgroup.html(modgroupArr);
-                return modgroup;
-            }
-
-            $(".content-with-bg").children("h2").next().empty().append(
-                genModBtns([
-                    {mods: ["NM"], selection: 0},
-                    {mods: ["NM"], selection: 1}]),
-                mapMode < 3 ? // HD for non-mania
-                    genModBtns([
-                        {mods: ["HD"], selection: 0},
-                        {mods: ["HD"], selection: 1},
-                        {mods: ["HD"], selection: 2}]) : 
-                    genModBtns([ // FI, HD for mania
-                        {mods: ["FI"], selection: 0},
-                        {mods: ["FI"], selection: 1},
-                        {mods: ["HD"], selection: 1},
-                        {mods: ["FI", "HD"], selection: 1},
-                        {mods: ["FI", "HD"], selection: 2}]),
-                genModBtns([
-                    {mods: ["HR"], selection: 0},
-                    {mods: ["HR"], selection: 1},
-                    {mods: ["HR"], selection: 2},
-                    {mods: ["EZ"], selection: 1},
-                    {mods: ["EZ"], selection: 2}]),
-                genModBtns([
-                    {mods: ["DT"], selection: 0},
-                    {mods: ["DT"], selection: 1},
-                    {mods: ["NC"], selection: 1},
-                    {mods: ["DT", "NC"], selection: 1},
-                    {mods: ["HT"], selection: 1}]),
-                genModBtns([
-                    {mods: ["SD"], selection: 0},
-                    {mods: ["SD"], selection: 1},
-                    {mods: ["PF"], selection: 1},
-                    {mods: ["SD", "PF"], selection: 1},
-                    {mods: ["SD", "PF"], selection: 2},
-                    {mods: ["NF"], selection: 1},
-                    {mods: ["NF"], selection: 2}]),
-                genModBtns([
-                    {mods: ["FL"], selection: 0},
-                    {mods: ["FL"], selection: 1},
-                    {mods: ["FL"], selection: 2}]),
-                mapMode < 3 ? [] : //mania keys
-                    genModBtns([
-                        {mods: ["4K"], selection: 0},
-                        {mods: ["4K"], selection: 1},
-                        {mods: ["5K"], selection: 1},
-                        {mods: ["6K"], selection: 1},
-                        {mods: ["7K"], selection: 1},
-                        {mods: ["8K"], selection: 1},
-                        {mods: ["9K"], selection: 1}]),
-                mapMode < 3 ? [] : //mirror
-                    genModBtns([
-                        {mods: ["MR"], selection: 0},
-                        {mods: ["MR"], selection: 1},
-                        {mods: ["MR"], selection: 2}]),
-                mapMode > 0 ? [] : //SO only for standard
-                    [genModBtns([
-                        {mods: ["SO"], selection: 0},
-                        {mods: ["SO"], selection: 1},
-                        {mods: ["SO"], selection: 2}]),
-                    genModBtns([
-                        {mods: ["TD"], selection: 0},
-                        {mods: ["TD"], selection: 1},
-                        {mods: ["TD"], selection: 2}])]
-            );
-        }
-
-        function nomodIconClick(){
-            if(!modsEnabled) return;
-            $(".modIcon").each(function(){
-                $(this).hide();
-                $(this).parent().children().first().show();
-            });
-            modIconClick.bind(this)();
-        }
-
-        function modIconClick(){
-            if(!modsEnabled) return;
-            if(!$(this).hasClass("nomodIcon")){
-                $(".nomodIcon").hide().parent().children().first().show();
-            }
-            var parent = $(this).parent();
-            $(this).hide();
-            if($(this).next().length === 0){
-                parent.children().first().show();
-            }else{
-                $(this).next().show();
-            }
-
-            timeoutUpdate();
-        }
-
-        function timeoutUpdate(){
-            if(timeoutID !== null){
-                clearTimeout(timeoutID);
-            }
-            timeoutID = setTimeout(function(){
-                timeoutID = null;
-                updateModScores();
-            }, timeDelay);
-        }
-
-        function updateModScores(){
-            clearScoresTable();
-            abortReqs();
-
-            var modvals = getSelectedMods();
-            var funs = [];
-            result = [];
-            for(var i=0; i<modvals.length; i++){
-                var modval = modvals[i];
-                if(modval < 0){
-                    funs.push(function(callback){
-                        getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
-                            result = result.concat(response);
-                            callback();
-                        }, scoreReqs);
-                    });
-                }else{
-                    funs.push(function(modval){
-                        return function(callback){
-                            getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum, mods:modval}, settings.showPpRank, function(response){
-                                result = result.concat(response);
-                                callback();
-                            }, scoreReqs);
-                        };
-                    }(modval));
-                }
-            }
-            doManyFunc(funs, function(){
-                sortResult("score");
-                result.splice(settings.displayTopNum);
-                updateScoresTable();
-            });
-
-        }
-
-        function getSelectedMods(){
-            var selected = [[]];
-            $(".modIcon:visible").each(function(){
-                var modarray = $(this).attr("value").split(",");
-                selected = cartesianProd(selected, modarray);
-            });
-
-            // handle doublemods
-            for(let si=0; si<selected.length; si++){
-                for(let i=0; i<doublemods.length; i++){
-                    if(selected[si].indexOf(doublemods[i][0]) >= 0){
-                        if(selected[si].indexOf(doublemods[i][1]) < 0){
-                            selected[si].push(doublemods[i][1]);
-                        }
-                    }
-                }
-            }
-
-            var modvals = [];
-            for(let si=0; si<selected.length; si++){
-                var modval = 0;
-                for(let i=0; i<modnames.length; i++){
-                    if(selected[si].indexOf(modnames[i].short) >= 0){
-                        modval += modnames[i].val;
-                    }
-                }
-                modvals.push(modval);
-            }
-            if(selected.length === 1 && modvals[0] === 0 && selected[0].indexOf("NM") < 0){ //get all scores
-                return [-1];
-            }
-            return modvals;
-        }
-
-        function getMapmode(){
-            return parseInt($(".beatmapTab.active").attr("href").slice(-1));
-        }
-
-        function modifyTableHeaders(){
-            if(mapMode == 3){
-                //because ppy fked up
-                scoreListingTitlerow.children().eq(12).remove();
-            }
-
-            // Add pp column
-            scoreListingTitlerow.children().eq(2).after(
-                $("<th></th>")
-                    .append($("<a><strong>pp</strong></a>")
-                        .click(function(){
-                            sortResult("pp");
-                            updateScoresTable();
-                        })
-                    )
-            );
-
-            // Add click scores to sort
-            scoreListingTitlerow.children().eq(2).empty().append(
-                $("<a><strong>Score</strong></a>")
-                    .click(function(){
-                        sortResult("score");
-                        updateScoresTable();
-                    })
-            );
-
-            // Add date column
-            scoreListingTitlerow.children().last().before(
-                $("<th class='datecol'>Date</th>")
-            );
-
-            // Add replay column
-            scoreListingTitlerow.children().last().after(
-                $("<th></th>")
-            );
-
-            // Fill empty pp and date
-            scoreListingTitlerow.nextAll().each(function(index, row){
-                row = $(row);
-                row.children().eq(2).after("<td></td>");
-                row.children().last().before("<td></td>");
-            });
-        }
-
-        function modifyTableHeadersMaxcombo(){
-            scoreListingTitlerow.children().eq(6).html("<strong>Max combo" + (beatmapInfo.max_combo === null ? "" : " (" + beatmapInfo.max_combo + ")") + "</strong>");
-        }
-
-        function clearScoresTable(){
-            result = [];
-            updateScoresTable(function(){
-                tableLoadingNotice.show(); 
-            });
-        }
-
-        function updateScoresTable(callback){
-            var tableRef = scoreListingTitlerow.parent();
-            var tableRows = [];
-
-            var usedUsers = [];
-            var rank = 0;
-            for(var i=0; i<result.length; i++){
-                var greyedout = false;
-                if(inArray(usedUsers, result[i].user_id)){
-                    greyedout = true;
-                }else{
-                    usedUsers.push(result[i].user_id);
-                    rank += 1;
-                }
-                var tableRow = makeScoreTableRow(result[i], rank, greyedout);
-                tableRows[i] = tableRow;
-            }
-
-            scoreListingTitlerow.nextAll().remove();
-            tableRef.append(tableRows);
-            $(".timeago").timeago();
-            updateShowDate();
-            tableLoadingNotice.hide();
-            if(callback) callback();
-        }
-
-        function makeScoreTableRow(score, rankno, greyedout){
-            var country = score.user.country.toLowerCase();
-            var acc = calcAcc(score, mapMode);
-            var rowclass, dateset;
-            dateset = new Date(score.date.replace(" ","T") + "+0000"); // dates from API in GMT+0
-
-            // handle colour of the row, depending on you, friend, odd/even row etc
-            if(localUser !== null && localUser.toString() === score.user_id){
-                rowclass = "row3p";
-            }else if(isFriend(score.user_id)){
-                rowclass = "row4p";
-            }else{
-                rowclass = "row" + ((rankno+1)%2 + 1) + "p";
-            }
-
-            if(greyedout){
-                rowclass += " greyedout";
-            }
-
-            var countryImg = "";
-            if(country !== "")
-                countryImg = "<img src=" + getCountryUrl(country) + ">";
-            var userhref = "<a href='/u/" + score.user_id +"''>" + score.username + "</a>";
-            var pprank = "";
-            if(score.user.pp_rank === undefined){
-                pprank = " <span class='pprank'></span>";
-            }else{
-                pprank = " <span class='pprank'>(#" + score.user.pp_rank + ")</span>";
-            }
-            var ppcalcData = makePpcalcData(mapMode, score, acc, mapID);
-            
-            var row = $(
-                `<tr class='${rowclass}'>
-                    <td>${score.replay_available == "1" ? 
-                        `<a class='require-login' href='/web/osu-getreplay.php?c=${score.score_id}&amp;m=${mapMode}'>#${rankno}</a>` :
-                        `#${rankno}`}
-                    </td>
-                    <td>${getRankImg(score.rank)}</td>
-                    <td>${rankno == 1 ? `<b>${commarise(score.score)}</b>` : commarise(score.score)}</td>
-                    <td class='${mapMode == 0 ? "ppcalc-pp" : ""}'>${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)} <span></span></td>
-                    <td>${acc == 100 ? `<b>${acc.toFixed(2)}%</b>` : `${acc.toFixed(2)}%`}</td>
-                    <td>${countryImg}\n${userhref}${pprank}</td>
-                    <td>${score.maxcombo}</td>
-                    ${mapMode == 3 ?
-                        // Mania
-                        `<td>${score.countgeki}</td>
-                        <td>${score.count300}</td>
-                        <td>${score.countkatu}</td>
-                        <td>${score.count100}</td>
-                        <td>${score.count50}</td>` :
-                        // Standard/Taiko/CTB
-                        `<td>${score.count300}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count100}&nbsp;&nbsp;/&nbsp;&nbsp;${score.count50}</td>
-                        <td>${score.countgeki}</td>
-                        <td>${score.countkatu}</td>`}
-                    <td>${score.countmiss}</td>
-                    <td>${getMods(score.enabled_mods)}</td>
-                    <td class='datecol'>
-                        <time class='timeago' datetime='${dateset.toISOString()}'>${dateset.toLocaleString()}</time>
-                    </td>
-                    <td><a onclick='reportscore(${score.score_id});'>Report</a></td>
-                    <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
-                </tr>`);
-            //ppcalc, only for std
-            if(mapMode == 0){
-                row.find(".ppcalc-pp").click(function(event){
-                    var me = $(this);
-                    me.find("span").text("(...)");
-                    var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                    doPpcalc(ppcalcData).then((result) => {
-                        if([RANKED, QUALIFIED].includes(Number(result.approved))){
-                            me.find("span").text(`(${result.pp_fc} if FC)`);
-                        }else{
-                            me.html(`<span>${result.pp} (${result.pp_fc} if FC)</span>`);
-                        }
-                    });
-                });
-            }
-            return row;
-        }
-
-        /*
-        function dlReplay(score){
-            getReplay({m: mapMode, b: mapID, u: score.user_id}, function(response){
-                if(response.error){
-                    alert("Replay not available :(");
-                }else{
-                    var playdata = atob(response.content);
-                    var replay = new Replayer.Replay(score, beatmapInfo, playdata, mapMode);
-                    var osr = replay.composeOsr();
-                    var modeName;
-                    if(mapMode === 0) modeName = "Osu";
-                    else if(mapMode === 1) modeName = "Taiko";
-                    else if(mapMode === 2) modeName = "CatchTheBeat";
-                    else modeName = "OsuMania";
-                    var filename = score.username + " - " +
-                        beatmapInfo.artist + " - " +
-                        beatmapInfo.title + " [" +
-                        beatmapInfo.version + "] (" +
-                        score.date.split(' ')[0] + ") " +
-                        modeName + ".osr";
-                    downloadFile(osr, filename);
-                }
-            });
-        }*/
-
-        function minePlayerCountries(){
-            scoreListingTitlerow.nextAll().each(function(index, ele){
-                var data = $(ele).children().eq(4).children();
-                if(data.length > 1){ 
-                    var temp = data.first().attr("src").split("/");
-                    var country = temp[temp.length-1].split(".")[0].toLowerCase();
-                    temp = data.last().attr("href").split("/");
-                    var uid = temp[temp.length-1];
-                    savePlayerCountry(uid, country);
-                }
-            });
-        }
-
-        return {init: init};
-    }
-
     function osuplusNewBeatmap(){
         var mapID = null,
             scoresResult = null,
@@ -3230,6 +1694,7 @@
                      .isSelected {border: 3px solid red;}
                      .partialSelected {border: 3px dashed red;}
                      .osupreview {width: 425px; height: 344px;}
+                     .osupreview2 {width: 850px; height: 600px;}
                      #opslider {width: 250px; display: inline-block; margin: 10px;}
                      .recentscore > td {background-color: green !important;}
                      .centered {display: block; margin-left: auto; margin-right: auto;}
@@ -3912,19 +2377,25 @@
             if(settings.showMirror4){
                 makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", null, false);
             }
+            if(settings.showMirror5){
+                makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}`, "Mino", null, false);
+            }
         }
 
         function addOsuPreview(){
+            if(!settings.osupreview && !settings.osupreview2) return;
             $(".beatmapset-info").after(
                 $("<div class='osupreview-container osuplus-header'><div class='js-spoilerbox bbcode-spoilerbox'>\
-                    <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>osu!preview</a>\
+                    <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>Preview</a>\
                     <div class='bbcode-spoilerbox__body'><div id='osupreview'></div></div></div>"
                 ).click(function(){
                     var osupreviewEle = $(this).find("#osupreview");
                     if(osupreviewEle.data("loaded")) return;
                     osupreviewEle.html(
-                        `If below doesn't work, <a href='http://jmir.xyz/osu/preview.html#${mapID}' target='_blank'>open in new tab</a><br>
-                        <iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe>`
+                        `${settings.osupreview ? `osu!preview (<a href='http://jmir.xyz/osu/preview.html#${mapID}' target='_blank'>open in new tab</a>)<br>
+                        <iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe><br><br>` : ""}
+                        ${settings.osupreview2 ? `<a href='https://github.com/FukutoTojido/beatmap-viewer-web'>osu! Web Beatmap Viewer</a> (<a href='https://preview.tryz.id.vn/?b=${mapID}' target='_blank'>open in new tab</a>)<br>
+                        <iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe>` : ""}`
                     );
                     osupreviewEle.data("loaded", true);
                 })
@@ -4438,6 +2909,7 @@
         return (secs/60>>0) + ":" + s.substr(s.length-2);
     }
 
+    /* old code used for old site
     function getRankImg(rank){
         var ranksrc;
         if(rank === "F"){
@@ -4447,6 +2919,7 @@
         }
         return "<img src='" + ranksrc + "'>";
     }
+    */
 
     function modeToInt(mode){
         switch(mode){
@@ -4599,13 +3072,13 @@
     function getRequest(url, callback, reqTracker){
         // reqTracker is a list of requests to keep track whether the request is ongoing, to allow abortion
         if(reqTracker){
-            var req = persistGetPageJSON(url, function(response){
+            var req = GetPageJSON(url, function(response){
                 removeFromArray(reqTracker, req);
                 callback(response);
             });
             reqTracker.push(req);
         }else{
-            persistGetPageJSON(url, callback);
+            GetPageJSON(url, callback);
         }
     }
 
@@ -4779,26 +3252,21 @@
         }
     }
 
-    function persistGetPageJSON(url, callback){
-        var rtn = {};
-        function repeatGetPage(url, callback){
-            var reqobj = GetPage(url, function(response){
+    function GetPageJSON(url, callback){
+        return GetPage(url, (response) => {
+            let responseJSON;
+            try{
+                responseJSON = JSON.parse(response);
                 try{
-                    var responseJSON = JSON.parse(response);
-                }catch(e){ // if server having problems and not returning json
-                    var timeoutID = setTimeout(function(){
-                        repeatGetPage(url, callback);
-                    }, 5000);
-                    rtn.abort = function(){
-                        clearTimeout(timeoutID);
-                    };
+                    callback(responseJSON);
+                }catch(e){
+                    // do nothing
                 }
-                callback(responseJSON);
-            });
-            rtn.abort = reqobj.abort.bind(reqobj);
-        }
-        repeatGetPage(url, callback);
-        return rtn;
+            }catch(e){
+                if(debug) console.log(`error parsing JSON: ${response}`);
+                callback(null);
+            }
+        });
     }
 
     var requestLimiter = {
@@ -4826,11 +3294,12 @@
             method: "GET",
             url: url,
             synchronous: false,
-            timeout: 0,
+            timeout: 10000,
             onload: function (resp) {
                 callback(resp.responseText);
             },
             ontimeout: function () {
+                if(debug) console.log("timeout!");
                 callback(null);
             }
         });
