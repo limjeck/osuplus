@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.11
+// @version      2.3.12
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -217,7 +217,8 @@
         showMpGrades: true,
         showRecent: true,
         osupreview: true,
-        osupreview2: true
+        osupreview2: true,
+        showBWS: false
     };
 
     var settings = {};
@@ -238,6 +239,7 @@
         }));
         return Promise.all(promises).then(() => {
             settings.displayTopNum = settings.showTop100 ? 100 : 50;
+            settings.apikey = nullIfBlankOrNull(settings.apikey);
             //settings.apikey = null;
             return settings;
         });
@@ -460,7 +462,8 @@
                             makeSettingRow("Show detailed hit count", "", makeCheckboxOption("showDetailedHitCount")),
                             makeSettingRow("Show hits per play", "", makeCheckboxOption("showHitsPerPlay")),
                             makeSettingRow("Show top ranks max possible combo", "may take longer to load", makeCheckboxOption("fetchUserpageMaxCombo")),
-                            makeSettingRow("Show first places detailed info", "may take longer to load", makeCheckboxOption("fetchFirstsInfo"))
+                            makeSettingRow("Show first places detailed info", "may take longer to load", makeCheckboxOption("fetchFirstsInfo")),
+                            makeSettingRow("Show BWS rank", "", makeCheckboxOption("showBWS"))
                         )
                     ),
                     $("<div>").append(
@@ -483,11 +486,11 @@
                     )
                 ),
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
-                    GMX.setValue("apikey", $("#settings-apikey").val());
+                    GMX.setValue("apikey", nullIfBlankOrNull($("#settings-apikey").val()));
                     var properties = [
                         "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
-                        "showMpGrades", "showRecent", "osupreview", "osupreview2"
+                        "showMpGrades", "showRecent", "osupreview", "osupreview2", "showBWS"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -662,7 +665,7 @@
                     <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'>
                         <span class="bbcode-spoilerbox__link-icon"></span>Match costs
                     </a>
-                    <div class='bbcode-spoilerbox__body osuplus-mp-body'>
+                    <div class='js-spoilerbox__body bbcode-spoilerbox__body osuplus-mp-body'>
                         <div id='osuplus-mc'>
                             Loading...
                         </div>
@@ -1184,7 +1187,8 @@
                     .ppcalc-pp {cursor: pointer;}
                     .play-detail {position: relative;}
                     .op-relrank {position: absolute; height: 100%; width: 40px; margin-left: -40px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; opacity: 0;}
-                    .play-detail:hover .op-relrank {opacity: 1;}`
+                    .play-detail:hover .op-relrank {opacity: 1;}
+                    .op-badges-input {color: black; width: 45px;}`
                 ));
             }
         }
@@ -1201,6 +1205,10 @@
             if(settings.showRecent){
                 addRecent();
             }
+            if(settings.showBWS){
+                addBWS();
+            }
+
 
             // Add modal
             $("body").append("<div class='opModalOverlay opModalOverride' id='opModalOverlay' style='display:none;'></div>");
@@ -1540,7 +1548,7 @@
                             <span class="bbcode-spoilerbox__link-icon"></span>
                             <h2 class='title title--page-extra'>Recent 24h</h2>
                         </button>
-                        <div class="bbcode-spoilerbox__body">
+                        <div class="js-spoilerbox__body bbcode-spoilerbox__body">
                             <div id='op-recent'>Loading...</div>
                         </div>
                     </div>
@@ -1655,6 +1663,35 @@
                     $(".failedScore").hide();
                 }
             });
+        }
+
+        function addBWS(){
+            let rank = decommarise($(".profile-detail__chart-numbers--top .value-display.value-display--rank").first().find(".value-display__value > div").text());
+            let badges = 0;
+            if($(".profile-badges").length){
+                badges = $(".profile-badges").children().length;
+            }
+            let bws = calculateBWS(rank, badges);
+
+            $(".profile-detail__chart-numbers--top .profile-detail__values").first().append(
+                `<div class="value-display value-display--rank" title="rank ^ (0.9937 ^ (badges^2))">
+                    <div class="value-display__label">BWS | Badges: <input type="number" class="op-badges-input" min=0 value=${badges}></div>
+                    <div class="value-display__value">
+                        <div class="op-bws-rank">#${commarise(bws)}</div>
+                    </div>
+                </div>`);
+
+            $(".op-badges-input").on("input", function(){
+                let badges = parseInt($(this).val());
+                if(isNaN(badges)) badges = 0;
+                let bws = calculateBWS(rank, badges);
+                $(".op-bws-rank").text(`#${commarise(bws)}`);
+            });
+        }
+
+        // BWS formula: rank ^ (0.9937 ^ (badges^2))
+        function calculateBWS(rank, badges){
+            return Math.round(rank ** (0.9937 ** (badges**2)));
         }
 
         return {init: init, destroy: destroy};
@@ -2387,7 +2424,7 @@
             $(".beatmapset-info").after(
                 $("<div class='osupreview-container osuplus-header'><div class='js-spoilerbox bbcode-spoilerbox'>\
                     <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>Preview</a>\
-                    <div class='bbcode-spoilerbox__body'><div id='osupreview'></div></div></div>"
+                    <div class='js-spoilerbox__body bbcode-spoilerbox__body'><div id='osupreview'></div></div></div>"
                 ).click(function(){
                     var osupreviewEle = $(this).find("#osupreview");
                     if(osupreviewEle.data("loaded")) return;
@@ -3381,6 +3418,10 @@
             }
         }
         return ans;
+    }
+
+    function nullIfBlankOrNull(stringValue) {
+        return stringValue === null || stringValue.trim() === "" || stringValue === "null" ? null : stringValue;
     }
 
     // runs array of functions funs asynchronously and calls finalcallback() when all are done
