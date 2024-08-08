@@ -36,6 +36,7 @@ All features are available on both the old and new site.
 - Display "pp if ranked or fc" for maps with scoreboards and user recent plays (click the pp value) (only for standard)
 - Export beatmap leaderboard to csv
 - Match cost calculator
+- BWS calculator
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
@@ -48,4 +49,11 @@ All features are available on both the old and new site.
    1. Under the "Legacy API" section, click "New Legacy API Key +".
    1. Put "osuplus" as application name and "https://github.com/limjeck/osuplus" as application url.
    1. Click "Show Key" to reveal your api key. Copy the key.
+1. On Chromium browsers, userscripts may not run properly without enabling Developer Mode. If necessary, enable Developer Mode for your browser (for Tampermonkey users, see https://www.tampermonkey.net/faq.php?locale=en#Q209)
 1. Use your api key by clicking the "here" in the red banner. Paste your api key when prompted.
+
+## FAQ
+- I don't see the red banner or the cogs settings!
+  - Make sure you have Tampermonkey/Greasemonkey installed and enabled. Make sure Developer Mode is enabled so that the userscript is allowed to inject codes (see https://www.tampermonkey.net/faq.php?locale=en#Q209 for details and instructions).
+- My question is not in this FAQ!
+  - You may ask any additional questions in the Discord server.
