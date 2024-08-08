@@ -44,12 +44,12 @@ All features are available on both the old and new site.
 ## How to install
 1. Ensure you have Tampermonkey/Greasemonkey installed and enabled. 
 1. Go to https://github.com/limjeck/osuplus/raw/master/osuplus.user.js. Tampermonkey/Greasemonkey will automatically open a tab, prompting you to install the userscript. Install it.
+1. On Chromium browsers, userscripts may not run properly without enabling Developer Mode. If necessary, enable Developer Mode for your browser (for Tampermonkey users, see https://www.tampermonkey.net/faq.php?locale=en#Q209)
 1. Go to any osu webpage. There should be a big red banner at the top prompting you to use your osu!API key.
 1. To get your osu!API key, go to https://osu.ppy.sh/p/api or https://osu.ppy.sh/home/account/edit#legacy-api.
    1. Under the "Legacy API" section, click "New Legacy API Key +".
    1. Put "osuplus" as application name and "https://github.com/limjeck/osuplus" as application url.
    1. Click "Show Key" to reveal your api key. Copy the key.
-1. On Chromium browsers, userscripts may not run properly without enabling Developer Mode. If necessary, enable Developer Mode for your browser (for Tampermonkey users, see https://www.tampermonkey.net/faq.php?locale=en#Q209)
 1. Use your api key by clicking the "here" in the red banner. Paste your api key when prompted.
 
 ## FAQ
