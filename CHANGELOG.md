@@ -1,3 +1,12 @@
+# 2.3.12 (8 Aug 2024)
+
+## Features
+- Added BWS ranking in userpage (disabled by default, enable it in settings)
+
+## Bugfixes
+- Fixed spoilerboxes not working
+- Fixed red banner disappearing if you save settings, without entering your API key
+
 # 2.3.11 (1 Jul 2024)
 
 ## Features
