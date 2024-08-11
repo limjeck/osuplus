@@ -2415,6 +2415,7 @@
             if(settings.showMirror4){
                 makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}`, "Mino", null, false);
                 makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}n`, "Mino", "no Video", false);
+                makeMirror(`https://catboy.best/beatmaps/${jsonBeatmapset.id}`, "Mino", "beatmap Info", true;
             }
             if(settings.showMirror5){
                 makeMirror(`https://omdb.nyahh.net/mapset/${jsonBeatmapset.id}`, "OMDB", "rate Beatmap", true);
