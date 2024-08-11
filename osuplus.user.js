@@ -445,7 +445,8 @@
                             makeSettingRow("Show Sayobot mirror", null, makeCheckboxOption("showMirror2")),
                             makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
                             makeSettingRow("Show Mino mirror", null, makeCheckboxOption("showMirror4")),
-                            makeSettingRow("Show OMDB shortcut", null, makeCheckboxOption("showMirror5")),
+                            makeSettingRow("Show Mino shortcut", null, makeCheckboxOption("showMirror5")),
+                            makeSettingRow("Show OMDB shortcut", null, makeCheckboxOption("showMirror6")),
                             makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
                             makeSettingRow("Fetch player countries outside top 50", "disable to load faster, but some players' countries won't be loaded", makeCheckboxOption("fetchPlayerCountries")),
@@ -489,7 +490,7 @@
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", nullIfBlankOrNull($("#settings-apikey").val()));
                     var properties = [
-                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked",
+                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showMirror6", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked",
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher",
                         "showMpGrades", "showRecent", "osupreview", "osupreview2", "showBWS"
                     ];
@@ -2415,10 +2416,12 @@
             if(settings.showMirror4){
                 makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}`, "Mino", null, false);
                 makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}n`, "Mino", "no Video", false);
-                makeMirror(`https://catboy.best/beatmaps/${jsonBeatmapset.id}`, "Mino", "beatmap Info", true);
             }
             if(settings.showMirror5){
-                makeMirror(`https://omdb.nyahh.net/mapset/${jsonBeatmapset.id}`, "OMDB", "rate Beatmap", true);
+                makeMirror(`https://catboy.best/beatmaps/${jsonBeatmapset.id}`, "Mino", "map Listing", true);
+            }
+            if(settings.showMirror6){
+                makeMirror(`https://omdb.nyahh.net/mapset/${jsonBeatmapset.id}`, "OMDB", "rate Map", true);
             }
         }
 
