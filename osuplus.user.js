@@ -2414,9 +2414,10 @@
             }
             if(settings.showMirror4){
                 makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}`, "Mino", null, false);
+                makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}n`, "Mino", "no Video", false);
             }
             if(settings.showMirror5){
-                makeMirror(`https://omdb.nyahh.net/mapset/${jsonBeatmapset.id}`, "OMDB", "click to rate", true);
+                makeMirror(`https://omdb.nyahh.net/mapset/${jsonBeatmapset.id}`, "OMDB", "rate Beatmap", true);
             }
         }
 
