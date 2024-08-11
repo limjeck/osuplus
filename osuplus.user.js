@@ -444,9 +444,8 @@
                             makeSettingRow("Show Beatconnect mirror", null, makeCheckboxOption("showMirror")),
                             makeSettingRow("Show Sayobot mirror", null, makeCheckboxOption("showMirror2")),
                             makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
-                            makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
-                            makeSettingRow("Show Mino mirror", null, makeCheckboxOption("showMirror5")),
-                            makeSettingRow("Show OMDB shortcut", null, makeCheckboxOption("showMirror6")),
+                            makeSettingRow("Show Mino mirror", null, makeCheckboxOption("showMirror4")),
+                            makeSettingRow("Show OMDB shortcut", null, makeCheckboxOption("showMirror5")),
                             makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
                             makeSettingRow("Fetch player countries outside top 50", "disable to load faster, but some players' countries won't be loaded", makeCheckboxOption("fetchPlayerCountries")),
@@ -490,7 +489,7 @@
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", nullIfBlankOrNull($("#settings-apikey").val()));
                     var properties = [
-                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showMirror6", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked",
+                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked",
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher",
                         "showMpGrades", "showRecent", "osupreview", "osupreview2", "showBWS"
                     ];
@@ -2414,12 +2413,9 @@
                 makeMirror(`https://api.nerinyan.moe/d/${jsonBeatmapset.id}?nv=1`, "NeriNyan", "no Video", false);
             }
             if(settings.showMirror4){
-                makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", null, false);
-            }
-            if(settings.showMirror5){
                 makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}`, "Mino", null, false);
             }
-            if(settings.showMirror6){
+            if(settings.showMirror5){
                 makeMirror(`https://omdb.nyahh.net/mapset/${jsonBeatmapset.id}`, "OMDB", "click to rate", true);
             }
         }
