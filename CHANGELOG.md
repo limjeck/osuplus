@@ -1,3 +1,29 @@
+# 2.3.12 (8 Aug 2024)
+
+## Features
+- Added BWS ranking in userpage (disabled by default, enable it in settings)
+
+## Bugfixes
+- Fixed spoilerboxes not working
+- Fixed red banner disappearing if you save settings, without entering your API key
+
+# 2.3.11 (1 Jul 2024)
+
+## Features
+- Added Mino mirror link (disabled by default; enable in settings)
+- Added osu! Web Beatmap Viewer as a beatmap preview alternative
+- Added setting options to disable both beatmap previews
+
+## Bugfixes
+- Fixed osuplus not working due to all requests instantly timing out
+- Fixed global/country ranking formatting
+- Removed some code for old site
+
+# 2.3.10 (4 Mar 2024)
+
+## Bugfixes
+- Disabled updating scoreboard in beatmap page when in Lazer mode
+
 # 2.3.9 (30 Jan 2023)
 
 ## Features

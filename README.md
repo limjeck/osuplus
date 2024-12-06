@@ -22,6 +22,7 @@ All features are available on both the old and new site.
 - Beatmap mirrors
 - Display numerical value of CS, AR, HP, OD
 - [osu!preview](https://osu.ppy.sh/forum/t/383371)
+- [osu! Web Beatmap Viewer](https://github.com/FukutoTojido/beatmap-viewer-web)
 - Display max combo value
 - Display recent plays (including failed scores) in userpage
 - Display top 100 most played maps in userpage
@@ -35,16 +36,24 @@ All features are available on both the old and new site.
 - Display "pp if ranked or fc" for maps with scoreboards and user recent plays (click the pp value) (only for standard)
 - Export beatmap leaderboard to csv
 - Match cost calculator
+- BWS calculator
 
 ## Prerequisites
 - Tampermonkey (for Chrome) or Greasemonkey (for Firefox)
-- osu!api key (you can obtain it at https://osu.ppy.sh/p/api)
 
 ## How to install
-Ensure you have Tampermonkey/Greasemonkey installed and enabled. 
+1. Ensure you have Tampermonkey/Greasemonkey installed and enabled. 
+1. Go to https://github.com/limjeck/osuplus/raw/master/osuplus.user.js. Tampermonkey/Greasemonkey will automatically open a tab, prompting you to install the userscript. Install it.
+1. On Chromium browsers, userscripts may not run properly without enabling Developer Mode. If necessary, enable Developer Mode for your browser (for Tampermonkey users, see https://www.tampermonkey.net/faq.php?locale=en#Q209)
+1. Go to any osu webpage. There should be a big red banner at the top prompting you to use your osu!API key.
+1. To get your osu!API key, go to https://osu.ppy.sh/p/api or https://osu.ppy.sh/home/account/edit#legacy-api.
+   1. Under the "Legacy API" section, click "New Legacy API Key +".
+   1. Put "osuplus" as application name and "https://github.com/limjeck/osuplus" as application url.
+   1. Click "Show Key" to reveal your api key. Copy the key.
+1. Use your api key by clicking the "here" in the red banner. Paste your api key when prompted.
 
-Obtain an API key at https://osu.ppy.sh/p/api. When prompted for an application name and website, put "osuplus" as the application name and https://osu.ppy.sh/community/forums/topics/408541 or https://github.com/limjeck/osuplus as the website.
-
-Click [here](https://github.com/limjeck/osuplus/raw/master/osuplus.user.js) to install.
-
-Now go to any osu! beatmap listing page. It should prompt you for your API key at the top of the page. Simply paste your API key and done!
+## FAQ
+- I don't see the red banner or the cogs settings!
+  - Make sure you have Tampermonkey/Greasemonkey installed and enabled. Make sure Developer Mode is enabled so that the userscript is allowed to inject codes (see https://www.tampermonkey.net/faq.php?locale=en#Q209 for details and instructions).
+- My question is not in this FAQ!
+  - You may ask any additional questions in the Discord server.
