@@ -218,6 +218,7 @@
         showRecent: true,
         osupreview: true,
         osupreview2: true,
+        osupreview3: true,
         showBWS: false
     };
 
@@ -451,7 +452,8 @@
                             makeSettingRow("Show top 100", "rather than top 50", makeCheckboxOption("showTop100")),
                             makeSettingRow("pp 2 decimal places", "rather than 0 dp", makeCheckboxOption("pp2dp")),
                             makeSettingRow("Show osu!preview", null, makeCheckboxOption("osupreview")),
-                            makeSettingRow("Show osu! Web Beatmap Viewer", null, makeCheckboxOption("osupreview2"))
+                            makeSettingRow("Show osu! Web Beatmap Viewer", null, makeCheckboxOption("osupreview2")),
+                            makeSettingRow("Show osu!cad beatmap viewer", null, makeCheckboxOption("osupreview3"))
                         )
                     ),
                     $("<div>").append(
@@ -490,7 +492,7 @@
                     var properties = [
                         "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
-                        "showMpGrades", "showRecent", "osupreview", "osupreview2", "showBWS"
+                        "showMpGrades", "showRecent", "osupreview", "osupreview2", "osupreview3", "showBWS"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -1699,6 +1701,7 @@
 
     function osuplusNewBeatmap(){
         var mapID = null,
+            setID = null,
             scoresResult = null,
             mapMode = 0,
             jsonBeatmapset = null,
@@ -1732,6 +1735,7 @@
                      .partialSelected {border: 3px dashed red;}
                      .osupreview {width: 425px; height: 344px;}
                      .osupreview2 {width: 850px; height: 600px;}
+                     .osupreview3 {width: 850px; height: 600px;}
                      #opslider {width: 250px; display: inline-block; margin: 10px;}
                      .recentscore > td {background-color: green !important;}
                      .centered {display: block; margin-left: auto; margin-right: auto;}
@@ -1761,6 +1765,10 @@
 
         function init(){
             if($("#osuplusloaded").length) return;
+
+            const slashIndex = window.location.pathname.lastIndexOf('/');
+            setID = window.location.pathname.substring(slashIndex + 1);
+
             $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
             //jsonCountries = JSON.parse($("#json-countries").text());
@@ -2420,7 +2428,7 @@
         }
 
         function addOsuPreview(){
-            if(!settings.osupreview && !settings.osupreview2) return;
+            if(!settings.osupreview && !settings.osupreview2 && !settings.osupreview3) return;
             $(".beatmapset-info").after(
                 $("<div class='osupreview-container osuplus-header'><div class='js-spoilerbox bbcode-spoilerbox'>\
                     <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>Preview</a>\
@@ -2432,7 +2440,10 @@
                         `${settings.osupreview ? `osu!preview (<a href='http://jmir.xyz/osu/preview.html#${mapID}' target='_blank'>open in new tab</a>)<br>
                         <iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe><br><br>` : ""}
                         ${settings.osupreview2 ? `<a href='https://github.com/FukutoTojido/beatmap-viewer-web'>osu! Web Beatmap Viewer</a> (<a href='https://preview.tryz.id.vn/?b=${mapID}' target='_blank'>open in new tab</a>)<br>
-                        <iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe>` : ""}`
+                        <iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe><br><br>` : ""}
+                        ${settings.osupreview3 ? `<a href='https://github.com/minetoblend/osu-cad'>osu! Web Beatmap Viewer</a> (<a href='https://viewer.osucad.com/b/${setID}/${mapID}' target='_blank'>open in new tab</a>)<br>
+                        <iframe class='osupreview3' src='https://viewer.osucad.com/b/${setID}/${mapID}' allowfullscreen></iframe>` : ""}`
+                        
                     );
                     osupreviewEle.data("loaded", true);
                 })
