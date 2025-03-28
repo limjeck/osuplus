@@ -1730,8 +1730,8 @@
                      .notSelected {border: 3px solid transparent;}
                      .isSelected {border: 3px solid red;}
                      .partialSelected {border: 3px dashed red;}
-                     .osupreview {width: 425px; height: 344px;}
-                     .osupreview2 {width: 850px; height: 600px;}
+                     .osupreview {width: 100%; height: 100%;}
+                     .osupreview2 {width: 100%; height: 100%;}
                      #opslider {width: 250px; display: inline-block; margin: 10px;}
                      .recentscore > td {background-color: green !important;}
                      .centered {display: block; margin-left: auto; margin-right: auto;}
@@ -1739,7 +1739,7 @@
                      #rankingtype label {padding: 8px}
                      .search-beatmap-scoreboard-table__table {width: 100%; min-width: 800px; font-size: 12px;}
                      #searchuser {margin-bottom: 10px;}
-                     .osupreview-container {padding: 30px;}
+                     .osupreview-container {padding: 10px;}
                      .beatmap-scoreboard-table__header--miss {max-width: 45px; min-width: 30px; width: auto;}
                      .beatmap-scoreboard-table__header a {cursor: pointer;}
                      .sub-button {background-image: none;}
@@ -1754,7 +1754,10 @@
                      .export-container {flex: 1; text-align: right;}
                      .export-btn {cursor: pointer;}
                      .beatmap-scoreboard-table__cell-oprank {position: relative;}
-                     .beatmap-scoreboard-table__cell-content--oprank {position: absolute; right: 0px; color: hsl(var(--hsl-l2));}`
+                     .beatmap-scoreboard-table__cell-content--oprank {position: absolute; right: 0px; color: hsl(var(--hsl-l2));}
+                     .preview-container {resize: vertical; overflow: hidden}
+                     #osupreview > .preview-container:nth-of-type(1) {height: 344px}
+                     #osupreview > .preview-container:nth-of-type(2) {height: 700px}`
                 ));
             }
         }
@@ -2421,18 +2424,18 @@
 
         function addOsuPreview(){
             if(!settings.osupreview && !settings.osupreview2) return;
-            $(".beatmapset-info").after(
-                $("<div class='osupreview-container osuplus-header'><div class='js-spoilerbox bbcode-spoilerbox'>\
+            $(".user-profile-pages").prepend(
+                $("<div class='page-extra'><div class='js-spoilerbox bbcode-spoilerbox'>\
                     <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>Preview</a>\
-                    <div class='js-spoilerbox__body bbcode-spoilerbox__body'><div id='osupreview'></div></div></div>"
+                    <div class='js-spoilerbox__body'><div id='osupreview'></div></div></div>"
                 ).click(function(){
                     var osupreviewEle = $(this).find("#osupreview");
                     if(osupreviewEle.data("loaded")) return;
                     osupreviewEle.html(
                         `${settings.osupreview ? `osu!preview (<a href='http://jmir.xyz/osu/preview.html#${mapID}' target='_blank'>open in new tab</a>)<br>
-                        <iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe><br><br>` : ""}
+                        <div class="preview-container"><iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe></div><br>` : ""}
                         ${settings.osupreview2 ? `<a href='https://github.com/FukutoTojido/beatmap-viewer-web'>osu! Web Beatmap Viewer</a> (<a href='https://preview.tryz.id.vn/?b=${mapID}' target='_blank'>open in new tab</a>)<br>
-                        <iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe>` : ""}`
+                        <div class="preview-container"><iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe></div>` : ""}`
                     );
                     osupreviewEle.data("loaded", true);
                 })
