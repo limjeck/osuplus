@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.12
+// @version      2.3.13
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -218,6 +218,7 @@
         showRecent: true,
         osupreview: true,
         osupreview2: true,
+        osupreview3: false,
         showBWS: false
     };
 
@@ -443,7 +444,7 @@
                             makeSettingRow("Show Beatconnect mirror", null, makeCheckboxOption("showMirror")),
                             makeSettingRow("Show Sayobot mirror", null, makeCheckboxOption("showMirror2")),
                             makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
-                            makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
+                            // makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
                             makeSettingRow("Show Mino mirror", null, makeCheckboxOption("showMirror5")),
                             makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
@@ -451,7 +452,8 @@
                             makeSettingRow("Show top 100", "rather than top 50", makeCheckboxOption("showTop100")),
                             makeSettingRow("pp 2 decimal places", "rather than 0 dp", makeCheckboxOption("pp2dp")),
                             makeSettingRow("Show osu!preview", null, makeCheckboxOption("osupreview")),
-                            makeSettingRow("Show osu! Web Beatmap Viewer", null, makeCheckboxOption("osupreview2"))
+                            makeSettingRow("Show osu! Web Beatmap Viewer", null, makeCheckboxOption("osupreview2")),
+                            makeSettingRow("Show osucad online beatmap viewer", null, makeCheckboxOption("osupreview3"))
                         )
                     ),
                     $("<div>").append(
@@ -490,7 +492,7 @@
                     var properties = [
                         "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
                         "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
-                        "showMpGrades", "showRecent", "osupreview", "osupreview2", "showBWS"
+                        "showMpGrades", "showRecent", "osupreview", "osupreview2", "osupreview3", "showBWS"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -1097,7 +1099,7 @@
 
                 //Get player list
                 var playerList = $(".ranking-page-table__row").map(function(i, ele){
-                    return $(ele).find(".ranking-page-table__user-link-text").attr("data-user-id");
+                    return $(ele).find(".ranking-page-table-main__link").attr("data-user-id");
                 });
                 var funs = [];
                 playerInfo = [];
@@ -1115,14 +1117,14 @@
                     
                     //Add new header
                     var newHeader = isGlobal ? "Country" : "Global";
-                    $(".ranking-page-table th").first().after(`<th class='ranking-page-table__heading'>${newHeader}</th>`);
+                    $(".ranking-page-table__heading--main").before(`<th class='ranking-page-table__heading'>${newHeader}</th>`);
 
                     //Add new ranks
                     $(".ranking-page-table__row").each(function(index, row){
                         row = $(row);
                         var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
-                        row.find(".ranking-page-table__column--rank").after(
-                            `<td class='ranking-page-table__column ranking-page-table__column--rank'>#${newRank}</td>`
+                        row.find(".ranking-page-table__column--main").before(
+                            `<td class='ranking-page-table__column'>#${newRank}</td>`
                         );
                     });
                 });
@@ -1730,8 +1732,9 @@
                      .notSelected {border: 3px solid transparent;}
                      .isSelected {border: 3px solid red;}
                      .partialSelected {border: 3px dashed red;}
-                     .osupreview {width: 425px; height: 344px;}
-                     .osupreview2 {width: 850px; height: 600px;}
+                     .osupreview {width: 100%; height: 100%;}
+                     .osupreview2 {width: 100%; height: 100%;}
+                     .osupreview3 {width: 100%; height: 100%;}
                      #opslider {width: 250px; display: inline-block; margin: 10px;}
                      .recentscore > td {background-color: green !important;}
                      .centered {display: block; margin-left: auto; margin-right: auto;}
@@ -1739,7 +1742,7 @@
                      #rankingtype label {padding: 8px}
                      .search-beatmap-scoreboard-table__table {width: 100%; min-width: 800px; font-size: 12px;}
                      #searchuser {margin-bottom: 10px;}
-                     .osupreview-container {padding: 30px;}
+                     .osupreview-container {padding: 10px;}
                      .beatmap-scoreboard-table__header--miss {max-width: 45px; min-width: 30px; width: auto;}
                      .beatmap-scoreboard-table__header a {cursor: pointer;}
                      .sub-button {background-image: none;}
@@ -1754,7 +1757,11 @@
                      .export-container {flex: 1; text-align: right;}
                      .export-btn {cursor: pointer;}
                      .beatmap-scoreboard-table__cell-oprank {position: relative;}
-                     .beatmap-scoreboard-table__cell-content--oprank {position: absolute; right: 0px; color: hsl(var(--hsl-l2));}`
+                     .beatmap-scoreboard-table__cell-content--oprank {right: 0px; color: hsl(var(--hsl-l2));}
+                     .preview-container {resize: vertical; overflow: hidden}
+                     .preview-container:has(.osupreview) {height: 500px;}
+                     .preview-container:has(.osupreview2) {height: 700px;}
+                     .preview-container:has(.osupreview3) {height: 700px;}`
                 ));
             }
         }
@@ -1924,7 +1931,9 @@
             }else{
                 pprank = ` <span class='pprank'>&nbsp;(#${score.user.pp_rank})</span>`;
             }
-            var userhref = `<a class='${cellClass}-content ${cellClass}-content--user-link js-usercard' data-user-id='${score.user_id}' href='/users/${score.user_id}/${mapModeStr}'>${score.username} ${pprank}</a>`;
+            var userhref = `<span class='${cellClass}-content u-hover-none'>
+                    <a class='js-usercard beatmap-scoreboard-table__user-link u-hover' data-user-id='${score.user_id}' href='/users/${score.user_id}/${mapModeStr}'>${score.username} ${pprank}</a>
+                </span>`;
             
             var ppcalcData = makePpcalcData(mapMode, score, acc, mapID);
             
@@ -1942,20 +1951,21 @@
             
             var row = $(`<tr class='${rowclass}'>
                     <td class='${cellClass} ${cellClass}-oprank'>
-                        <a class='${cellClass}-content ${cellClass}-content--rank ${cellClass}-content--oprank' 
-                            ${score.replay_available == "1" ? `href='/scores/${intToMode(mapMode)}/${score.score_id}/download'` : ""}>
-                            #${rankno}
-                        </a>
-                        <a class='${cellClass}-content' ${scoreHref}></a>
+                        <a class='${cellClass}-content ${cellClass}-content--bg-link' ${scoreHref}></a>
+                        <span class='${cellClass}-content ${cellClass}-content--rank ${cellClass}-content--oprank u-hover-none'>
+                            <a class='u-hover' ${score.replay_available == "1" ? `href='/scores/${intToMode(mapMode)}/${score.score_id}/download'` : ""}>
+                                #${rankno}
+                            </a>
+                        </span>
                     </td>
                     ${makeTdLink(["grade"], `
                         <div class='score-rank score-rank--tiny score-rank--${score.rank}'></div>`)}
                     ${makeTdLink(["score"], commarise(score.score))}
                     ${makeTdLink(acc == 100 ? ["perfect"] : [], `${acc.toFixed(2)}%`)}
                     <td class='${cellClass}'>${countryImg}</td>
-                    <td class='${cellClass} u-relative'>
+                    <td class='${cellClass} ${cellClass}--player u-relative'>
+                        <a class='${cellClass}-content ${cellClass}-content--bg-link' ${scoreHref}></a>
                         ${userhref}
-                        <a class='${cellClass}-content' ${scoreHref}></a>
                     </td>
                     ${makeTdLink(score.perfect == "1" ? ["perfect"] : [], commarise(score.maxcombo) + "x")}
                     ${mapMode == 3 ?
@@ -2412,7 +2422,8 @@
                 makeMirror(`https://api.nerinyan.moe/d/${jsonBeatmapset.id}?nv=1`, "NeriNyan", "no Video", false);
             }
             if(settings.showMirror4){
-                makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", null, false);
+                // chimu.moe dead :(
+                // makeMirror(`https://api.chimu.moe/v1/download/${jsonBeatmapset.id}?n=1`, "Chimu.moe", null, false);
             }
             if(settings.showMirror5){
                 makeMirror(`https://catboy.best/d/${jsonBeatmapset.id}`, "Mino", null, false);
@@ -2420,7 +2431,7 @@
         }
 
         function addOsuPreview(){
-            if(!settings.osupreview && !settings.osupreview2) return;
+            if(!settings.osupreview && !settings.osupreview2 && !settings.osupreview3) return;
             $(".beatmapset-info").after(
                 $("<div class='osupreview-container osuplus-header'><div class='js-spoilerbox bbcode-spoilerbox'>\
                     <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>Preview</a>\
@@ -2430,9 +2441,11 @@
                     if(osupreviewEle.data("loaded")) return;
                     osupreviewEle.html(
                         `${settings.osupreview ? `osu!preview (<a href='http://jmir.xyz/osu/preview.html#${mapID}' target='_blank'>open in new tab</a>)<br>
-                        <iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe><br><br>` : ""}
+                        <div class='preview-container'><iframe class='osupreview' src='https://jmir.xyz/osu/preview.html#${mapID}' allowfullscreen></iframe></div><br>` : ""}
                         ${settings.osupreview2 ? `<a href='https://github.com/FukutoTojido/beatmap-viewer-web'>osu! Web Beatmap Viewer</a> (<a href='https://preview.tryz.id.vn/?b=${mapID}' target='_blank'>open in new tab</a>)<br>
-                        <iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe>` : ""}`
+                        <div class='preview-container'><iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe></div><br>` : ""}
+                        ${settings.osupreview3 ? `<a href='https://github.com/minetoblend/osu-cad'>osucad online beatmap viewer</a> (<a href='https://viewer.osucad.com/b/${jsonBeatmapset.id}/${mapID}' target='_blank'>open in new tab</a>)<br>
+                        <div class='preview-container'><iframe class='osupreview3' src='https://viewer.osucad.com/b/${jsonBeatmapset.id}/${mapID}' allowfullscreen></iframe></div>` : ""}`
                     );
                     osupreviewEle.data("loaded", true);
                 })
