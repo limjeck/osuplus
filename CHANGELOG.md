@@ -1,3 +1,14 @@
+# 2.3.13 (20 Apr 2025)
+
+## Features
+- Added osucad online beatmap viewer (disabled by default, enable it in settings)
+- All beatmap viewers are vertically resizable
+
+## Bugfixes
+- Removed Chimu.moe mirror
+- Fixed misaligned columns and missing country/gloabl ranks in ranking page
+- Fixed beatmap page scoreboard (no player teams for now)
+
 # 2.3.12 (8 Aug 2024)
 
 ## Features
