@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.13
+// @version      2.3.14
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -9,6 +9,7 @@
 // @match        http://old.ppy.sh/*
 // @match        https://old.ppy.sh/*
 
+// @icon         https://osu.ppy.sh/favicon.ico
 // @noframes
 // @connect      ppy.sh
 // @grant        GM.xmlHttpRequest
@@ -1036,7 +1037,6 @@
 
     function osuplusNewBeatmapListing(){
         // Nothing for now
-        
         function addCss(){
             if(!$(".osuplus-new-beatmaplisting-style").length){
                 $(document.head).append($("<style class='osuplus-new-beatmaplisting-style'></style>").html(
@@ -1078,7 +1078,7 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             var path = window.location.pathname.split("/");
-            if(path[3] != "performance") return;
+            if(path[3] != "global") return;
 
             addCss();
             mode = modeToInt(path[2]);
@@ -2445,7 +2445,7 @@
                         ${settings.osupreview2 ? `<a href='https://github.com/FukutoTojido/beatmap-viewer-web'>osu! Web Beatmap Viewer</a> (<a href='https://preview.tryz.id.vn/?b=${mapID}' target='_blank'>open in new tab</a>)<br>
                         <div class='preview-container'><iframe class='osupreview2' src='https://preview.tryz.id.vn/?b=${mapID}' allowfullscreen></iframe></div><br>` : ""}
                         ${settings.osupreview3 ? `<a href='https://github.com/minetoblend/osu-cad'>osucad online beatmap viewer</a> (<a href='https://viewer.osucad.com/b/${jsonBeatmapset.id}/${mapID}' target='_blank'>open in new tab</a>)<br>
-                        <div class='preview-container'><iframe class='osupreview3' src='https://viewer.osucad.com/b/${jsonBeatmapset.id}/${mapID}' allowfullscreen></iframe></div>` : ""}`
+                        <div class='preview-container'><iframe class='osupreview3' src='https://viewer.osucad.com/embed/${jsonBeatmapset.id}/${mapID}' allowfullscreen></iframe></div>` : ""}`
                     );
                     osupreviewEle.data("loaded", true);
                 })
