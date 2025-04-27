@@ -1,3 +1,12 @@
+# 2.3.14 (27 Apr 2025)
+
+## Features
+- Added userscript favicon
+
+## Bugfixes
+- Changed embed link for osucad online beatmap viewer
+- Fixed country/global ranks in ranking page
+
 # 2.3.13 (20 Apr 2025)
 
 ## Features
@@ -6,7 +15,7 @@
 
 ## Bugfixes
 - Removed Chimu.moe mirror
-- Fixed misaligned columns and missing country/gloabl ranks in ranking page
+- Fixed misaligned columns and missing country/global ranks in ranking page
 - Fixed beatmap page scoreboard (no player teams for now)
 
 # 2.3.12 (8 Aug 2024)
