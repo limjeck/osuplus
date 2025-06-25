@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.14
+// @version      2.3.15
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -208,14 +208,14 @@
         fetchPlayerCountries: true,
         showTop100: true,
         showDetailedHitCount: true,
-        showHitsPerPlay: true,
+        //showHitsPerPlay: true,
         fetchUserpageMaxCombo: true,
         fetchFirstsInfo: true,
         rankingVisible: false,
         forceShowDifficulties: false,
         pp2dp: true,
         showSiteSwitcher: false,
-        showMpGrades: true,
+        //showMpGrades: true,
         showRecent: true,
         osupreview: true,
         osupreview2: true,
@@ -463,7 +463,7 @@
                             makeSettingRow("Show recent 24h", "", makeCheckboxOption("showRecent")),
                             makeSettingRow("Show failed scores", "", makeCheckboxOption("failedChecked")),
                             makeSettingRow("Show detailed hit count", "", makeCheckboxOption("showDetailedHitCount")),
-                            makeSettingRow("Show hits per play", "", makeCheckboxOption("showHitsPerPlay")),
+                            //makeSettingRow("Show hits per play", "", makeCheckboxOption("showHitsPerPlay")),
                             makeSettingRow("Show top ranks max possible combo", "may take longer to load", makeCheckboxOption("fetchUserpageMaxCombo")),
                             makeSettingRow("Show first places detailed info", "may take longer to load", makeCheckboxOption("fetchFirstsInfo")),
                             makeSettingRow("Show BWS rank", "", makeCheckboxOption("showBWS"))
@@ -480,20 +480,14 @@
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
                             makeSettingRow("Force show difficulties", "so no need to hover over maps (legacy setting, no effect on new site)", makeCheckboxOption("forceShowDifficulties"))
                         )
-                    ),
-                    $("<div>").append(
-                        "<h2>Multiplayer</h2>",
-                        $("<table class='osuplusSettingsTable' width='100%'>").append(
-                            makeSettingRow("Show grades", "only for std", makeCheckboxOption("showMpGrades"))
-                        )
                     )
                 ),
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
                     GMX.setValue("apikey", nullIfBlankOrNull($("#settings-apikey").val()));
                     var properties = [
                         "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
-                        "showDetailedHitCount", "showHitsPerPlay", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
-                        "showMpGrades", "showRecent", "osupreview", "osupreview2", "osupreview3", "showBWS"
+                        "showDetailedHitCount", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
+                        "showRecent", "osupreview", "osupreview2", "osupreview3", "showBWS"
                     ];
                     for(let property of properties){
                         setBoolProperty(property);
@@ -793,51 +787,6 @@
                 });
             });
             $(".mp-history-content h3").after(mpDiv);
-            
-            // add grades
-            if(settings.showMpGrades){
-                var containers = $(".mp-history-game");
-                $.map(containers, (container) => {
-                    addGrades($(container));
-                });
-                observer = new MutationObserver((mutations, observer) => {
-                    for(let mutation of mutations){
-                        for(let node of mutation.addedNodes){
-                            $.map($(node).find(".mp-history-game"), (container) => {
-                                addGrades($(container));
-                            });
-                        }
-                    }
-                });
-                observer.observe($(".js-react--mp-history")[0], {subtree: true, childList: true});
-            }
-        }
-
-        function addGrades(container){
-            if(container.find(".mp-history-game__stats-box").children().eq(1).text() == "osu!"){ // only for std for now
-                $.map(container.find(".mp-history-player-score"), (playerdiv) => {
-                    playerdiv = $(playerdiv);
-                    var stats = playerdiv.find(".mp-history-player-score__stat-number--small");
-                    var score = {
-                        count300: decommarise(stats.eq(0).text()),
-                        count100: decommarise(stats.eq(1).text()),
-                        count50: decommarise(stats.eq(2).text()),
-                        countmiss: decommarise(stats.eq(3).text()),
-                        countgeki: 0,
-                        countkatu: 0
-                    };
-                    var mods = $.map(playerdiv.find(".mp-history-player-score__mods").children(), (child) => {
-                        return $(child).attr("class").split("mod--")[1];
-                    });
-                    var modnum = modArrayToNum(mods);
-                    var grade = calcGrade(score, 0, modnum);
-                    playerdiv.find(".mp-history-player-score__shapes").after(
-                        `<div class='op-mp-grade'>
-                            <div class='score-rank score-rank--full score-rank--${grade}'></div>
-                        </div>`
-                    );
-                });
-            }
         }
 
         function matchCost(selectedMatches, selectedUsers, formula){
@@ -988,7 +937,7 @@
         function extractMatches(events, userMap){
             var matches = [];
             for(let event of events){
-                if(event.detail.type == "other"){
+                if(event.detail.type === "other"){
                     var match = {
                         beatmap: event.game.beatmap === undefined ? {
                             id: Math.floor(Math.random() * 1e12),
@@ -1002,10 +951,10 @@
                         scores: event.game.scores.map((score) => ({
                             user_id: score.user_id,
                             username: userMap[score.user_id],
-                            mods: score.mods,
+                            mods: score.mods.map((mod) => mod.acronym),
                             team: score.match.team,
                             passed: score.passed,
-                            score: score.score
+                            score: score.total_score
                         })),
                         mods: event.game.mods,
                         id: event.game.id,
@@ -1519,12 +1468,6 @@
                     var c300 = parseInt(user.count300), c100 = parseInt(user.count100), c50 = parseInt(user.count50),
                         ctotal = c300 + c100 + c50;
 
-                    if(settings.showHitsPerPlay){
-                        $(".profile-stats__entry").eq(4).after(
-                            `<dl class="profile-stats__entry"><dt class="profile-stats__key">Hits per Play</dt>
-                            <dd class="profile-stats__value">${(ctotal/parseInt(user.playcount)).toFixed(2)}</dd></dl>`
-                        );
-                    }
                     if(settings.showDetailedHitCount){
                         $(".profile-stats__entry").eq(4).after(
                             `<dl class="profile-stats__entry"><dt class="profile-stats__key">300x</dt>
@@ -2859,6 +2802,7 @@
         }
     }
 
+    // eslint-disable-next-line no-unused-vars
     function calcGrade(score, mode, mods){
         var c50   = parseInt(score.count50),
             c100  = parseInt(score.count100),
