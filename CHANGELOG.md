@@ -1,3 +1,10 @@
+# 2.3.15 (25 Jun 2025)
+
+## Bugfixes
+- Removed userpage hits per play (already added to site)
+- Removed multiplayer grades (already added to site)
+- Fixed multiplayer matchcosts
+
 # 2.3.14 (27 Apr 2025)
 
 ## Features
