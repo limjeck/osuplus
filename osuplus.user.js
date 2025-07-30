@@ -155,36 +155,36 @@
     /* eslint-enable no-unused-vars */
 
     var modnames = [
-            {val: 1, name: "No Fail", short: "NF"},
-            {val: 2, name: "Easy", short: "EZ"},
-            {val: 4, name: "Touch Device", short: "TD"},
-            {val: 8, name: "Hidden", short: "HD"},
-            {val: 16, name: "Hard Rock", short: "HR"},
-            {val: 32, name: "Sudden Death", short: "SD"},
-            {val: 64, name: "Double Time", short: "DT"},
-            {val: 128, name: "Relax", short: "RX"},
-            {val: 256, name: "Half Time", short: "HT"},
-            {val: 512, name: "Nightcore", short: "NC"},
-            {val: 1024, name: "Flashlight", short: "FL"},
-            {val: 2048, name: "Autoplay", short: "AT"},
-            {val: 4096, name: "Spun Out", short: "SO"},
-            {val: 8192, name: "Relax2", short: "AP"},
-            {val: 16384, name: "Perfect", short: "PF"},
-            {val: 32768, name: "Key4", short: "4K"},
-            {val: 65536, name: "Key5", short: "5K"},
-            {val: 131072, name: "Key6", short: "6K"},
-            {val: 262144, name: "Key7", short: "7K"},
-            {val: 524288, name: "Key8", short: "8K"},
-            {val: 1048576, name: "Fade In", short: "FI"},
-            {val: 2097152, name: "Random", short: "RD"},
+            {val: 1, name: "No Fail", short: "NF", type: "DifficultyReduction"},
+            {val: 2, name: "Easy", short: "EZ", type: "DifficultyReduction"},
+            {val: 4, name: "Touch Device", short: "TD", type: "System"},
+            {val: 8, name: "Hidden", short: "HD", type: "DifficultyIncrease"},
+            {val: 16, name: "Hard Rock", short: "HR", type: "DifficultyIncrease"},
+            {val: 32, name: "Sudden Death", short: "SD", type: "DifficultyIncrease"},
+            {val: 64, name: "Double Time", short: "DT", type: "DifficultyIncrease"},
+            {val: 128, name: "Relax", short: "RX", type: "Automation"},
+            {val: 256, name: "Half Time", short: "HT", type: "DifficultyReduction"},
+            {val: 512, name: "Nightcore", short: "NC", type: "DifficultyIncrease"},
+            {val: 1024, name: "Flashlight", short: "FL", type: "DifficultyIncrease"},
+            {val: 2048, name: "Autoplay", short: "AT", type: "Automation"},
+            {val: 4096, name: "Spun Out", short: "SO", type: "Automation"},
+            {val: 8192, name: "Relax2", short: "AP", type: "Automation"},
+            {val: 16384, name: "Perfect", short: "PF", type: "DifficultyIncrease"},
+            {val: 32768, name: "Key4", short: "4K", type: "Conversion"},
+            {val: 65536, name: "Key5", short: "5K", type: "Conversion"},
+            {val: 131072, name: "Key6", short: "6K", type: "Conversion"},
+            {val: 262144, name: "Key7", short: "7K", type: "Conversion"},
+            {val: 524288, name: "Key8", short: "8K", type: "Conversion"},
+            {val: 1048576, name: "Fade In", short: "FI", type: "DifficultyIncrease"},
+            {val: 2097152, name: "Random", short: "RD", type: "Conversion"},
             {val: 4194304, name: "Last Mod", short: "LM"},
-            {val: 16777216, name: "Key9", short: "9K"},
-            {val: 33554432, name: "Key10", short: "10K"},
-            {val: 67108864, name: "Key1", short: "1K"},
-            {val: 134217728, name: "Key3", short: "3K"},
-            {val: 268435456, name: "Key2", short: "2K"},
+            {val: 16777216, name: "Key9", short: "9K", type: "Conversion"},
+            {val: 33554432, name: "Key10", short: "10K", type: "Conversion"},
+            {val: 67108864, name: "Key1", short: "1K", type: "Conversion"},
+            {val: 134217728, name: "Key3", short: "3K", type: "Conversion"},
+            {val: 268435456, name: "Key2", short: "2K", type: "Conversion"},
             {val: 536870912, name: "Score V2", short: "V2"},
-            {val: 1073741824, name: "Mirror", short: "MR"}
+            {val: 1073741824, name: "Mirror", short: "MR", type: "Conversion"}
         ],
         // if the first is set, the second has to be set also
         doublemods = [
@@ -2754,7 +2754,7 @@
         var modsArray = getModsArray(modnum);
         var modsHtml = modsArray.map(function(mod){
             //return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--dynamic mod--${mod.short}' title='${mod.name}'></div></div></div>`;
-            return `<div class='mod mod--${mod.short}' title='${mod.name}'></div>`;
+            return `<div class="mod mod--type-${mod.type}"><div class="mod__icon mod__icon--${mod.short}" data-acronym="${mod.short}"></div></div>`;
         });
         return modsHtml.join("");
     }
