@@ -1,3 +1,8 @@
+# 2.3.16 (5 Aug 2025)
+
+## Bugfixes
+- Fixed mods not appearing in beatmaps page
+
 # 2.3.15 (25 Jun 2025)
 
 ## Bugfixes
