@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.16
+// @version      2.3.17
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -1139,7 +1139,7 @@
                     .play-detail {position: relative;}
                     .op-relrank {position: absolute; height: 100%; width: 40px; margin-left: -40px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; opacity: 0;}
                     .play-detail:hover .op-relrank {opacity: 1;}
-                    .op-badges-input {color: black; width: 45px;}`
+                    .op-badges-input {color: black; width: 45px; margin-top: -10px; margin-bottom: -10px;}`
                 ));
             }
         }
@@ -1148,7 +1148,7 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
-            jsonUser = JSON.parse($(".js-react--profile-page").attr("data-initial-data")).user;
+            jsonUser = JSON.parse($(".js-react.u-contents").attr("data-initial-data")).user;
             gameMode = getGameMode();
 
             addDetailedTop();
@@ -1304,7 +1304,7 @@
 
             addRelativeRank(ele);
             // Obtain mods
-            let mods = ele.find(".play-detail__score-detail--mods .mod").map((_, x) => $(x).attr("data-acronym")).get();
+            let mods = ele.find(".play-detail__mods .mod__icon").map((_, x) => $(x).attr("data-acronym")).get();
             let modnum = modArrayToNum(mods);
 
             if(settings.fetchFirstsInfo){
@@ -1622,7 +1622,7 @@
                 `<div class="value-display value-display--rank" title="rank ^ (0.9937 ^ (badges^2))">
                     <div class="value-display__label">BWS | Badges: <input type="number" class="op-badges-input" min=0 value=${badges}></div>
                     <div class="value-display__value">
-                        <div class="op-bws-rank">#${commarise(bws)}</div>
+                        <div class="op-bws-rank rank-value rank-value--base">#${commarise(bws)}</div>
                     </div>
                 </div>`);
 
