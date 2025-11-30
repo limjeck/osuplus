@@ -1,3 +1,10 @@
+# 2.3.17 (30 Nov 2025)
+
+## Bugfixes
+- Fixed userpage not loading properly
+- Fixed userpage firsts not displaying details for scores with mods
+- Fixed userpage BWS rank formatting
+
 # 2.3.16 (5 Aug 2025)
 
 ## Bugfixes
