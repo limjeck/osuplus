@@ -1148,7 +1148,7 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
-            jsonUser = JSON.parse($(".js-react.u-contents").attr("data-initial-data")).user;
+            jsonUser = JSON.parse($(".js-react.u-contents[data-initial-data]").attr("data-initial-data")).user;
             gameMode = getGameMode();
 
             addDetailedTop();
