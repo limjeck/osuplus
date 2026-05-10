@@ -2891,6 +2891,34 @@
             numarray.push(num.slice(-3));
             num = num.slice(0,-3);
         }
+        var funs = [];
+        for(var i=0; i<friends2.length; i++){
+            funs.push(function(uid){
+                return function(callback){
+                    getScoresWithPlayerInfo({b:mapID, u:uid, m:mapMode, type:"id"}, settings.showPpRank, function(response){
+                        if(response.length > 0){
+                            scoresResult.push(response[0]);
+                        }
+                        callback();
+                    }, scoreReqs);
+                };
+            }(friends2[i]));
+        }
+        doManyFunc(funs, function(){
+            sortResult("score");
+            updateScoresTable();
+        });
+    }
+    
+    function addBloodcatMirror(){
+        $(".beatmapset-header__buttons").append(
+            `<a href="http://bloodcat.com/osu/s/${jsonBeatmapset.id}" data-turbolinks="false" style="background-image: url(https://i.imgur.com/3IE8Mx3.png)" class="btn-osu-big btn-osu-big--beatmapset-header js-beatmapset-download-link">
+            <span class="btn-osu-big__content ">
+            <span class="btn-osu-big__left">
+            <span class="btn-osu-big__text-top">Bloodcat mirror</span>
+            </span><span class="btn-osu-big__icon">
+            <span class="fa-fw"><i class="fas fa-download"></i></span></span></span></a>`
+        );
         return numarray.reverse().join(",");
     }
 
