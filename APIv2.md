@@ -7,4 +7,5 @@
    ![Register application](/assets/api-howto2.png)
 1. You now have your Client ID and Client Secret! Click "Show client secret" to reveal it (do not show this to anyone).
    ![Keys](/assets/api-howto3.png)
-1. In case you changed your client ID or secret, you can modify the keys stored in osuplus via the osuplus settings tab.
+
+In case you changed your client ID or secret, you can modify the keys stored in osuplus via the osuplus settings tab.
