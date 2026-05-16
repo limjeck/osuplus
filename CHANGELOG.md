@@ -1,3 +1,15 @@
+# 2.4.0 (17 May 2026)
+
+## Features
+- Now uses osu!API v2.
+- Added support for Lazer mode.
+- Added team banners in beatmap page scoreboard.
+- Added total number of scores in beatmap page scoreboard.
+
+## Bugfixes
+- Allowed minor cursor movement for opening settings.
+- Removed some unnecessary settings options.
+
 # 2.3.17 (30 Nov 2025)
 
 ## Bugfixes
