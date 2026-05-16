@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.3.17
+// @version      2.4.0
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -45,6 +45,409 @@
         GMX = GM;
     }
 
+    const limiter = {
+        intervalMs: 100,
+        queue: Promise.resolve(),
+        nextAt: 0,
+
+        async fetch(resource, options) {
+            const startGate = this.queue.then(async () => {
+                const now = Date.now();
+                const waitMs = Math.max(0, this.nextAt - now);
+                if(waitMs > 0) {
+                    await new Promise((resolve) => setTimeout(resolve, waitMs));
+                }
+
+                this.nextAt = Date.now() + this.intervalMs;
+            });
+
+            this.queue = startGate.then(() => undefined, () => undefined);
+
+            await startGate;
+            if(debug) {
+                if(resource instanceof URL){
+                    console.log(resource.href);
+                }else{
+                    console.log(resource);
+                }
+            }
+            return await fetch(resource, options);
+        }
+    };
+
+    class OsuAPI {
+        constructor(clientID, clientSecret) {
+            this.clientID = clientID;
+            this.clientSecret = clientSecret;
+            this.baseUrl = "https://osu.ppy.sh/api/v2";
+            this.token = null;
+            this.tokenExpiry = 0;
+
+            this.authPromise = null;
+            this.beatmapsCache = {};
+            this.beatmapFileCache = {};
+        }
+
+        async authenticate() {
+            const now = Date.now();
+            if (this.token && now < this.tokenExpiry) return; // Reuse valid token
+
+            if (this.authPromise) {
+                await this.authPromise;
+                return;
+            }
+
+            this.authPromise = (async () => {
+                const response = await limiter.fetch("https://osu.ppy.sh/oauth/token", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "x-api-version": "20240529"
+                    },
+                    body: JSON.stringify({
+                        client_id: this.clientID,
+                        client_secret: this.clientSecret,
+                        grant_type: "client_credentials",
+                        scope: "public"
+                    })
+                });
+
+                if (!response.ok) throw new Error("Authentication failed");
+
+                const data = await response.json();
+                this.token = data.access_token;
+                this.tokenExpiry = now + data.expires_in * 1000 - 60000; // buffer 1 min
+            })();
+
+            try {
+                await this.authPromise;
+            } finally {
+                this.authPromise = null;
+            }
+        }
+
+        async auth_fetch(url, signal=undefined) {
+            await this.authenticate();
+            return await limiter.fetch(url, {
+                method: "GET",
+                headers: { 
+                    Authorization: `Bearer ${this.token}`,
+                    "x-api-version": "20240529"
+                },
+                signal: signal
+            });
+        }
+
+        async getScore(beatmap_id, user_id, mode="osu", mods=null, legacy_only=0, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/beatmaps/${beatmap_id}/scores/users/${user_id}`);
+            const params = {
+                mode: mode,
+                legacy_only: legacy_only
+            };
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+            if(mods !== null) {
+                for(let mod of mods) {
+                    url.searchParams.append("mods[]", mod);
+                }
+            }
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error("Failed to fetch score");
+            return await response.json();
+        }
+
+        async getScores(beatmap_id, user_id, mode="osu", legacy_only=0, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/beatmaps/${beatmap_id}/scores/users/${user_id}/all`);
+            const params = {
+                ruleset: mode,
+                legacy_only: legacy_only
+            };
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error("Failed to fetch scores");
+            return await response.json();
+        }
+
+        async getUserScores(user_id, type, mode="osu", legacy_only=0, include_fails=1, limit=100, offset=0, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/users/${user_id}/scores/${type}`);
+            const params = {
+                legacy_only: legacy_only,
+                include_fails: include_fails,
+                mode: mode,
+                limit: limit,
+                offset: offset
+            };
+            Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error(`Failed to fetch user ${type} scores`);
+            return await response.json();
+        }
+
+        async getUserRecent(user_id, mode="osu", legacy_only=0, include_fails=1, limit=100, offset=0, signal=undefined) {
+            return await this.getUserScores(user_id, "recent", mode, legacy_only, include_fails, limit, offset, signal);
+        }
+
+        async getUserBest(user_id, mode="osu", legacy_only=0, limit=100, offset=0, signal=undefined) {
+            return await this.getUserScores(user_id, "best", mode, legacy_only, undefined, limit, offset, signal);
+        }
+
+        async getUserFirsts(user_id, mode="osu", legacy_only=0, limit=100, offset=0, signal=undefined) {
+            return await this.getUserScores(user_id, "firsts", mode, legacy_only, undefined, limit, offset, signal);
+        }
+
+        async getBeatmap(beatmap_id, signal=undefined) {
+            if(!this.beatmapsCache[beatmap_id]) {
+                this.beatmapsCache[beatmap_id] = (async () => {
+                    const url = new URL(`${this.baseUrl}/beatmaps/${beatmap_id}`);
+                    const response = await this.auth_fetch(url, signal);
+                    if (!response.ok) throw new Error(`Failed to fetch beatmap id ${beatmap_id}`);
+                    return await response.json();
+                })();
+
+                // Do not cache failures, so retries can refetch.
+                this.beatmapsCache[beatmap_id].catch(() => {
+                    delete this.beatmapsCache[beatmap_id];
+                });
+            }
+
+            return await this.beatmapsCache[beatmap_id];
+        }
+
+        async getBeatmaps(beatmap_ids, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/beatmaps`);
+            for(let id of beatmap_ids){
+                url.searchParams.append("ids[]", id);
+            }
+
+            let resolveBatch;
+            let rejectBatch;
+            const batchPromise = new Promise((resolve, reject) => {
+                resolveBatch = resolve;
+                rejectBatch = reject;
+            });
+
+            for(const beatmap_id of beatmap_ids) {
+                if(this.beatmapsCache[beatmap_id]) continue;
+
+                this.beatmapsCache[beatmap_id] = batchPromise.then((result) => {
+                    const beatmap = result.beatmapsById[beatmap_id];
+                    if(!beatmap) throw new Error(`Failed to fetch beatmap id ${beatmap_id}`);
+                    return beatmap;
+                });
+
+                // Do not cache failures, so retries can refetch.
+                this.beatmapsCache[beatmap_id].catch(() => {
+                    delete this.beatmapsCache[beatmap_id];
+                });
+            }
+
+            try {
+                const response = await this.auth_fetch(url, signal);
+                if (!response.ok) throw new Error(`Failed to fetch beatmaps ${beatmap_ids.join(", ")}`);
+
+                const data = await response.json();
+                const beatmaps = Array.isArray(data) ? data : data.beatmaps;
+                const beatmapsById = {};
+                for(const beatmap of beatmaps) {
+                    if(beatmap && beatmap.id) {
+                        beatmapsById[beatmap.id] = beatmap;
+                    }
+                }
+
+                resolveBatch({ data, beatmapsById });
+                return data;
+            } catch(err) {
+                rejectBatch(err);
+                throw err;
+            }
+        }
+
+        async detailifyUsers(data, signal=undefined) {
+            let user_ids = data.scores.map(score => score.user_id);
+            user_ids = [...new Set(user_ids)];
+            const users = await this.getUsersUnlimited(user_ids, signal);
+            let usersById = {};
+            for(const user of users) {
+                if(user && user.id) {
+                    usersById[user.id] = user;
+                }
+            }
+            for(const score of data.scores) {
+                score.user = usersById[score.user_id];
+            }
+            return data;
+        }
+
+        // type is one of ['global', 'country', 'friend', 'team'], some may require supporter
+        async getBeatmapScores(beatmap_id, limit=100, mode="osu", legacy_only=0, mods=null, type=null, detailed_users=false, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/beatmaps/${beatmap_id}/scores`);
+            const params = {
+                limit: limit,
+                mode: mode,
+                legacy_only: legacy_only,
+                type: type
+            };
+            Object.keys(params).forEach(key => {
+                if(params[key] !== null) {
+                    url.searchParams.append(key, params[key]);
+                }
+            });
+            if(mods !== null) {
+                for(let mod of mods) {
+                    url.searchParams.append("mods[]", mod);
+                }
+            }
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error("Failed to fetch beatmap scores");
+            const data = await response.json();
+            if(!detailed_users) {
+                return data;
+            }else{
+                return await this.detailifyUsers(data, signal);
+            }
+        }
+
+        async getMatch(match_id, limit=100, before=null, after=null, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/matches/${match_id}`);
+            const params = {
+                limit: limit,
+                before: before,
+                after: after
+            };
+            Object.keys(params).forEach(key => {
+                if(params[key] !== null) {
+                    url.searchParams.append(key, params[key]);
+                }
+            });
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error(`Failed to fetch match ${match_id}`);
+            return await response.json();
+        }
+
+        async getMatchAll(match_id, signal=undefined) {
+            const match = await this.getMatch(match_id, undefined, undefined, undefined, signal);
+            if(!Array.isArray(match.events) || !match.events.length) return match;
+
+            const first_event_id = match.first_event_id;
+            const users = [];
+            const usersById = {};
+            for(const user of match.users) {
+                if(user && user.id && !usersById[user.id]) {
+                    usersById[user.id] = true;
+                    users.push(user);
+                }
+            }
+
+            while(match.events.length && match.events[0].id > first_event_id) {
+                const before = match.events[0].id;
+                const res = await this.getMatch(match_id, 100, before, undefined, signal);
+                if(!Array.isArray(res.events) || !res.events.length) break;
+                match.events = res.events.concat(match.events);
+                for(const user of res.users) {
+                    if(user && user.id && !usersById[user.id]) {
+                        usersById[user.id] = true;
+                        users.push(user);
+                    }
+                }
+            }
+
+            if(match.users) {
+                match.users = users;
+            }
+
+            return match;
+        }
+
+        async getRanking(mode="osu", type="performance", country=null, cursor=null, filter=null, spotlight=null, variant=null, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/rankings/${mode}/${type}`);
+            const params = {
+                country: country,
+                cursor: cursor,
+                filter: filter,
+                spotlight: spotlight,
+                variant: variant
+            };
+            Object.keys(params).forEach(key => {
+                if(params[key] !== null) {
+                    url.searchParams.append(key, params[key]);
+                }
+            });
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error(`Failed to fetch ranking ${mode}/${type}`);
+            return await response.json();
+        }
+
+        async getUser(user_id, mode=null, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/users/${user_id}${mode ? `/${mode}` : ""}`);
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error(`Failed to fetch user ${user_id}`);
+            return await response.json();
+        }
+
+        async getUsers(user_ids, include_variant_statistics=false, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/users`);
+            const params = {
+                include_variant_statistics: include_variant_statistics
+            };
+            Object.keys(params).forEach(key => {
+                if(params[key] !== null) {
+                    url.searchParams.append(key, params[key]);
+                }
+            });
+            for(let id of user_ids){
+                url.searchParams.append("ids[]", id);
+            }
+
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error("Failed to fetch users");
+            return await response.json();
+        }
+
+        // Allows more than 50 users by batching
+        async getUsersUnlimited(user_ids, include_variant_statistics=false, signal=undefined) {
+            const batchSize = 50;
+            let ans = [];
+            for(let i=0; i<user_ids.length; i+=batchSize) {
+                const batchIds = user_ids.slice(i, i+batchSize);
+                let users = await this.getUsers(batchIds, include_variant_statistics, signal);
+                ans = ans.concat(users.users);
+            }
+            return ans;
+        }
+
+        async getBeatmapFile(beatmap_id, signal=undefined) {
+            if(!this.beatmapFileCache[beatmap_id]) {
+                this.beatmapFileCache[beatmap_id] = (async () => {
+                    const url = new URL(`https://osu.ppy.sh/osu/${beatmap_id}`);
+                    let res = await limiter.fetch(url, signal);
+                    return await res.text();
+                })();
+            }
+            return await this.beatmapFileCache[beatmap_id];
+        }
+
+        normaliseStatistics(stats) {
+            stats = {
+                great: 0, ok: 0, meh: 0, miss: 0, good: 0, perfect: 0,
+                small_tick_hit: 0, small_tick_miss: 0,
+                large_tick_hit: 0, large_tick_miss: 0,
+                ...stats,
+            };
+            return stats;
+        }
+
+    }
+
+    // export
+    unsafeWindow.OsuAPI = OsuAPI;
+    var osuapi = null;
+
     /*eslint-disable*/
     var ojsama = (() => {
         // ojsama 2.2.0 (https://github.com/Francesco149/ojsama/)
@@ -57,18 +460,7 @@
     /*eslint-enable*/
 
 
-    //https://i.imgur.com/87WeqCL.png
-    var //FImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAQCAYAAAAiYZ4HAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyZpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDIxIDc5LjE1NTc3MiwgMjAxNC8wMS8xMy0xOTo0NDowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIDIwMTQgKFdpbmRvd3MpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOjYwNDg3Q0VFMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4IiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOjYwNDg3Q0VGMDdDNTExRTZCRUNBQUJFQjU3NDhGRjk4Ij4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6NjA0ODdDRUMwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NjA0ODdDRUQwN0M1MTFFNkJFQ0FBQkVCNTc0OEZGOTgiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz6y4WsfAAABoklEQVR42pSSyy8DURTGvzvTh3am1fFoqwjVVERYeHRpayMRsZfYSqwk/AcSOxsbiQUrsbDrgpVIEIKgIiH1aAijQyjVdtoxHXcmJSyYuMmX3HPP+eWeL/mIpmn4zyE6QAiBu1yItLeGe2U5l6rzCb46r6vJJzj9VQLnV54vC7NLG8snojppKYHlU2ODOyODHeRwZx1pWUNefkMu+4C8cot3RkQlp3XQuS8gp0hHmbXFKD8+l8SZhOMMcEeXFWmPXuGmmtcHP4GCpirZk+ssvy9hgdbDv3lgSlYaGgKCN/Go6sXKX6YNoMzhDFZwBKnXrF5ul3osiKPZyXu6vwPGStWCM1hmZdFZT4oY6JoJhVss9VX2tkafqzZzu4eJmY29mIjIF+Cv5EM2VgVnI0x/WO2DIwnx5h7RLQmnV/SexvmPH5oC7hBR0pheLWpH0sEufbqgSlDdUMWoNn8AjdW24FPqBceS0egxNe3hrN68LMNlgWQWDQPwu4oBKymAZWE3A4yVEvGYPcnIyGuoME2fHj7eitEaN+IWBkNms+S/8f4QYACrg5Lyg2EOtgAAAABJRU5ErkJggg==",
-        //UImg = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADwAAAA8CAMAAAANIilAAAAA1VBMVEUAAACioqKbm5vy8vLX19fv7+/Ozs6ioqK0tLTR0dHJycmqqqqzs7Ojo6Oamprb29vT09Ourq6mpqb///8mJiYzMzMxMTEsLCwpKSkvLy81NTUjIyMgICAeHh5JSUlISEhRUVFFRUUZGRkcHBympqZaWlqrq6s6Ojo+Pj5WVlbExMSjo6NCQkI3NzfY2Ni4uLivr695eXlycnJMTEze3t66urqoqKj8/Pz4+Pjg4ODa2tq+vr60tLSbm5t+fn5ra2vk5OTj4+OTk5OMjIyFhYVpaWlmZmaYnrJ3AAAAE3RSTlMAUlL+8f7nQ6np562iS0jy8aRXW3S7rwAAAbZJREFUSMft1dlymzAYhuGmxnaapOtnLLGvNjgBL+DsW/f7v6T+mrrIbQXKccJzAqPROyAxGl71er2X4PhoiH8N3hw+JX33AWrGWNu+vsLykeV+npDc9/0gEhbfvmA41rXA3E0YRSxJLJ9QSQI/PIWhbc88z+OMMb67TISsYMzc4qO2/VssOEFgekmFI01blpYrsdoScR4EgRNbGHa3bv25cqUFampZQKZxDHS2jnOPrSMNcZYkXkT7VmQOx6CjTWn6HJCtC6zixPZJlpk/MOpoJ4TiScOhOOEhifK8WOK4qyVriiWKvUzEtOgVjI5WGZ/zvA6FFS7ftrb8N4q5RLFZZgG5Az4p2wPZ8jlgNa0F3NEHm3CeAgfqc3SFC/bHV2DDdngF3DuEX6hbYmDNGj9Btc0EuxL3Ik5b20PcTK1GucW+JaNta2vJCBtLqh9v9tuIhlrfmQyQyzabzWbf0/NT4TatTBqat7YEmEohxdF0n2zVTy6amcVMKPWtXPODuWOHC8E3G7JVO8F1ZqroW2LgNrNVyrWmJeMhrh+i/9Jis8QltbragNp7Okd6J6OB8g/T6/WevV831F5ngplDwwAAAABJRU5ErkJggg==",
-        FImgNew = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPCEtLSBHZW5lcmF0b3I6IEFkb2JlIElsbHVzdHJhdG9yIDIzLjAuMywgU1ZHIEV4cG9ydCBQbHVnLUluIC4gU1ZHIFZlcnNpb246IDYuMDAgQnVpbGQgMCkgIC0tPgo8c3ZnIHZlcnNpb249IjEuMSIgaWQ9IkxheWVyXzEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIHg9IjBweCIgeT0iMHB4IgoJIHZpZXdCb3g9IjAgMCAzMiAxNiIgc3R5bGU9ImVuYWJsZS1iYWNrZ3JvdW5kOm5ldyAwIDAgMzIgMTY7IiB4bWw6c3BhY2U9InByZXNlcnZlIj4KPHN0eWxlIHR5cGU9InRleHQvY3NzIj4KCS5zdDB7ZmlsbDojQjlCOUI5O30KCS5zdDF7ZmlsbDojRkY1QTVBO2ZpbHRlcjp1cmwoI0Fkb2JlX09wYWNpdHlNYXNrRmlsdGVyKTt9Cgkuc3Qye21hc2s6dXJsKCNtYXNrMF8xXyk7fQoJLnN0M3tmaWxsOiNDNEM0QzQ7fQoJLnN0NHtmaWxsOiNBRkFGQUY7fQoJLnN0NXtmaWxsOiNBNEE0QTQ7fQoJLnN0NntmaWxsOiMzMzMzMzM7fQo8L3N0eWxlPgo8cGF0aCBjbGFzcz0ic3QwIiBkPSJNOCwwaDE2YzQuNCwwLDgsMy42LDgsOGwwLDBjMCw0LjQtMy42LDgtOCw4SDhjLTQuNCwwLTgtMy42LTgtOGwwLDBDMCwzLjYsMy42LDAsOCwweiIvPgo8ZGVmcz4KCTxmaWx0ZXIgaWQ9IkFkb2JlX09wYWNpdHlNYXNrRmlsdGVyIiBmaWx0ZXJVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCI+CgkJPGZlQ29sb3JNYXRyaXggIHR5cGU9Im1hdHJpeCIgdmFsdWVzPSIxIDAgMCAwIDAgIDAgMSAwIDAgMCAgMCAwIDEgMCAwICAwIDAgMCAxIDAiLz4KCTwvZmlsdGVyPgo8L2RlZnM+CjxtYXNrIG1hc2tVbml0cz0idXNlclNwYWNlT25Vc2UiIHg9Ii0xLjMiIHk9Ii05IiB3aWR0aD0iMzUuMyIgaGVpZ2h0PSIzMCIgaWQ9Im1hc2swXzFfIj4KCTxwYXRoIGNsYXNzPSJzdDEiIGQ9Ik04LDBoMTZjNC40LDAsOCwzLjYsOCw4bDAsMGMwLDQuNC0zLjYsOC04LDhIOGMtNC40LDAtOC0zLjYtOC04bDAsMEMwLDMuNiwzLjYsMCw4LDB6Ii8+CjwvbWFzaz4KPGcgY2xhc3M9InN0MiI+Cgk8cGF0aCBjbGFzcz0ic3QzIiBkPSJNMTYtOWwxNy4zLDMwSC0xLjNMMTYtOXoiLz4KCTxwYXRoIGNsYXNzPSJzdDQiIGQ9Ik0yNy41LDNMMzQsMTQuMkgyMUwyNy41LDN6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNNy41LTJsMy45LDYuOEgzLjZMNy41LTJ6Ii8+Cgk8cGF0aCBjbGFzcz0ic3Q1IiBkPSJNOS41LDEzbDMuOSw2LjhINS42TDkuNSwxM3oiLz4KPC9nPgo8Zz4KCTxwb2x5Z29uIGNsYXNzPSJzdDYiIHBvaW50cz0iMTEsMy45IDIxLjMsMy45IDIxLjMsNS4yIDEyLjUsNS4yIDEyLjUsNy41IDIwLjgsNy41IDIwLjgsOC44IDEyLjUsOC44IDEyLjUsMTIuMyAxMSwxMi4zIAkiLz4KPC9nPgo8L3N2Zz4K",
-        v2Img = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC0AAAAgCAMAAACxWgF2AAAA4VBMVEVHcEwAAAAAAAAAAAD+yyEAAAAAAAAAAAAAAAAAAAANCwH3xiBIOQkAAADouh6HbBHarhz6yCD3xiDvvx+McBLLohruvh/muB6fgBS0kBfuvh/OpRsAAAD2xSD2xSAAAAA2KwephxYAAADFnhlkUA2FahHcsBzRpxuPchMtJAbbrxzhtB3tvh/qux6vjBfxwR8QDQKlhBUAAABiTgwWEgJxWg9FNwk5Lgf/zCFUVFTkuC2ag0X+yyHasTFkX1H2xSVzaE7uvyiBckvGozi8mzz7ySLQqjWOe0ixkz+mjELywyWzBV0HAAAAOHRSTlMAHQYI/Q0YIANgPNgQNOYIe/DKsR9TdaAUOsRdFPThJVCeLbppf9TIhlB+3unel9dOqlF+ZYVzcPZxy64AAAHkSURBVBgZhcCFQttQGAXgP2mSXmq4u7uz7Zy41Nj7P9B6I01hBT6pLG60LcxjtTcW5ZOtFXzgD1Bb2ZIPzFV84mOQ+CitmjJDrWOewQCldSW1Thvfa3dkSi3hJ0tKKmvL+MnympTMTWj+MPRQSJkB2SiM3xOUNk3JqW0LWuSRAbQh6WFELQxQsLaVaI0d5AYZ6UEbkcM+SS8lY5R2GjKhdlGKyDACkJAhUjIAUjJAaVeJSOcAFY/MAPTJd4QMAfTJPkoHHRF1g6mATAHEpIvMywCMyCEqN0rsR9RCMkFApiiMyThC5dEWx0JtTI7hkX3khiRdTFmOGBZqLhlHIRlBS0IyQ80yxLjHjJT0SA9alJLvmHFviPOAGRm1AJpHptB8FB4csVt3qEWciKH1yTCBNkDurmWLal5hhkdyjImAZN913QTwkbtqKhG7e4FaQDLBRMxSgMJF1xYR5ZxZqMUcQYtZCnxo1pmjZKJxcopa5CIXuYUEhdOThmhq72gfP9k/2lOSMw+P8SUfueNDU0p2q4fv9Vq2VJRxjpLvY55zQ8mU3b1Eyf87wH8uu7bUlHN9i6/dXjtKZpjNp+eehXms3vNT05QPGkbrZaHy9uf11+vvt4XCS8toyCfKdozmPIZjKyn9A+yZ82+JDdzhAAAAAElFTkSuQmCC",
-        //RIP bloodcat
-        //bloodcatBtnImg = "data:image/png;base64,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",
-
-        loaderImg = "data:image/gif;base64,R0lGODlhEAAQAPIAAKmp/wAAAIGBwisrQgAAAEFBYlZWgmFhkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==",
-
-        //subImg = "data:image/png;base64,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",
-        //subbedImg = "data:image/png;base64,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",
+    var loaderImg = "data:image/gif;base64,R0lGODlhEAAQAPIAAKmp/wAAAIGBwisrQgAAAEFBYlZWgmFhkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==",
 
         settingsImg = "data:image/png;base64,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",
 
@@ -139,20 +531,10 @@
     var OLDSITE = 0,
         NEWSITE = 1;
 
-    var apikey = null,
+    var //apikey = null,
         hasKey = false,
         siteType = OLDSITE,
         osuPink = "#cc2e8a";
-
-    /* eslint-disable no-unused-vars */
-    const GRAVEYARD = -2;
-    const WIP = -1;
-    const PENDING = 0;
-    const RANKED = 1;
-    const APPROVED = 2;
-    const QUALIFIED = 3;
-    const LOVED = 4;
-    /* eslint-enable no-unused-vars */
 
     var modnames = [
             {val: 1, name: "No Fail", short: "NF", type: "DifficultyReduction"},
@@ -184,15 +566,55 @@
             {val: 134217728, name: "Three Keys", short: "3K", type: "Conversion"},
             {val: 268435456, name: "Two Keys", short: "2K", type: "Conversion"},
             {val: 536870912, name: "Score V2", short: "SV2", type: "System"},
-            {val: 1073741824, name: "Mirror", short: "MR", type: "Conversion"}
+            {val: 1073741824, name: "Mirror", short: "MR", type: "Conversion"},
+            
+            {val: 0, name: "Daycore", short: "DC", type: "DifficultyReduction"},
+            {val: 0, name: "Traceable", short: "TC", type: "DifficultyIncrease"},
+            {val: 0, name: "Blinds", short: "BL", type: "DifficultyIncrease"},
+            {val: 0, name: "Strict Tracking", short: "ST", type: "DifficultyIncrease"},
+            {val: 0, name: "Accuracy Challenge", short: "AC", type: "DifficultyIncrease"},
+            {val: 0, name: "Target Practice", short: "TP", type: "Conversion"},
+            {val: 0, name: "Difficulty Adjust", short: "DA", type: "Conversion"},
+            {val: 0, name: "Classic", short: "CL", type: "Conversion"},
+            {val: 0, name: "Alternate", short: "AL", type: "Conversion"},
+            {val: 0, name: "Single Tap", short: "SG", type: "Conversion"},
+            {val: 0, name: "Cinema", short: "CN", type: "Automation"},
+            {val: 0, name: "Transform", short: "TR", type: "Fun"},
+            {val: 0, name: "Wiggle", short: "WG", type: "Fun"},
+            {val: 0, name: "Spin In", short: "SI", type: "Fun"},
+            {val: 0, name: "Grow", short: "GR", type: "Fun"},
+            {val: 0, name: "Deflate", short: "DF", type: "Fun"},
+            {val: 0, name: "Wind Up", short: "WU", type: "Fun"},
+            {val: 0, name: "Wind Down", short: "WD", type: "Fun"},
+            {val: 0, name: "Barrel Roll", short: "BR", type: "Fun"},
+            {val: 0, name: "Approach Different", short: "AD", type: "Fun"},
+            {val: 0, name: "Muted", short: "MU", type: "Fun"},
+            {val: 0, name: "No Scope", short: "NS", type: "Fun"},
+            {val: 0, name: "Magnetised", short: "MG", type: "Fun"},
+            {val: 0, name: "Repel", short: "RP", type: "Fun"},
+            {val: 0, name: "Adaptive Speed", short: "AS", type: "Fun"},
+            {val: 0, name: "Freeze Frame", short: "FR", type: "Fun"},
+            {val: 0, name: "Bubbles", short: "BU", type: "Fun"},
+            {val: 0, name: "Synesthesia", short: "SY", type: "Fun"},
+            {val: 0, name: "Depth", short: "DP", type: "Fun"},
+            {val: 0, name: "Bloom", short: "BM", type: "Fun"},
+            {val: 0, name: "Simplified Rhythm", short: "SR", type: "DifficultyReduction"},
+            {val: 0, name: "Swap", short: "SW", type: "Conversion"},
+            {val: 0, name: "Constant Speed", short: "CS", type: "Conversion"},
+            {val: 0, name: "Floating Fruits", short: "FF", type: "Fun"},
+            {val: 0, name: "Moving Fast", short: "MF", type: "Fun"},
+            {val: 0, name: "No Release", short: "NR", type: "DifficultyReduction"},
+            {val: 0, name: "Cover", short: "CO", type: "DifficultyIncrease"},
+            {val: 0, name: "Dual Stages", short: "DS", type: "Conversion"},
+            {val: 0, name: "Invert", short: "IN", type: "Conversion"},
+            {val: 0, name: "Hold Off", short: "HO", type: "Conversion"}
         ],
         // if the first is set, the second has to be set also
         doublemods = [
             ["NC", "DT"],
             ["PF", "SD"]
         ],
-        countryCodes = {"BD": "Bangladesh", "BE": "Belgium", "BF": "Burkina Faso", "BG": "Bulgaria", "BA": "Bosnia and Herzegovina", "BB": "Barbados", "WF": "Wallis and Futuna", "BL": "Saint Barthelemy", "BM": "Bermuda", "BN": "Brunei", "BO": "Bolivia", "BH": "Bahrain", "BI": "Burundi", "BJ": "Benin", "BT": "Bhutan", "JM": "Jamaica", "BV": "Bouvet Island", "BW": "Botswana", "WS": "Samoa", "BQ": "Bonaire, Saint Eustatius and Saba ", "BR": "Brazil", "BS": "Bahamas", "JE": "Jersey", "BY": "Belarus", "BZ": "Belize", "RU": "Russia", "RW": "Rwanda", "RS": "Serbia", "TL": "East Timor", "RE": "Reunion", "TM": "Turkmenistan", "TJ": "Tajikistan", "RO": "Romania", "TK": "Tokelau", "GW": "Guinea-Bissau", "GU": "Guam", "GT": "Guatemala", "GS": "South Georgia and the South Sandwich Islands", "GR": "Greece", "GQ": "Equatorial Guinea", "GP": "Guadeloupe", "JP": "Japan", "GY": "Guyana", "GG": "Guernsey", "GF": "French Guiana", "GE": "Georgia", "GD": "Grenada", "GB": "United Kingdom", "GA": "Gabon", "SV": "El Salvador", "GN": "Guinea", "GM": "Gambia", "GL": "Greenland", "GI": "Gibraltar", "GH": "Ghana", "OM": "Oman", "TN": "Tunisia", "JO": "Jordan", "HR": "Croatia", "HT": "Haiti", "HU": "Hungary", "HK": "Hong Kong", "HN": "Honduras", "HM": "Heard Island and McDonald Islands", "VE": "Venezuela", "PR": "Puerto Rico", "PS": "Palestinian Territory", "PW": "Palau", "PT": "Portugal", "SJ": "Svalbard and Jan Mayen", "PY": "Paraguay", "IQ": "Iraq", "PA": "Panama", "PF": "French Polynesia", "PG": "Papua New Guinea", "PE": "Peru", "PK": "Pakistan", "PH": "Philippines", "PN": "Pitcairn", "PL": "Poland", "PM": "Saint Pierre and Miquelon", "ZM": "Zambia", "EH": "Western Sahara", "EE": "Estonia", "EG": "Egypt", "ZA": "South Africa", "EC": "Ecuador", "IT": "Italy", "VN": "Vietnam", "SB": "Solomon Islands", "ET": "Ethiopia", "SO": "Somalia", "ZW": "Zimbabwe", "SA": "Saudi Arabia", "ES": "Spain", "ER": "Eritrea", "ME": "Montenegro", "MD": "Moldova", "MG": "Madagascar", "MF": "Saint Martin", "MA": "Morocco", "MC": "Monaco", "UZ": "Uzbekistan", "MM": "Myanmar", "ML": "Mali", "MO": "Macao", "MN": "Mongolia", "MH": "Marshall Islands", "MK": "Macedonia", "MU": "Mauritius", "MT": "Malta", "MW": "Malawi", "MV": "Maldives", "MQ": "Martinique", "MP": "Northern Mariana Islands", "MS": "Montserrat", "MR": "Mauritania", "IM": "Isle of Man", "UG": "Uganda", "TZ": "Tanzania", "MY": "Malaysia", "MX": "Mexico", "IL": "Israel", "FR": "France", "IO": "British Indian Ocean Territory", "SH": "Saint Helena", "FI": "Finland", "FJ": "Fiji", "FK": "Falkland Islands", "FM": "Micronesia", "FO": "Faroe Islands", "NI": "Nicaragua", "NL": "Netherlands", "NO": "Norway", "NA": "Namibia", "VU": "Vanuatu", "NC": "New Caledonia", "NE": "Niger", "NF": "Norfolk Island", "NG": "Nigeria", "NZ": "New Zealand", "NP": "Nepal", "NR": "Nauru", "NU": "Niue", "CK": "Cook Islands", "XK": "Kosovo", "CI": "Ivory Coast", "CH": "Switzerland", "CO": "Colombia", "CN": "China", "CM": "Cameroon", "CL": "Chile", "CC": "Cocos Islands", "CA": "Canada", "CG": "Republic of the Congo", "CF": "Central African Republic", "CD": "Democratic Republic of the Congo", "CZ": "Czech Republic", "CY": "Cyprus", "CX": "Christmas Island", "CR": "Costa Rica", "CW": "Curacao", "CV": "Cape Verde", "CU": "Cuba", "SZ": "Swaziland", "SY": "Syria", "SX": "Sint Maarten", "KG": "Kyrgyzstan", "KE": "Kenya", "SS": "South Sudan", "SR": "Suriname", "KI": "Kiribati", "KH": "Cambodia", "KN": "Saint Kitts and Nevis", "KM": "Comoros", "ST": "Sao Tome and Principe", "SK": "Slovakia", "KR": "South Korea", "SI": "Slovenia", "KP": "North Korea", "KW": "Kuwait", "SN": "Senegal", "SM": "San Marino", "SL": "Sierra Leone", "SC": "Seychelles", "KZ": "Kazakhstan", "KY": "Cayman Islands", "SG": "Singapore", "SE": "Sweden", "SD": "Sudan", "DO": "Dominican Republic", "DM": "Dominica", "DJ": "Djibouti", "DK": "Denmark", "VG": "British Virgin Islands", "DE": "Germany", "YE": "Yemen", "DZ": "Algeria", "US": "United States", "UY": "Uruguay", "YT": "Mayotte", "UM": "United States Minor Outlying Islands", "LB": "Lebanon", "LC": "Saint Lucia", "LA": "Laos", "TV": "Tuvalu", "TW": "Taiwan", "TT": "Trinidad and Tobago", "TR": "Turkey", "LK": "Sri Lanka", "LI": "Liechtenstein", "LV": "Latvia", "TO": "Tonga", "LT": "Lithuania", "LU": "Luxembourg", "LR": "Liberia", "LS": "Lesotho", "TH": "Thailand", "TF": "French Southern Territories", "TG": "Togo", "TD": "Chad", "TC": "Turks and Caicos Islands", "LY": "Libya", "VA": "Vatican", "VC": "Saint Vincent and the Grenadines", "AE": "United Arab Emirates", "AD": "Andorra", "AG": "Antigua and Barbuda", "AF": "Afghanistan", "AI": "Anguilla", "VI": "U.S. Virgin Islands", "IS": "Iceland", "IR": "Iran", "AM": "Armenia", "AL": "Albania", "AO": "Angola", "AQ": "Antarctica", "AS": "American Samoa", "AR": "Argentina", "AU": "Australia", "AT": "Austria", "AW": "Aruba", "IN": "India", "AX": "Aland Islands", "AZ": "Azerbaijan", "IE": "Ireland", "ID": "Indonesia", "UA": "Ukraine", "QA": "Qatar", "MZ": "Mozambique"},
-        playerCountries = null;
+        playerCountries = null; // obsolete
 
     var defaultSettings = {
         showMirror: true,
@@ -200,31 +622,31 @@
         showMirror3: false,
         showMirror4: false,
         showMirror5: false,
-        //showSubscribeMap: false,
         apikey: null,
         failedChecked: true,
-        showDates: true,
         showPpRank: false,
-        fetchPlayerCountries: true,
+        //fetchPlayerCountries: true,
         showTop100: true,
         showDetailedHitCount: true,
         //showHitsPerPlay: true,
         fetchUserpageMaxCombo: true,
         fetchFirstsInfo: true,
         rankingVisible: false,
-        forceShowDifficulties: false,
+        //forceShowDifficulties: false,
         pp2dp: true,
-        showSiteSwitcher: false,
+        //showSiteSwitcher: false,
         //showMpGrades: true,
         showRecent: true,
         osupreview: true,
         osupreview2: true,
         osupreview3: false,
-        showBWS: false
+        showBWS: false,
+        clientID: null,
+        clientSecret: null
     };
 
     var settings = {};
-    function initSettings(){
+    async function initSettings(){
         var promises = [];
         //promises.push(GMX.setValue("apikey", null));
         //promises.push(GMX.setValue("playerCountries", "{}"));
@@ -239,95 +661,13 @@
         promises.push(GMX.getValue("playerCountries", "{}").then((result) => {
             playerCountries = typeof(result) === "string" ? JSON.parse(result) : {};
         }));
-        return Promise.all(promises).then(() => {
-            settings.displayTopNum = settings.showTop100 ? 100 : 50;
-            settings.apikey = nullIfBlankOrNull(settings.apikey);
-            //settings.apikey = null;
-            return settings;
-        });
+        await Promise.all(promises);
+    
+        settings.displayTopNum = settings.showTop100 ? 100 : 50;
+        settings.apikey = nullIfBlankOrNull(settings.apikey);
+        //settings.apikey = null;
+        return settings;
     }
-
-    /*eslint-disable*/
-    //peppy code
-    (function($) {
-        $.fn.textWidth = function() {
-            var html_org = $(this).html();
-            var html_calc = '<span>' + html_org + '</span>';
-            $(this).html(html_calc);
-            var width = $(this).find('span:first').width();
-            $(this).html(html_org);
-            return width;
-        }
-        ;
-        $.fn.marquee = function(args) {
-            var that = $(this);
-            var textWidth = that.textWidth()
-              , actualWidth = that.width()
-              , offset = 0
-              , width = 0
-              , css = {
-                'text-indent': that.css('text-indent'),
-                'overflow': that.css('overflow'),
-                'white-space': that.css('white-space')
-            }
-              , marqueeCss = {
-                'text-indent': width,
-                'overflow': 'hidden',
-                'white-space': 'nowrap'
-            }
-              , args = $.extend(true, {
-                count: -1,
-                speed: 1e1,
-                leftToRight: false
-            }, args)
-              , i = 0
-              , stop = (actualWidth - textWidth)
-              , dfd = $.Deferred();
-            if (textWidth < actualWidth || that.attr('stop') == -1)
-                return;
-            that.attr('stop', -1);
-            function go() {
-                if (!that.length)
-                    return dfd.reject();
-                if (that.attr('stop') >= 0) {
-                    that.css(css);
-                    that.attr('stop', 0);
-                    return dfd.resolve();
-                }
-                if (width == stop) {
-                    i++;
-                    if (i >= args.count) {
-                        setTimeout(go, args.speed);
-                        return;
-                    }
-                    if (args.leftToRight) {
-                        width = textWidth * -1;
-                    } else {
-                        width = offset;
-                    }
-                }
-                that.css('text-indent', width + 'px');
-                if (args.leftToRight) {
-                    width++;
-                } else {
-                    width--;
-                }
-                setTimeout(go, args.speed);
-            }
-            if (args.leftToRight) {
-                width = textWidth * -1;
-                width++;
-                stop = offset;
-            } else {
-                width--;
-            }
-            that.css(marqueeCss);
-            go();
-            return dfd.promise();
-        }
-        ;
-    })($);
-    /*eslint-enable*/
 
     $(document).ready(reloadOsuplus);
 
@@ -348,31 +688,6 @@
         });
     }
 
-    var getBeatmapsCache = (function(){
-        var callbacks = {},
-            beatmapsCache = {};
-
-        function getBeatmapsCache(params, callback){
-            var id = params.b;
-            if(id in beatmapsCache){
-                callback(beatmapsCache[id]);
-            }else if(id in callbacks){
-                callbacks[id].push(callback);
-            }else{
-                callbacks[id] = [callback];
-                getBeatmaps(params, function(response){
-                    beatmapsCache[id] = response;
-                    callbacks[id].forEach(function(cb){
-                        cb(response);
-                    });
-                    delete callbacks[id];
-                });
-            }
-        }
-
-        return getBeatmapsCache;
-    })();
-
     function isOldSite(url){
         if(url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/u\//) ||
            url.match(/^https?:\/\/(osu|old)\.ppy\.sh\/([bs]\/|p\/beatmap\?)/) ||
@@ -386,17 +701,25 @@
 
     function mainInit(){
         $(".osuplus").remove();
-        apikey = settings.apikey;
-        if(apikey !== null){
+        if(settings.clientID !== null && settings.clientSecret !== null){
             hasKey = true;
+            if(osuapi === null){
+                osuapi = new OsuAPI(settings.clientID, settings.clientSecret);
+                if(debug){
+                    unsafeWindow.osuapi = osuapi;
+                }
+            }
         }else{
             hasKey = false;
             displayGetKey();
         }
+
         insertSettings();
     }
 
     function insertSettings(){
+        var boolProperties = [],
+            textProperties = ["apikey", "clientSecret", "clientID"];
         function makeSettingRow(title, description, option){
             return `<tr class='row2'><td><b>${title}</b>
                     ${description ? `<br>${description}` : ""}
@@ -404,6 +727,7 @@
         }
 
         function makeCheckboxOption(property){
+            boolProperties.push(property);
             return `<input type='checkbox' id='settings-${property}'
                     ${settings[property] ? " checked" : ""}>`;
         }
@@ -434,9 +758,11 @@
                     $("<div>").append(
                         "<h2>General</h2>",
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
-                            makeSettingRow("API key", null, `<input type='text' style='display:none' id='settings-apikey' name='apikey' value='${settings.apikey}'>
-                                                          <label><input type='checkbox' id='show-apikey'>Show</label>`),
-                            makeSettingRow("Show Site Switcher", null, makeCheckboxOption("showSiteSwitcher"))
+                            makeSettingRow("APIv2 client ID", null, `<input type='text' id='settings-clientID' name='clientID' value='${settings.clientID}'>`),
+                            makeSettingRow("APIv2 client secret", null, `<input type='text' style='display:none' id='settings-clientSecret' name='clientSecret' value='${settings.clientSecret}'>
+                                                          <label><input type='checkbox' id='show-clientSecret'>Show</label>`),
+                            makeSettingRow("API key (not in use)", null, `<input type='text' style='display:none' id='settings-apikey' name='apikey' value='${settings.apikey}'>
+                                                          <label><input type='checkbox' id='show-apikey'>Show</label>`)
                         )
                     ),
                     $("<div>").append(
@@ -447,9 +773,7 @@
                             makeSettingRow("Show NeriNyan mirror", null, makeCheckboxOption("showMirror3")),
                             // makeSettingRow("Show Chimu.moe mirror", null, makeCheckboxOption("showMirror4")),
                             makeSettingRow("Show Mino mirror", null, makeCheckboxOption("showMirror5")),
-                            makeSettingRow("Show dates", null, makeCheckboxOption("showDates")),
                             makeSettingRow("Show pp rank beside player", "scores may take longer to load", makeCheckboxOption("showPpRank")),
-                            makeSettingRow("Fetch player countries outside top 50", "disable to load faster, but some players' countries won't be loaded", makeCheckboxOption("fetchPlayerCountries")),
                             makeSettingRow("Show top 100", "rather than top 50", makeCheckboxOption("showTop100")),
                             makeSettingRow("pp 2 decimal places", "rather than 0 dp", makeCheckboxOption("pp2dp")),
                             makeSettingRow("Show osu!preview", null, makeCheckboxOption("osupreview")),
@@ -474,23 +798,14 @@
                         $("<table class='osuplusSettingsTable' width='100%'>").append(
                             makeSettingRow("Show global/country ranking", "", makeCheckboxOption("rankingVisible"))
                         )
-                    ),
-                    $("<div>").append(
-                        "<h2>Beatmap Listing</h2>",
-                        $("<table class='osuplusSettingsTable' width='100%'>").append(
-                            makeSettingRow("Force show difficulties", "so no need to hover over maps (legacy setting, no effect on new site)", makeCheckboxOption("forceShowDifficulties"))
-                        )
                     )
                 ),
                 $("<button id='osuplusSettingsSaveBtn'>Save</button>").click(function(){
-                    GMX.setValue("apikey", nullIfBlankOrNull($("#settings-apikey").val()));
-                    var properties = [
-                        "showMirror", "showMirror2", "showMirror3", "showMirror4", "showMirror5", "showDates", "showPpRank", "fetchPlayerCountries", "showTop100", "pp2dp", "failedChecked", 
-                        "showDetailedHitCount", "fetchUserpageMaxCombo", "fetchFirstsInfo", "rankingVisible", "forceShowDifficulties", "showSiteSwitcher", 
-                        "showRecent", "osupreview", "osupreview2", "osupreview3", "showBWS"
-                    ];
-                    for(let property of properties){
-                        setBoolProperty(property);
+                    for(let prop of textProperties){
+                        GMX.setValue(prop, nullIfBlankOrNull($(`#settings-${prop}`).val()));
+                    }
+                    for(let prop of boolProperties){
+                        setBoolProperty(prop);
                     }
                 })
             )
@@ -500,13 +815,15 @@
             GMX.setValue(property, $(`#settings-${property}`).prop("checked"));
         }
 
-        $("#show-apikey").click(function(){
-            if(this.checked){
-                $("#settings-apikey").show();
-            }else{
-                $("#settings-apikey").hide();
-            }
-        });
+        for(let secret of ["apikey", "clientSecret"]){
+            $(`#show-${secret}`).click(function(){
+                if(this.checked){
+                    $(`#settings-${secret}`).show();
+                }else{
+                    $(`#settings-${secret}`).hide();
+                }
+            });
+        }
 
         function openModal(){
             $("#osuplusModal, #osuplusModalOverlay").fadeIn(200);
@@ -523,28 +840,28 @@
 
     // draggable code
     function dragElement(ele, onclick){
-        var cursorx = 0, elex = 0, moved = false;
+        var cursorx = 0, elex = 0, moved = 0;
         ele.mousedown((e) => {
             e.preventDefault();
             cursorx = e.clientX;
             elex = ele.position().left;
-            moved = false;
+            moved = 0;
             $(document).mousemove(dragmove);
             $(document).mouseup(dragup);
         });
 
         function dragmove(e){
             e.preventDefault();
-            moved = true;
             var newcursorx = e.clientX;
             var newright = $(document).width() - elex - ele.width() + cursorx - newcursorx;
+            moved = cursorx - newcursorx;
             ele.css("right", newright + "px");
         }
 
         function dragup(e){
             $(document).off("mousemove", dragmove);
             $(document).off("mouseup", dragup);
-            if(!moved && onclick){
+            if(Math.abs(moved) < 5 && onclick){
                 onclick();
             }
         }
@@ -558,11 +875,6 @@
             };
 
         function init(){
-            // add site switcher
-            if(settings.showSiteSwitcher){
-                $(document.body).append("<script src='//s.ppy.sh/js/site-switcher.js'></script>");
-            }
-
             function reInit(){
                 currentBody = document.body;
                 mainInit();
@@ -668,122 +980,121 @@
                         </div>
                     </div>
                 </div>
-            </div>`).click(function(){
+            </div>`).click(async function(){
                 var mcEle = $(this).find("#osuplus-mc");
                 if(mcEle.data("loaded")) return;
                 mcEle.data("loaded", true);
-                getMpEvents(mpId).then((res) => {
-                    jsonEvents = res;
-                    userMap = getUserMap(jsonEvents.users);
-                    matches = extractMatches(jsonEvents.events, userMap);
-                    userDict = getUserDict(userMap, matches);
-                    var teamval = {blue: 2, red: 1, none: 0};
-                    var userData = Object.values(userDict).sort((a, b) => teamval[b.team] - teamval[a.team]);
+                let res = await osuapi.getMatchAll(mpId);
+                jsonEvents = res;
+                userMap = getUserMap(jsonEvents.users);
+                matches = extractMatches(jsonEvents.events, userMap);
+                userDict = getUserDict(userMap, matches);
+                var teamval = {blue: 2, red: 1, none: 0};
+                var userData = Object.values(userDict).sort((a, b) => teamval[b.team] - teamval[a.team]);
 
-                    mcEle.html(
-                        `<div class='mc-settings'>
-                            <div class='mc-maps-container'>
-                                <div>Maps</div>
-                                ${matches.map((match, index) => 
-                                    `<input type='checkbox' id='mp-map-${match.id}' name='${index}' checked>
-                                    <label for='mp-map-${match.id}' class='mp-label'>
-                                        ${match.beatmap.title} [${match.beatmap.version}] ${match.mods.length == 0 ? "" : `+${match.mods.join(",")}`}
-                                    </label><br>`
-                                ).join("")}
-                            </div>
-                            <div class='mc-users-container'>
-                                <div>Players</div>
-                                ${userData.map((user) => 
-                                    `<div class='mc-user'>
-                                        <input type='checkbox' id='mp-user-${user.id}' name='${user.id}' checked>
-                                        <label for='mp-user-${user.id}' class='mp-label'><span class='mp-team-${user.team}'></span> ${user.username}</label>
-                                    </div>`
-                                ).join("")}
-                            </div>
-                            <div class='mc-others-container'>
-                                EZ mult: <input type='text' id='mc-ez-mult' value='1.00'><br>
-                                FL mult: <input type='text' id='mc-fl-mult' value='1.00'><br>
-                                <br>
-                                <div class='mc-formulas'>
-                                    Formula:
-                                    <div class='mc-formula-box'>
-                                        <input type='radio' id='mc-formula-osuplus' name='mc-formula' value='osuplus' checked>
-                                        <label for='mc-formula-osuplus' class='mp-label'>osuplus</label> <a href='https://i.imgur.com/BJPOKDY.png' target='_blank'>?</a><br>
-                                        <input type='radio' id='mc-formula-bathbot' name='mc-formula' value='bathbot'>
-                                        <label for='mc-formula-bathbot' class='mp-label'>Bathbot</label> <a href='https://i.imgur.com/7KFwcUS.png' target='_blank'>?</a><br>
-                                        <input type='radio' id='mc-formula-flashlight' name='mc-formula' value='flashlight'>
-                                        <label for='mc-formula-flashlight' class='mp-label'>Flashlight</label> <a href='https://i.imgur.com/lNITeBx.png' target='_blank'>?</a>
-                                    </div>
+                mcEle.html(
+                    `<div class='mc-settings'>
+                        <div class='mc-maps-container'>
+                            <div>Maps</div>
+                            ${matches.map((match, index) => 
+                                `<input type='checkbox' id='mp-map-${match.id}' name='${index}' checked>
+                                <label for='mp-map-${match.id}' class='mp-label'>
+                                    ${match.beatmap.title} [${match.beatmap.version}] ${match.mods.length == 0 ? "" : `+${match.mods.join(",")}`}
+                                </label><br>`
+                            ).join("")}
+                        </div>
+                        <div class='mc-users-container'>
+                            <div>Players</div>
+                            ${userData.map((user) => 
+                                `<div class='mc-user'>
+                                    <input type='checkbox' id='mp-user-${user.id}' name='${user.id}' checked>
+                                    <label for='mp-user-${user.id}' class='mp-label'><span class='mp-team-${user.team}'></span> ${user.username}</label>
+                                </div>`
+                            ).join("")}
+                        </div>
+                        <div class='mc-others-container'>
+                            EZ mult: <input type='text' id='mc-ez-mult' value='1.00'><br>
+                            FL mult: <input type='text' id='mc-fl-mult' value='1.00'><br>
+                            <br>
+                            <div class='mc-formulas'>
+                                Formula:
+                                <div class='mc-formula-box'>
+                                    <input type='radio' id='mc-formula-osuplus' name='mc-formula' value='osuplus' checked>
+                                    <label for='mc-formula-osuplus' class='mp-label'>osuplus</label> <a href='https://i.imgur.com/BJPOKDY.png' target='_blank'>?</a><br>
+                                    <input type='radio' id='mc-formula-bathbot' name='mc-formula' value='bathbot'>
+                                    <label for='mc-formula-bathbot' class='mp-label'>Bathbot</label> <a href='https://i.imgur.com/7KFwcUS.png' target='_blank'>?</a><br>
+                                    <input type='radio' id='mc-formula-flashlight' name='mc-formula' value='flashlight'>
+                                    <label for='mc-formula-flashlight' class='mp-label'>Flashlight</label> <a href='https://i.imgur.com/lNITeBx.png' target='_blank'>?</a>
                                 </div>
                             </div>
                         </div>
-                        <div class='mc-calculate-row'>
-                            <button class='mc-calculate-btn'>Calculate match costs</button>
-                        </div>
-                        <div class='mc-results'>
+                    </div>
+                    <div class='mc-calculate-row'>
+                        <button class='mc-calculate-btn'>Calculate match costs</button>
+                    </div>
+                    <div class='mc-results'>
 
-                        </div>`
-                    );
-                    mcEle.find("button.mc-calculate-btn").click(() => {
-                        var selectedMatches = $.map($(".mc-maps-container input:checked"), x => deepCopy(matches[x.name]));
-                        var ezmult = parseFloat($("#mc-ez-mult").val());
-                        if(isNaN(ezmult)) ezmult = 1;
-                        var flmult = parseFloat($("#mc-fl-mult").val());
-                        if(isNaN(flmult)) flmult = 1;
-                        for(let match of selectedMatches){
-                            for(let score of match.scores){
-                                if(inArray(score.mods, "EZ")){
-                                    score.score *= ezmult;
-                                }
-                                if(inArray(score.mods, "FL")){
-                                    score.score *= flmult;
-                                }
+                    </div>`
+                );
+                mcEle.find("button.mc-calculate-btn").click(() => {
+                    var selectedMatches = $.map($(".mc-maps-container input:checked"), x => deepCopy(matches[x.name]));
+                    var ezmult = parseFloat($("#mc-ez-mult").val());
+                    if(isNaN(ezmult)) ezmult = 1;
+                    var flmult = parseFloat($("#mc-fl-mult").val());
+                    if(isNaN(flmult)) flmult = 1;
+                    for(let match of selectedMatches){
+                        for(let score of match.scores){
+                            if(inArray(score.mods, "EZ")){
+                                score.score *= ezmult;
+                            }
+                            if(inArray(score.mods, "FL")){
+                                score.score *= flmult;
                             }
                         }
+                    }
 
-                        var selectedUsersList = $.map($(".mc-user input:checked"), x => x.name);
-                        var selectedUsers = {};
-                        for(let user in userMap){
-                            selectedUsers[user] = false;
-                        }
-                        for(let user of selectedUsersList){
-                            selectedUsers[user] = true;
-                        }
-                        var formula = $(".mc-formula-box input[name=mc-formula]:checked").val();
-                        var result = matchCost(selectedMatches, selectedUsers, formula);
-                        var teamresultDiv = "";
-                        if(result.teamresult.none == 0){
-                            teamresultDiv = `<span class='mp-team-blue'></span> ${result.teamresult.blue} - ${result.teamresult.red} <span class='mp-team-red'></span>`;
-                        }
-                        var mc = [];
-                        for(let id in result.stats){
-                            mc.push({
-                                id: id,
-                                username: userDict[id].username,
-                                team: userDict[id].team,
-                                stats: result.stats[id]
-                            });
-                        }
-                        mc.sort((a, b) => b.stats.mc - a.stats.mc);
-                        mcEle.find(".mc-results").empty().html(
-                            `<div class='mc-results-header'>${jsonEvents.match.name}<br>Formula: ${formula}</div>
-                            <div class='mc-teamresult'>${teamresultDiv}</div>
-                            <div class='mc-result'>
-                                <table class='mc-list'>
-                                    <tr><th></th><th></th><th></th><th class='mc-header-plays'>#plays(${selectedMatches.length})</th><th class='mc-header-tops'>#tops</th></tr>
-                                    ${mc.map(x => 
-                                    `<tr class='mc-list-row'><td></td>
-                                        <td class='mc-cell-mc'><span class='mc-mc'>${x.stats.mc.toFixed(3)}</span></td>
-                                        <td class='mc-cell-player'><span class='mp-team-${x.team}'></span> ${x.username}</td>
-                                        <td class='mc-cell-plays'>${x.stats.plays}</td>
-                                        <td class='mc-cell-tops'>${x.stats.tops}</td>
-                                    </tr>`
-                                    ).join("")}
-                                    
-                                </ol>
-                            </div>`
-                        );
-                    });
+                    var selectedUsersList = $.map($(".mc-user input:checked"), x => x.name);
+                    var selectedUsers = {};
+                    for(let user in userMap){
+                        selectedUsers[user] = false;
+                    }
+                    for(let user of selectedUsersList){
+                        selectedUsers[user] = true;
+                    }
+                    var formula = $(".mc-formula-box input[name=mc-formula]:checked").val();
+                    var result = matchCost(selectedMatches, selectedUsers, formula);
+                    var teamresultDiv = "";
+                    if(result.teamresult.none == 0){
+                        teamresultDiv = `<span class='mp-team-blue'></span> ${result.teamresult.blue} - ${result.teamresult.red} <span class='mp-team-red'></span>`;
+                    }
+                    var mc = [];
+                    for(let id in result.stats){
+                        mc.push({
+                            id: id,
+                            username: userDict[id].username,
+                            team: userDict[id].team,
+                            stats: result.stats[id]
+                        });
+                    }
+                    mc.sort((a, b) => b.stats.mc - a.stats.mc);
+                    mcEle.find(".mc-results").empty().html(
+                        `<div class='mc-results-header'>${jsonEvents.match.name}<br>Formula: ${formula}</div>
+                        <div class='mc-teamresult'>${teamresultDiv}</div>
+                        <div class='mc-result'>
+                            <table class='mc-list'>
+                                <tr><th></th><th></th><th></th><th class='mc-header-plays'>#plays(${selectedMatches.length})</th><th class='mc-header-tops'>#tops</th></tr>
+                                ${mc.map(x => 
+                                `<tr class='mc-list-row'><td></td>
+                                    <td class='mc-cell-mc'><span class='mc-mc'>${x.stats.mc.toFixed(3)}</span></td>
+                                    <td class='mc-cell-player'><span class='mp-team-${x.team}'></span> ${x.username}</td>
+                                    <td class='mc-cell-plays'>${x.stats.plays}</td>
+                                    <td class='mc-cell-tops'>${x.stats.tops}</td>
+                                </tr>`
+                                ).join("")}
+                                
+                            </ol>
+                        </div>`
+                    );
                 });
             });
             $(".mp-history-content h3").after(mpDiv);
@@ -951,7 +1262,7 @@
                         scores: event.game.scores.map((score) => ({
                             user_id: score.user_id,
                             username: userMap[score.user_id],
-                            mods: score.mods.map((mod) => mod.acronym),
+                            mods: score.mods.map(mod => mod.acronym),
                             team: score.match.team,
                             passed: score.passed,
                             score: score.total_score
@@ -1030,7 +1341,7 @@
             if(path[3] != "global") return;
 
             addCss();
-            mode = modeToInt(path[2]);
+            mode = path[2];
             var searchObj = searchParser(window.location.search);
             if(searchObj.country){
                 isGlobal = false;
@@ -1050,17 +1361,14 @@
                 var playerList = $(".ranking-page-table__row").map(function(i, ele){
                     return $(ele).find(".ranking-page-table-main__link").attr("data-user-id");
                 });
-                var funs = [];
                 playerInfo = [];
+                var promises = [];
                 playerList.each(function(index, id){
-                    funs.push(function(donecb){
-                        getUser({u: id, m: mode, type: "id"}, function(response){
-                            playerInfo[index] = response[0];
-                            donecb();
-                        });
-                    });
+                    promises.push(osuapi.getUser(id, mode).then(function(response){
+                        playerInfo[index] = response;
+                    }));
                 });
-                doManyFunc(funs, function(){
+                Promise.all(promises).then(function(){
                     if(destroyed) return;
                     tableLoadingNotice.hide();
                     
@@ -1071,7 +1379,7 @@
                     //Add new ranks
                     $(".ranking-page-table__row").each(function(index, row){
                         row = $(row);
-                        var newRank = isGlobal ? playerInfo[index].pp_country_rank : playerInfo[index].pp_rank;
+                        var newRank = isGlobal ? playerInfo[index].statistics.country_rank : playerInfo[index].statistics.global_rank;
                         row.find(".ranking-page-table__column--main").before(
                             `<td class='ranking-page-table__column'>#${newRank}</td>`
                         );
@@ -1105,7 +1413,9 @@
         var jsonUser = null,
             gameMode = null,
             userBest = null,
-            opModalContent = null;
+            opModalContent = null,
+            currentUser = null,
+            legacy_only = 0;
 
         function addCss(){
             if(!$(".osuplus-new-userpage-style").length){
@@ -1127,19 +1437,18 @@
                     .opModal-song-info td {padding: 2px 7px;}
                     .tableAttr {width: 70px;}
                     .sub-button {width: 90px; margin-left: 30px;}
-                    .score-rank--F {background-image: url('${FImgNew}');}
                     .play-detail__pp.play-detail__recent-pp {min-width: 0px; padding: 0px;}
                     .div-24h {margin-top: 50px;}
                     .modal-hr {color: red;}
                     .modal-ez {color: green;}
                     .opModal {color: black;}
                     .opModal h1 {color: ${osuPink};}
-                    .mod--V2 {background-image: url('${v2Img}');}
                     .ppcalc-pp {cursor: pointer;}
                     .play-detail {position: relative;}
                     .op-relrank {position: absolute; height: 100%; width: 40px; margin-left: -40px; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; opacity: 0;}
                     .play-detail:hover .op-relrank {opacity: 1;}
-                    .op-badges-input {color: black; width: 45px; margin-top: -10px; margin-bottom: -10px;}`
+                    .op-badges-input {color: black; width: 45px; margin-top: -10px; margin-bottom: -10px;}
+                    .perfect-combo {color: hsl(90 100% 70%)}`
                 ));
             }
         }
@@ -1148,8 +1457,10 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
-            jsonUser = JSON.parse($(".js-react.u-contents").attr("data-initial-data")).user;
+            jsonUser = JSON.parse($(".js-react.u-contents[data-initial-data]").attr("data-initial-data")).user;
             gameMode = getGameMode();
+            currentUser = JSON.parse(JSON.stringify(unsafeWindow.currentUser));
+            legacy_only = currentUser.user_preferences.legacy_score_only ? 1 : 0;
 
             addDetailedTop();
             addGeneral();
@@ -1188,23 +1499,45 @@
 
         function getGameMode(){
             var modeStr = $(".game-mode-link--active").attr("href").split("/");
-            modeStr = modeStr[modeStr.length-1];
-            return modeToInt(modeStr);
+            return modeStr[modeStr.length-1];
         }
 
         function addDetailedTop(){
-            var bestObserver = new MutationObserver(function(mutationList){
-                for(var mutation of mutationList){
-                    if(mutation.addedNodes.length){
-                        addBestDetails(mutation.addedNodes[0]);
+            var bestObserver = new MutationObserver(async mutationList => {
+                if($("div[data-page-id=top_ranks] .play-detail-list").eq(1).children("div").length > userBest.length){
+                    // Load more bests if user shows more
+                    let moreBests = await osuapi.getUserBest(jsonUser.id, gameMode, legacy_only, 100, userBest.length);
+                    userBest = userBest.concat(moreBests);
+                }
+                let elems = [];
+                for(let mutation of mutationList){
+                    if(mutation.addedNodes.length && mutation.addedNodes[0].classList.contains("play-detail")){
+                        elems.push(mutation.addedNodes[0]);
                     }
+                }
+                let ids = elems.map(ele => beatmapIdOfDetailRow($(ele)));
+                // Cache beatmap info in batch
+                if(settings.fetchUserpageMaxCombo && ids.length){
+                    osuapi.getBeatmaps(ids);
+                }
+                for(let elem of elems){
+                    addBestDetails(elem);
                 }
             });
             var firstObserver = new MutationObserver(function(mutationList){
-                for(var mutation of mutationList){
-                    if(mutation.addedNodes.length){
-                        addFirstDetails(mutation.addedNodes[0]);
+                let elems = [];
+                for(let mutation of mutationList){
+                    if(mutation.addedNodes.length && mutation.addedNodes[0].classList.contains("play-detail")){
+                        elems.push(mutation.addedNodes[0]);
                     }
+                }
+                let ids = elems.map(ele => beatmapIdOfDetailRow($(ele)));
+                // Cache beatmap info in batch
+                if(settings.fetchUserpageMaxCombo && settings.fetchFirstsInfo && ids.length){
+                    osuapi.getBeatmaps(ids);
+                }
+                for(let elem of elems){
+                    addFirstDetails(elem);
                 }
             });
 
@@ -1224,27 +1557,43 @@
             });
 
             // Add bests details
-            getUserBest({u: jsonUser.id, m: gameMode, type: "id", limit: 100}, function(scores){
+            osuapi.getUserBest(jsonUser.id, gameMode, legacy_only, 100).then(function(scores){
                 userBest = scores;
-                lazyLoadedPromise.then(() => {
-                    $("div[data-page-id=top_ranks] .play-detail-list").eq(1).find(".play-detail").each(function(i, ele){
-                        addBestDetails(ele);
-                    });
-                    if($("div[data-page-id=top_ranks] .play-detail-list")[1]){
-                        bestObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[1], {childList: true});
-                    }
+                return lazyLoadedPromise;
+            }).then(function(){
+                $("div[data-page-id=top_ranks] .play-detail-list").eq(1).find(".play-detail").each(function(i, ele){
+                    addBestDetails(ele);
                 });
+                if($("div[data-page-id=top_ranks] .play-detail-list")[1]){
+                    bestObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[1], {childList: true});
+                }
             });
 
             lazyLoadedPromise.then(() => {
                 // Add firsts details
-                $("div[data-page-id=top_ranks] .play-detail-list").eq(2).find(".play-detail").each(function(i, ele){
+                let firstElems = $("div[data-page-id=top_ranks] .play-detail-list").eq(2).find(".play-detail").filter(e => !$(e).has(".op-details-loaded").length);
+                if(settings.fetchUserpageMaxCombo && settings.fetchFirstsInfo){
+                    // Cache beatmap info in batch
+                    let ids = firstElems.map((i, ele) => beatmapIdOfDetailRow($(ele))).get();
+                    if(ids.length){
+                        osuapi.getBeatmaps(ids);
+                    }
+                }
+                firstElems.each((i, ele) => {
                     addFirstDetails(ele);
                 });
                 firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[2], {childList: true});
 
                 // Add pinned details
-                $("div[data-page-id=top_ranks] .play-detail-list").eq(0).find(".play-detail").each(function(i, ele){
+                let pinnedElems = $("div[data-page-id=top_ranks] .play-detail-list").eq(0).find(".play-detail").filter(e => !$(e).has(".op-details-loaded").length);
+                if(settings.fetchUserpageMaxCombo && settings.fetchFirstsInfo){
+                    // Cache beatmap info in batch
+                    let ids = pinnedElems.map((i, ele) => beatmapIdOfDetailRow($(ele))).get();
+                    if(ids.length){
+                        osuapi.getBeatmaps(ids);
+                    }
+                }
+                pinnedElems.each((i, ele) => {
                     addFirstDetails(ele);
                 });
                 firstObserver.observe($("div[data-page-id=top_ranks] .play-detail-list")[0], {childList: true});
@@ -1283,8 +1632,8 @@
             addRelativeRank(ele);
             var beatmapId = beatmapIdOfDetailRow(ele);
             var score = null;
-            for(var uscore of userBest){
-                if(uscore.beatmap_id == beatmapId){
+            for(let uscore of userBest){
+                if(uscore.beatmap.id == beatmapId){
                     score = uscore;
                     break;
                 }
@@ -1305,14 +1654,14 @@
             addRelativeRank(ele);
             // Obtain mods
             let mods = ele.find(".play-detail__mods .mod__icon").map((_, x) => $(x).attr("data-acronym")).get();
-            let modnum = modArrayToNum(mods);
 
             if(settings.fetchFirstsInfo){
                 var beatmapId = beatmapIdOfDetailRow(ele);
                 if(beatmapId){ // may be undefined if you are moving pinned scores
-                    getScores({b: beatmapId, u: jsonUser.id, type: "id", m: gameMode, a: 1, mods: modnum, limit: 1}, function(scores){
-                        if(scores.length){
-                            addDetails(ele, scores[0], beatmapId);
+                    osuapi.getScore(beatmapId, jsonUser.id, gameMode, mods, legacy_only).then(function(score){
+                        // contains potentially useful score.position modded ranking info
+                        if(score.score){
+                            addDetails(ele, score.score, beatmapId);
                         }
                     });
                 }
@@ -1330,9 +1679,9 @@
         function addDetails(top, score, mapId){
             addModalBtn(top, mapId);
             if(settings.fetchUserpageMaxCombo){
-                getBeatmapsCache({b: mapId, m: gameMode, a: 1}, function(beatmap){
-                    if(beatmap.length){
-                        detailify(top, score, beatmap[0]);
+                osuapi.getBeatmap(mapId).then(function(beatmap){
+                    if(beatmap){
+                        detailify(top, score, beatmap);
                     }
                 });
             }else{
@@ -1355,28 +1704,31 @@
             if(beatmap && beatmap.max_combo !== null){
                 maxmapcombo.text(` (${beatmap.max_combo}x)`);
             }
-            if(score.perfect === "1"){
+            /*
+            if(score.is_perfect_combo){
                 if(top.find(".play-detail__pp-weight").length){
                     top.find(".play-detail__pp-weight").prepend("<span class='play-detail__fc'>(FC) </span>");
                 }else{
                     top.find(".play-detail__accuracy-and-weighted-pp").after("<div><span class='play-detail__fc'>(FC)</span></div>");
                 }
-            }
+            }*/
             top.find(".play-detail__title").after(makeScoreStats(score, maxmapcombo));
         }
 
         function makeScoreStats(score, maxmapcombo){
+            let stats = osuapi.normaliseStatistics(score.statistics);
+            let total_score = getTotalScore(score, getScoringMode());
             return $("<div class='play-detail__opstats'></div>").append(
                 $("<b></b>").append(
-                    `${commarise(score.score)} / ${score.maxcombo}x`,
+                    `${commarise(total_score)} / <span ${score.is_perfect_combo ? "class='perfect-combo'" : ""}>${score.max_combo}x</span>`,
                     maxmapcombo
                 ),
-                gameMode <= 1 ? // Standard/Taiko
-                    ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countmiss} }` :
-                    gameMode == 2 ? // CTB
-                        ` { ${score.count300} / ${score.count100} / ${score.count50} / ${score.countkatu} / ${score.countmiss} }` :
+                gameMode === "osu" || gameMode === "taiko" ? // Standard/Taiko
+                    ` { ${stats.great} / ${stats.ok} / ${stats.meh} / ${stats.miss} }` :
+                    gameMode === "fruits" ? // CTB
+                        ` { ${stats.great} / ${stats.large_tick_hit} / ${stats.small_tick_miss} / ${stats.count_miss} }` :
                         // Mania
-                        ` { ${score.countgeki} / ${score.count300} / ${score.countkatu} / ${score.count100} / ${score.count50} / ${score.countmiss} }`
+                        ` { ${stats.perfect} / ${stats.great} / ${stats.good} / ${stats.ok} / ${stats.meh} / ${stats.miss} }`
             );
         }
 
@@ -1401,10 +1753,10 @@
             if(id === undefined) return;
             var opModalContent = $("#opModalContent");
             opModalContent.empty();
-            getBeatmapsCache({b: id, m: gameMode, a: 1}, function(beatmap){
-                beatmap = beatmap[0];
+            osuapi.getBeatmap(id).then(beatmap => {
+                const beatmapset = beatmap.beatmapset;
                 opModalContent.html(
-                    `<h1>${beatmap.artist} - <a href=/beatmapsets/${beatmap.beatmapset_id}>${beatmap.title}</a> [<a href=/beatmaps/${beatmap.beatmap_id}>${beatmap.version}</a>]</h1>
+                    `<h1>${beatmapset.artist} - <a href=/beatmapsets/${beatmapset.id}>${beatmapset.title}</a> [<a href=/beatmaps/${beatmap.id}>${beatmap.version}</a>]</h1>
                     <input type="radio" name="mods" value="none" checked="">Nomod
                     <input type="radio" name="mods" value="hr">HR
                     <input type="radio" name="mods" value="ez">EZ
@@ -1412,29 +1764,29 @@
                         <tr>
                           <td rowspan=5 style='width:1%'>
                             <a>
-                              <img class='bmt' src=//b.ppy.sh/thumb/${beatmap.beatmapset_id}l.jpg>
+                              <img class='bmt' src=//b.ppy.sh/thumb/${beatmapset.id}l.jpg>
                             </a>
                           </td>
-                          <td class='tableAttr'>CS:</td><td>${beatmap.diff_size} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_size)*1.3, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_size)/2).toFixed(2)})</span></td>
-                          <td class='tableAttr'>AR:</td><td>${beatmap.diff_approach} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_approach)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_approach)/2).toFixed(2)})</span></td>
+                          <td class='tableAttr'>CS:</td><td>${beatmap.cs} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.cs)*1.3, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.cs)/2).toFixed(2)})</span></td>
+                          <td class='tableAttr'>AR:</td><td>${beatmap.ar} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.ar)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.ar)/2).toFixed(2)})</span></td>
                         </tr>
                         <tr>
-                          <td class='tableAttr'>HP:</td><td>${beatmap.diff_drain} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_drain)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_drain)/2).toFixed(2)})</span></td>
-                          <td class='tableAttr'>Stars:</td><td>${beatmap.difficultyrating}</td>
+                          <td class='tableAttr'>HP:</td><td>${beatmap.drain} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.drain)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.drain)/2).toFixed(2)})</span></td>
+                          <td class='tableAttr'>Stars:</td><td>${beatmap.difficulty_rating}</td>
                         </tr>
                         <tr>
-                          <td class='tableAttr'>OD:</td><td>${beatmap.diff_overall} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.diff_overall)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.diff_overall)/2).toFixed(2)})</span></td>
+                          <td class='tableAttr'>OD:</td><td>${beatmap.accuracy} <span class="modal-hr" hidden>(${Math.min(parseFloat(beatmap.accuracy)*1.4, 10).toFixed(2)})</span><span class="modal-ez" hidden>(${(parseFloat(beatmap.accuracy)/2).toFixed(2)})</span></td>
                           <td class='tableAttr'>Length:</td>
                           <td>${secsToMins(parseInt(beatmap.total_length))} (${secsToMins(parseInt(beatmap.hit_length))} drain)${(beatmap.max_combo == null ? "" : `<br>${beatmap.max_combo}x combo`)}</td>
                         </tr>
                         <tr>
-                          <td class='tableAttr'>Creator:</td><td>${beatmap.creator}</td>
+                          <td class='tableAttr'>Creator:</td><td>${beatmapset.creator}</td>
                           <td class='tableAttr'>BPM:</td><td>${beatmap.bpm}</td>
                         </tr>
                         <tr>
-                          <td colspan=4><a href=/beatmapsets/${beatmap.beatmapset_id}/download>Download</a>
-                            <a href='https://beatconnect.io/b/${beatmap.beatmapset_id}'>Beatconnect mirror</a><br>
-                            <a href='https://osu.sayobot.cn/home?search=${beatmap.beatmapset_id}' target='_blank'>Sayobot</a>
+                          <td colspan=4><a href=/beatmapsets/${beatmapset.id}/download>Download</a>
+                            <a href='https://beatconnect.io/b/${beatmapset.id}'>Beatconnect mirror</a><br>
+                            <a href='https://osu.sayobot.cn/home?search=${beatmapset.id}' target='_blank'>Sayobot</a>
                           </td>
                         </tr>
                       </table>`
@@ -1463,9 +1815,9 @@
 
         function addGeneral(){
             if(settings.showDetailedHitCount || settings.showHitsPerPlay){
-                getUser({u: jsonUser.id, m: gameMode, type: "id"}, function(response){
-                    var user = response[0];
-                    var c300 = parseInt(user.count300), c100 = parseInt(user.count100), c50 = parseInt(user.count50),
+                osuapi.getUser(jsonUser.id, gameMode).then(function(user){
+                    var stats = user.statistics;
+                    var c300 = parseInt(stats.count_300), c100 = parseInt(stats.count_100), c50 = parseInt(stats.count_50),
                         ctotal = c300 + c100 + c50;
 
                     if(settings.showDetailedHitCount){
@@ -1501,8 +1853,7 @@
             );
             var container = $("#op-recent");
 
-            getUserRecent({u: jsonUser.id, m: gameMode, limit: 50, type: "id"}, function(response){
-                var userRecent = response;
+            osuapi.getUserRecent(jsonUser.id, gameMode, legacy_only, 1, 100).then(function(userRecent){
                 var failedCheckbox = $("<input type=checkbox id='failedCheckbox'/>"),
                     failedChecked = settings.failedChecked;
 
@@ -1524,18 +1875,24 @@
                     subcontainer
                 );
 
-                userRecent.forEach(function(play){
+                let ids = userRecent.map(play => play.beatmap.id);
+                ids = Array.from(new Set(ids));
+                if(settings.fetchUserpageMaxCombo){
+                    osuapi.getBeatmaps(ids);
+                }
+
+                userRecent.forEach(async play => {
                     var //modstr = getMods(play.enabled_mods),
-                        acc = calcAcc(play, gameMode),
-                        dateset = new Date(play.date.replace(" ","T") + "+0000"), // dates from API in GMT+0
-                        maplink = $(`<a href="https://osu.ppy.sh/beatmaps/${play.beatmap_id}" class="play-detail__title u-ellipsis-overflow">
+                        acc = play.accuracy * 100.0,
+                        dateset = new Date(play.ended_at), // dates from API in GMT+0
+                        maplink = $(`<a href="https://osu.ppy.sh/beatmaps/${play.beatmap.id}" class="play-detail__title u-ellipsis-overflow">
                             Loading...<small class="play-detail__artist"></small></a>`),
                         mapver = $("<span class='play-detail__beatmap'>Loading...</span>"),
                         maxmapcombo = $("<span></span>").css("color", "#b7b1e5"),
                         //starrating = $("<b>...&#9733;</b>"),
                         failClass = play.rank === "F" ? "failedScore" : "passScore",
                         ppUnitSpan = "<span class='play-detail__pp-unit'>pp</span>",
-                        ppcalcData = makePpcalcData(gameMode, play, acc, play.beatmap_id);
+                        ppcalcData = makePpcalcData(gameMode, play, acc, play.beatmap.id);
 
                     var detailrow = $(`<div class='play-detail play-detail--highlightable play-detail--compact ${failClass}'>`).append(
                         $("<div class='play-detail__group play-detail__group--top'></div>").append(
@@ -1559,22 +1916,22 @@
                                     <div class="play-detail__accuracy-and-weighted-pp">
                                         <span class="play-detail__accuracy">${acc.toFixed(2)}%</span>
                                     </div>
-                                    ${play.perfect == "1" ? 
+                                    ${play.perfect ? 
                                     "<div><span class='play-detail__fc'>(FC)</span></div>" : ""}
                                 </div>
                             </div>
                             <div class="play-detail__score-detail play-detail__score-detail--mods">
-                                ${getNewMods(play.enabled_mods)}
+                                ${getNewModsHTML(play.mods)}
                             </div>
-                            <div class="play-detail__pp${gameMode == 0 ? "" : " play-detail__recent-pp"}">
-                                ${gameMode == 0 ? 
+                            <div class="play-detail__pp${gameMode == "osu" ? "" : " play-detail__recent-pp"}">
+                                ${gameMode == "osu" ? 
                                 `<span class='ppcalc-pp'>${ppUnitSpan}</span>
                                 <a class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</a>` : ""}
                             </div>
                             <div class="play-detail__more"></div>
                         </div>`
                     );
-                    addModalBtn(detailrow, play.beatmap_id);
+                    addModalBtn(detailrow, play.beatmap.id);
                     detailrow.find(".ppcalc-pp").click(function(event){
                         var me = $(this);
                         me.html(`...${ppUnitSpan}<br>(...)`);
@@ -1585,18 +1942,22 @@
                     });
 
                     subcontainer.append(detailrow);
+
+                    if(settings.fetchUserpageMaxCombo){
+                        let beatmap = await osuapi.getBeatmap(play.beatmap.id);
+                        play.beatmap.max_combo = beatmap.max_combo;
+                    }else{
+                        play.beatmap.max_combo = null;
+                    }
                     
-                    getBeatmapsCache({b: play.beatmap_id, m: gameMode, a: 1}, function(response){
-                        var r = response[0];
-                        maplink.html(
-                            `${r.title} <small class="play-detail__artist">by ${r.artist}</small>`
-                        );
-                        if(r.max_combo !== null){
-                            maxmapcombo.text(` (${r.max_combo}x)`);
-                        }
-                        mapver.text(r.version);
-                        detailrow.find(".identifier").val(r.beatmap_id);
-                    });
+                    maplink.html(
+                        `${play.beatmapset.title} <small class="play-detail__artist">by ${play.beatmapset.artist}</small>`
+                    );
+                    if(play.beatmap.max_combo !== null){
+                        maxmapcombo.text(` (${play.beatmap.max_combo}x)`);
+                    }
+                    mapver.text(play.beatmap.version);
+                    detailrow.find(".identifier").val(play.beatmap.id);
                 });
                 subcontainer.children().each((id, row) => {
                     addRelativeRank($(row));
@@ -1647,20 +2008,20 @@
             scoresResult = null,
             mapMode = 0,
             jsonBeatmapset = null,
-            //jsonCountries = null,
             maxCombo = null,
-            //showDates = true,
             modsEnabled = true,
             timeDelay = 1000,
             timeoutID = null,
             friends = [],
-            scoreReqs = [],
+            reqsController = new AbortController(),
             tableLoadingNotice = null,
             tableWaiter = null,
             tableObserver = null,
             beatmapWaiter = null,
             beatmapObserver = null,
-            currentUser = null;
+            currentUser = null,
+            legacy_only = 1,
+            tableController = null;
 
         function addCss(){
             if(!$(".osuplus-new-beatmap-style").length){
@@ -1713,9 +2074,7 @@
             if($("#osuplusloaded").length) return;
             $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
             addCss();
-            //jsonCountries = JSON.parse($("#json-countries").text());
             jsonBeatmapset = JSON.parse($("#json-beatmapset").text());
-            //showDates = settings.showDates;
             currentUser = JSON.parse(JSON.stringify(unsafeWindow.currentUser));
             friends = extractFriends();
 
@@ -1725,14 +2084,18 @@
                 beatmapObserver = whenBeatmapChange(() => {
                     refreshBeatmapsetHeader();
                 });
-                // only update scores if not in Lazer mode
-                if(currentUser.user_preferences.legacy_score_only){
-                    tableWaiter = waitForEl(".beatmap-scoreboard-table", function(el){
-                        refreshTable();
-                        tableObserver = whenScoreboardChange(refreshTable);
-                    });
-                }
+                legacy_only = currentUser.user_preferences.legacy_score_only ? 1 : 0;
+                tableWaiter = waitForEl(".beatmap-scoreboard-table", function(el){
+                    refreshTable();
+                    tableObserver = whenScoreboardChange(refreshTable);
+                });
             });
+        }
+
+        // React object containing scoreboard data
+        function getTableController(){
+            let key = Object.keys($(".beatmap-scoreboard-table")[0]).find(key => key.startsWith("__reactFiber"));
+            return $(".beatmap-scoreboard-table")[0][key].return.return.pendingProps.controller;
         }
 
         function whenBeatmapChange(callback){
@@ -1742,16 +2105,18 @@
         }
 
         function whenScoreboardChange(onchange){
-            var observer = new MutationObserver(function(mutationList, observer){
-                for(var mutation of mutationList){
+            var observer = new MutationObserver((mutationList, observer) => {
+                let toCallback = false;
+                for(let mutation of mutationList){
                     if(mutation.type == "childList" && mutation.addedNodes.length){
                         var ele = $(":not(.osuplus-table).beatmap-scoreboard-table__table")[0];
                         if(ele){
                             observer.observe(ele, {characterData: true, subtree: true});
+                            toCallback = true;
                         }
                     }
                 }
-                onchange();
+                if(toCallback) onchange();
             });
             observer.observe($(":not(.osuplus-table).beatmap-scoreboard-table__table")[0], {characterData: true, subtree: true});
             observer.observe($(".beatmapset-scoreboard__main")[0], {childList: true});
@@ -1766,9 +2131,10 @@
         }
 
         function refreshTable(){
+            tableController = getTableController();
+            if(debug) unsafeWindow.tableController = tableController; // export
             $(".osuplus-table").remove();
             maxCombo = getMaxCombo(jsonBeatmapset, mapID, mapMode);
-            minePlayerCountries();
 
             if($(".page-tabs").children().first().hasClass("page-tabs__tab--active") && 
                 ($(".beatmapset-scoreboard__mods--initial").length || $(".beatmapset-scoreboard__mods").length==0)){
@@ -1779,12 +2145,14 @@
                     addSlider();
                     tableLoadingNotice = addTableLoadingNotice();
                     tableLoadingNotice.show();
-                    replicateTable();
+                    //replicateTable();
                     modifyTableHeaders();
 
-                    getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
+                    osuapi.getBeatmapScores(mapID, settings.displayTopNum, mapMode, legacy_only, undefined, undefined, settings.showPpRank).then(response => {
                         scoresResult = response;
+                        sortResult("score");
                         updateScoresTable();
+                        tableLoadingNotice.hide();
                     });
                 }
             }else{
@@ -1813,201 +2181,65 @@
             return null;
         }
 
-        function replicateTable(){
-            var oldTable = $(".beatmap-scoreboard-table__table");
-            var newTable = $("<table class='osuplus-table beatmap-scoreboard-table__table'></table>");
-            newTable.html(oldTable.html());
-            oldTable.hide();
-            oldTable.after(newTable);
-        }
-
         function extractFriends(){
             return currentUser.friends.map((friend) => friend.target_id.toString());
         }
 
-        function countryNameFromCode(code){
-            if(countryCodes[code]){
-                return countryCodes[code];
-            }else{
-                return "Unknown";
-            }
-        }
-
         function getMapmode(){
             var modeStr = $(".beatmapset-beatmap-picker__beatmap--active").attr("href").slice(1).split("/")[0];
-            return modeToInt(modeStr);
+            return modeStr;
         }
 
-        function makeScoreTableRow(score, rankno, greyedout){
-            var country = score.user.country.toLowerCase();
-            var countryUpper = country.toUpperCase();
-            var acc = calcAcc(score, mapMode);
-            var mapModeStr = intToMode(mapMode);
-            var rowclass;
-            var datetime = score.date.replace(" ", "T") + "+0000"; // dates from API in GMT+0
+        function updateScoresTable(){
+            let scores = scoresResult.scores;
+            $(".beatmap-scoreboard-table__header--grade").text(`/ ${scoresResult.score_count}`);
+            if(scores.length === 0){
+                // needs a dummy, otherwise entire table disappears
+                let dummy = {
+                    id: 0,
+                    preserve: true,
+                    processed: true,
+                    ranked: true,
+                    accuracy: 0,
+                    ruleset_id: 0,
+                    user_id: 0,
+                    ended_at: "2000-01-01T00:00:00Z",
+                    user: { username: "No scores found" },
+                    statistics: {},
+                    mods: [],
+                    current_user_attributes: { pin: null },
+                    type: "solo_score",
+                    pp: 0
+                };
+                tableController.data.scores = [dummy];
+                return;
+            }
+            tableController.data.scores = scores;
 
-            rowclass = "clickable-row beatmap-scoreboard-table__body-row beatmap-scoreboard-table__body-row--highlightable";
-            if(currentUser !== null && currentUser.id.toString() === score.user_id){ // self
-                rowclass += " beatmap-scoreboard-table__body-row--self";
-            }else if(isFriend(score.user_id)){
-                rowclass += " beatmap-scoreboard-table__body-row--friend";
-            }
-            if(rankno === 1){
-                rowclass += " beatmap-scoreboard-table__body-row--first";
-            }
-            if(greyedout){
-                rowclass += " greyedout";
-            }
-
-            var cellClass = "beatmap-scoreboard-table__cell";
-            var scoreHref = `href='https://osu.ppy.sh/scores/${mapModeStr}/${score.score_id}'`;
-            var countryName = countryNameFromCode(countryUpper);
-            var countryImg = "";
-            if(country !== ""){
-                countryImg = `<a class='${cellClass}-content' href='/rankings/${mapModeStr}/performance?country=${countryUpper}'>
-                        <div class='flag-country flag-country--flat' style='background-image: url(&quot;${getCountryUrl(countryUpper)}&quot;);' title='${countryName}'></div>
-                    </a>`;
-            }
-            var pprank;
-            if(score.user.pp_rank === undefined){
-                pprank = " <span class='pprank'></span>";
-            }else{
-                pprank = ` <span class='pprank'>&nbsp;(#${score.user.pp_rank})</span>`;
-            }
-            var userhref = `<span class='${cellClass}-content u-hover-none'>
-                    <a class='js-usercard beatmap-scoreboard-table__user-link u-hover' data-user-id='${score.user_id}' href='/users/${score.user_id}/${mapModeStr}'>${score.username} ${pprank}</a>
-                </span>`;
-            
-            var ppcalcData = makePpcalcData(mapMode, score, acc, mapID);
-            
-            function makeTdLink(modifiers, content){
-                return `<td class=${cellClass}>
-                        <a class='${cellClass}-content ${modifiers.map(x => `${cellClass}-content--${x}`).join(" ")}' ${scoreHref}>
-                            ${content}
-                        </a>
-                    </td>`;
-            }
-
-            function makeZeroableEntry(num){
-                return makeTdLink(num === "0" ? ["zero"] : [], commarise(num));
-            }
-            
-            var row = $(`<tr class='${rowclass}'>
-                    <td class='${cellClass} ${cellClass}-oprank'>
-                        <a class='${cellClass}-content ${cellClass}-content--bg-link' ${scoreHref}></a>
-                        <span class='${cellClass}-content ${cellClass}-content--rank ${cellClass}-content--oprank u-hover-none'>
-                            <a class='u-hover' ${score.replay_available == "1" ? `href='/scores/${intToMode(mapMode)}/${score.score_id}/download'` : ""}>
-                                #${rankno}
-                            </a>
-                        </span>
-                    </td>
-                    ${makeTdLink(["grade"], `
-                        <div class='score-rank score-rank--tiny score-rank--${score.rank}'></div>`)}
-                    ${makeTdLink(["score"], commarise(score.score))}
-                    ${makeTdLink(acc == 100 ? ["perfect"] : [], `${acc.toFixed(2)}%`)}
-                    <td class='${cellClass}'>${countryImg}</td>
-                    <td class='${cellClass} ${cellClass}--player u-relative'>
-                        <a class='${cellClass}-content ${cellClass}-content--bg-link' ${scoreHref}></a>
-                        ${userhref}
-                    </td>
-                    ${makeTdLink(score.perfect == "1" ? ["perfect"] : [], commarise(score.maxcombo) + "x")}
-                    ${mapMode == 3 ?
-                    // Mania
-                    [
-                        makeZeroableEntry(score.countgeki),
-                        makeZeroableEntry(score.count300),
-                        makeZeroableEntry(score.countkatu),
-                        makeZeroableEntry(score.count100),
-                        makeZeroableEntry(score.count50)
-                    ].join("") :
-                    mapMode == 1 ?
-                    // Taiko
-                    [
-                        makeZeroableEntry(score.count300),
-                        makeZeroableEntry(score.count100)
-                    ].join("") :
-                    mapMode == 2 ?
-                    // CTB
-                    [
-                        makeZeroableEntry(score.count300),
-                        makeZeroableEntry(score.count100),
-                        makeZeroableEntry(score.countkatu)
-                    ].join("") :
-                    // Standard
-                    [
-                        makeZeroableEntry(score.count300),
-                        makeZeroableEntry(score.count100),
-                        makeZeroableEntry(score.count50)
-                    ].join("")}
-                    ${makeZeroableEntry(score.countmiss)}
-                    <td class='${cellClass} osuplus-pp-cell${mapMode == 0 ? " ppcalc-pp" : ""}'>
-                        <a class='${cellClass}-content'>
-                            <span title="${score.pp}">${parseFloat(score.pp).toFixed(settings.pp2dp ? 2 : 0)}</span> <span class="if-fc-span"></span>
-                        </a>
-                    </td>
-                    ${makeTdLink(["time"], `
-                        <time class='js-tooltip-time' title='${datetime}'>
-                            ${window.eval(`moment("${datetime}").locale("scoreboard").fromNow()`)}
-                        </time>`)}
-                    ${makeTdLink(["mods"], `
-                        <div class='beatmap-scoreboard-table__mods'>
-                            ${getNewMods(score.enabled_mods)}
-                        </div>`)}
-                    <!--<td class="beatmap-scoreboard-table__play-detail-menu"></td>-->
-                    <td class='op-ppcalc-data' hidden>${JSON.stringify(ppcalcData)}</td>
-                </tr>`);
-            //doesn't work on greasemonkey, unfixable?
-            //ReactDOM.render(React.createElement(_exported.PlayDetailMenu, {score: newify(score)}), row.find(".beatmap-scoreboard-table__play-detail-menu")[0]);
-
-            //ppcalc, only for std
-            if(mapMode == 0){
-                row.find(".ppcalc-pp").click(function(event){
-                    var me = $(this);
-                    me.find(".if-fc-span").text("(...)");
-                    var ppcalcData = JSON.parse(me.parent().find(".op-ppcalc-data").text());
-                    doPpcalc(ppcalcData).then((result) => {
-                        if([RANKED, QUALIFIED].includes(Number(result.approved))){
-                            me.find(".if-fc-span").text(`(${result.pp_fc} if FC)`);
-                        }else{
-                            me.html(`<span class="if-fc-span">${result.pp} (${result.pp_fc} FC)</span>`);
-                        }
-                    });
+            // change pp to 2dp
+            if(settings.pp2dp){
+                $(".osuplus-pp2dp").remove();
+                $(".beatmap-scoreboard-table__body-row").each((i, row) => {
+                    const len = row.children.length;
+                    const pp = scores[i].pp;
+                    if(pp !== null){
+                        $(row.children[len-4]).find("span").hide().after(
+                            `<span class="osuplus-pp2dp" title=${pp}>${pp.toFixed(2)}</span>`
+                        );
+                    }else{
+                        $(row.children[len-4]).find("span").show();
+                    }
                 });
             }
 
-            return row;
-        }
-        /*
-        function newify(score){
-            score.replay = (score.replay_available == "1");
-            score.user = {username: score.username};
-            score.beatmap = {mode: intToMode(mapMode)};
-            score.id = score.score_id;
-            return score;
-        }*/
-
-        function updateScoresTable(callback){
-            var tableRows = [];
-            var usedUsers = [];
-            var rank = 0;
-            for(var i=0; i<scoresResult.length; i++){
-                var greyedout = false;
-                if(inArray(usedUsers, scoresResult[i].user_id)){
-                    greyedout = true;
-                }else{
-                    usedUsers.push(scoresResult[i].user_id);
-                    rank += 1;
-                }
-                var tableRow = makeScoreTableRow(scoresResult[i], rank, greyedout);
-                tableRows[i] = tableRow;
+            if(settings.showPpRank){
+                $(".pprank").remove();
+                $(".beatmap-scoreboard-table__body-row").each((i, row) => {
+                    $(row.children[5]).children("span").append(
+                        `<span class='pprank'>&nbsp;(#${scores[i].user.statistics_rulesets[mapMode].global_rank})</span>`
+                    );
+                });
             }
-
-            $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__body-row").remove();
-            $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__body").append(tableRows);
-            //$(".timeago").timeago();
-            //updateShowDate();
-            tableLoadingNotice.hide();
-            if(callback) callback();
         }
 
         function putModButtons(){
@@ -2064,7 +2296,7 @@
                 genModBtns([
                     {mods: ["NM"], selection: 0},
                     {mods: ["NM"], selection: 1}]),
-                mapMode < 3 ? // HD for non-mania
+                mapMode !== "mania" ? // HD for non-mania
                     genModBtns([
                         {mods: ["HD"], selection: 0},
                         {mods: ["HD"], selection: 1},
@@ -2101,7 +2333,7 @@
                     {mods: ["FL"], selection: 0},
                     {mods: ["FL"], selection: 1},
                     {mods: ["FL"], selection: 2}]),
-                mapMode < 3 ? [] : //mania keys
+                mapMode !== "mania" ? [] : //mania keys
                     genModBtns([
                         {mods: ["4K"], selection: 0},
                         {mods: ["4K"], selection: 1},
@@ -2110,12 +2342,12 @@
                         {mods: ["7K"], selection: 1},
                         {mods: ["8K"], selection: 1},
                         {mods: ["9K"], selection: 1}]),
-                mapMode < 3 ? [] : //mirror
+                mapMode !== "mania" ? [] : //mirror
                     genModBtns([
                         {mods: ["MR"], selection: 0},
                         {mods: ["MR"], selection: 1},
                         {mods: ["MR"], selection: 2}]),
-                mapMode > 0 ? [] : //SO only for standard
+                mapMode !== "standard" ? [] : //SO only for standard
                     [
                         genModBtns([
                             {mods: ["SO"], selection: 0},
@@ -2181,39 +2413,30 @@
             }, timeDelay);
         }
 
-        function updateModScores(){
-            clearScoresTable();
+        async function updateModScores(){
             abortReqs();
+            tableLoadingNotice.show();
+            //setTableLoading(true);
+            clearScoresResult();
 
             var modvals = getSelectedMods();
-            var funs = [];
-            scoresResult = [];
-            for(var i=0; i<modvals.length; i++){
-                var modval = modvals[i];
-                if(modval < 0){
-                    funs.push(function(callback){
-                        getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum}, settings.showPpRank, function(response){
-                            scoresResult = scoresResult.concat(response);
-                            callback();
-                        }, scoreReqs);
-                    });
-                }else{
-                    funs.push(function(modval){
-                        return function(callback){
-                            getScoresWithPlayerInfo({b:mapID, m:mapMode, limit:settings.displayTopNum, mods:modval}, settings.showPpRank, function(response){
-                                scoresResult = scoresResult.concat(response);
-                                callback();
-                            }, scoreReqs);
-                        };
-                    }(modval));
-                }
-            }
-            doManyFunc(funs, function(){
-                sortResult("score");
-                scoresResult.splice(settings.displayTopNum);
-                updateScoresTable();
+            var promises = modvals.map(async modval => {
+                let modsArray = getModsArray(modval).map(mod => mod.short);
+                if(modsArray.length === 0) modsArray = ["NM"];
+                if(modval < 0) modsArray = undefined;
+                let result = await osuapi.getBeatmapScores(mapID, settings.displayTopNum, mapMode, legacy_only, modsArray, undefined, false, reqsController.signal);
+                scoresResult.score_count += result.score_count;
+                scoresResult.scores = scoresResult.scores.concat(result.scores);
             });
-
+            await Promise.all(promises);
+            sortResult("score");
+            scoresResult.scores.splice(settings.displayTopNum);
+            if(settings.showPpRank){
+                scoresResult = await osuapi.detailifyUsers(scoresResult);
+            }
+            updateScoresTable();
+            //setTableLoading(false);
+            tableLoadingNotice.hide();
         }
 
         function getSelectedMods(){
@@ -2269,30 +2492,10 @@
                                 name: "rankingtype",
                                 value: "friends"})
                             .change(rankingTypeChanged),
-                        "Friends"),
-                    //Show date button
-                    /*
-                    $("<label></label>").append(
-                        $("<input>")
-                            .attr({
-                                type: "checkbox",
-                                id: "showdatebox"})
-                            .change(showDateChanged)
-                            .prop("checked", showDates),
-                        "Show date")*/
+                        "Friends")
                 )
             );
         }
-        /*
-        function showDateChanged(){
-            showDates = $("#showdatebox").prop("checked");
-            updateShowDate();
-        }
-
-        function updateShowDate(){
-            if(showDates) $(".datecol").show();
-            else $(".datecol").hide();
-        }*/
 
         function rankingTypeChanged(){
             var rankingType = $("input[name=rankingtype]:checked").val();
@@ -2308,9 +2511,11 @@
             }
         }
 
-        function updateFriendsScores(){
-            clearScoresTable();
+        async function updateFriendsScores(){
+            //clearScoresTable();
             abortReqs();
+            tableLoadingNotice.show();
+            clearScoresResult();
 
             // Make copy of friends including yourself
             var friends2 = friends.slice(0);
@@ -2318,23 +2523,20 @@
                 friends2.push(currentUser.id.toString());
             }
 
-            var funs = [];
-            for(var i=0; i<friends2.length; i++){
-                funs.push(function(uid){
-                    return function(callback){
-                        getScoresWithPlayerInfo({b:mapID, u:uid, m:mapMode, type:"id"}, settings.showPpRank, function(response){
-                            if(response.length > 0){
-                                scoresResult = scoresResult.concat(response);
-                            }
-                            callback();
-                        }, scoreReqs);
-                    };
-                }(friends2[i]));
-            }
-            doManyFunc(funs, function(){
-                sortResult("score");
-                updateScoresTable();
+            var promises = friends2.map(async uid => {
+                let result;
+                try{
+                    result = await osuapi.getScore(mapID, uid, mapMode, undefined, legacy_only, reqsController.signal);
+                    scoresResult.score_count += 1;
+                    scoresResult.scores.push(result.score);
+                } catch(e){
+                    // no score for user
+                }
             });
+            await Promise.all(promises);
+            sortResult("score");
+            updateScoresTable();
+            tableLoadingNotice.hide();
         }
 
         function makeMirror(url, topName, bottomName, newTab){
@@ -2399,7 +2601,7 @@
             $(".beatmap-scoreboard-table").before(
                 $("<div class='osuplus-table slider-export-container'></div>").append(
                     createSlider(function(val, checked){
-                        var rows = $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__body-row");
+                        var rows = $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__body-row");
                         if(checked){
                             var curTime = new Date();
                             rows.each(function(index, row){
@@ -2421,21 +2623,21 @@
                 )
             );
             $(".export-btn").click(function(){
-                downloadFile(scoresToCsv(scoresResult, mapMode), "scores.csv");
+                downloadFile(scoresToCsv(scoresResult.scores), "scores.csv");
             });
         }
 
         function abortReqs(){
-            while(scoreReqs.length){
-                scoreReqs.pop().abort();
-            }
+            reqsController.abort();
+            reqsController = new AbortController();
         }
 
         function sortResult(sortby){
             if(sortby === "score"){
-                scoresResult.sort(function(a,b){
-                    var ascore = parseInt(a.score),
-                        bscore = parseInt(b.score);
+                const scoreKey = legacy_only ? "legacy_total_score" : "total_score";
+                scoresResult.scores.sort(function(a,b){
+                    let ascore = parseInt(a[scoreKey]),
+                        bscore = parseInt(b[scoreKey]);
                     if(ascore < bscore){
                         return 1;
                     }else if(ascore > bscore){
@@ -2445,8 +2647,8 @@
                     }
                 });
             }else if(sortby === "pp"){
-                scoresResult.sort(function(a,b){
-                    var ascore = parseFloat(a.pp),
+                scoresResult.scores.sort(function(a,b){
+                    let ascore = parseFloat(a.pp),
                         bscore = parseFloat(b.pp);
                     if(ascore < bscore){
                         return 1;
@@ -2475,17 +2677,17 @@
 
         function modifyTableHeaders(){
             // Add click scores/pp to sort
-            $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--score").text("").append(
+            $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--score").text("").append(
                 $("<a>Score</a>")
                     .click(function(){
                         sortResult("score");
                         updateScoresTable();
                     })
             );
-            var ppheader = $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--pp");
+            var ppheader = $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--pp");
             if(ppheader.length == 0){
                 ppheader = $("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--pp'></th>");
-                $(".osuplus-table.beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--time").before(ppheader);
+                $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--time").before(ppheader);
             }
             ppheader.text("").append(
                 $("<a>pp</a>")
@@ -2503,11 +2705,8 @@
             $(".osuplus-table .beatmap-scoreboard-table__header--maxcombo").text(`Max Combo${maxCombo ? ` (${maxCombo})` : ""}`);
         }
 
-        function clearScoresTable(){
-            scoresResult = [];
-            updateScoresTable(function(){
-                tableLoadingNotice.show(); 
-            });
+        function clearScoresResult(){
+            scoresResult = {score_count: 0, scores: []};
         }
 
         function addSearchUser(){
@@ -2524,94 +2723,39 @@
                                 {
                                     $(this).trigger("enterKey");
                                 }
-                            }),
-                        $("<div></div>").attr("id", "searchuserinfo").text("Searching...").hide(),
-                        $("<div></div>").attr("class", "search-beatmap-scoreboard-table")
-                            .attr("id", "searchuserresult")
-                            .append(
-                                $("<table class='search-beatmap-scoreboard-table__table'></table>").append(
-                                    $("<thead></thead>").append(
-                                        $(".beatmap-scoreboard-table__table thead tr").clone()
-                                    )
-                                ).append("<tbody class='beatmap-scoreboard-table__body'></tbody>")
-                            ).hide()
+                            })
                     )
             );
         }
 
         function searchUserEnter(){
-            $("#searchuserinfo").text("Searching...").show();
-            $("#searchuserresult").hide();
+            tableLoadingNotice.show();
             var searchusernames = $("#searchusertxt").val().split(",");
-            var promises = searchusernames.map((username) => new Promise(function(resolve, reject){
-                getScoresWithPlayerInfo({b:mapID, u:username, m:mapMode, type:"string"}, settings.showPpRank, resolve);
-            }));
+            var promises = searchusernames.map(async username => {
+                username = username.trim();
+                let user = await osuapi.getUser(`@${username}`);
+                let scores = await osuapi.getScores(mapID, user.id, mapMode, legacy_only, reqsController.signal);
+                scores.scores.forEach(s => s.user = user);
+                return scores;
+            });
             Promise.all(promises).then((responses) => {
                 var response = [];
                 for(let r of responses){
-                    response = response.concat(r);
+                    response = response.concat(r.scores);
                 }
                 response.sort((a,b) => parseInt(b.score) - parseInt(a.score));
-                if(response.length > 0){
-                    $("#searchuserresult .beatmap-scoreboard-table__body").children().remove();
-                    response.forEach(function(score, index){
-                        var tableRow = makeScoreTableRow(score, index+1);
-                        $("#searchuserresult .beatmap-scoreboard-table__body").append(tableRow);
-                    });
-                    
-                    //$(".timeago").timeago();
-                    $("#searchuserinfo").hide();
-                    $("#searchuserresult").show();
-                }else{
-                    $("#searchuserinfo").text("No scores found :(");
-                }
-            });
-        }
-
-        function isFriend(uid){
-            var friends = currentUser.friends;
-            for(var i=0; i<friends.length; i++){
-                if(friends[i].target_id.toString() === uid) return true;
-            }
-            return false;
-        }
-
-        function minePlayerCountries(){
-            $(".beatmap-scoreboard-table__body").children().each(function(index, ele){
-                var country = $(ele).children().eq(4).children().first().attr("href").split("=")[1].toLowerCase();
-                var uid = $(ele).find(".js-usercard").attr("data-user-id");
-                savePlayerCountry(uid, country);
+                scoresResult = {
+                    score_count: response.length,
+                    scores: response
+                };
+                updateScoresTable();
+                tableLoadingNotice.hide();
             });
         }
 
         return {init: init, destroy: destroy};
     }
 
-
-    function getPlayerCountry(playerid, callback){
-        if(playerid in playerCountries){
-            callback(playerCountries[playerid]);
-        }else{
-            if(settings.fetchPlayerCountries){
-                getUser({u:playerid, type:"id"}, function(response){
-                    var country;
-                    if(response.length){
-                        country = response[0].country.toLowerCase();
-                    }else{
-                        country = "xx";
-                    }
-                    savePlayerCountry(playerid, country);
-                    callback(country);
-                });
-            }else{
-                callback("");
-            }
-        }
-    }
-
-    function savePlayerCountry(playerid, country){
-        playerCountries[playerid] = country;
-    }
 
     function createSlider(valueChange){
         var slider, sliderLbl, sliderCB;
@@ -2651,68 +2795,80 @@
         $(document.body).prepend(
             `<div class="op-getkey">
                 <h1 id="osuplusnotice">
-                    [osuplus] Click <a class="a-promptKey">here</a> to use your osu!API key.<br>
-                    Don't have API key? Get from <a href='https://osu.ppy.sh/p/api' target="_blank">here</a> or <a href='https://old.ppy.sh/p/api' target="_blank">here</a>
+                    [osuplus] Click <a class="a-promptKey" style="cursor: pointer;">here</a> to use your osu!api v2 keys.<br>
+                    See <a href='https://github.com/limjeck/osuplus/blob/master/APIv2.md' target="_blank">here</a> for instructions on how to get the keys.
                 </h1>
             </div>`
         );
         $(".a-promptKey").click(promptKey);
     }
 
-    function promptKey(){
-        var yourKey = prompt("Enter your API key");
-        if(yourKey !== null){
-            testKey(yourKey, function(islegit){
-                if(islegit){
-                    GMX.setValue("apikey", yourKey).then(() => {
-                        apikey = yourKey;
-                        hasKey = true;
-                        alert("API key worked! Your page will now refresh");
-                        location.reload();
-                    });
-                }else{
-                    alert("API key failed :(");
-                }
-            });
+    async function promptKey(){
+        let clientID = prompt("Enter your client ID");
+        if(clientID === null) return;
+        let clientSecret = prompt("Enter your client secret");
+        if(clientSecret === null) return;
+
+        let islegit = await testKey(clientID, clientSecret);
+        if(islegit){
+            settings.clientID = clientID;
+            settings.clientSecret = clientSecret;
+            await Promise.all([
+                GMX.setValue("clientID", clientID),
+                GMX.setValue("clientSecret", clientSecret)
+            ]);
+            let cfm = confirm("API key worked! Click OK to refresh the page");
+            if(cfm){
+                location.reload();
+            }
+        }else{
+            alert("API key failed :(");
         }
     }
 
-    function testKey(key, callback){
-        var url = "https://osu.ppy.sh/api/get_user?k=" + key;
-        GetPage(url, function(response){
-            var jresponse = JSON.parse(response);
-            if("error" in jresponse){
-                callback(false);
-            }else{
-                callback(true);
-            }
-        });
+    async function testKey(clientID, clientSecret){
+        osuapi = new OsuAPI(clientID, clientSecret);
+        try{
+            await osuapi.authenticate();
+            return true;
+        }catch(error){
+            return false;
+        }
     }
 
-    function scoresToCsv(scores, mapMode){
-        var header = ["rank", "score", "accuracy", "country", "username", "user_id", "maxcombo", "perfect", "300", "100", "50", "geki", "katu", "miss", "pp", "date", "mods", "mods_int", "replay_available", "score_id"];
-        var content = scores.map((score) => [
-            score.rank,
-            score.score,
-            calcAcc(score, mapMode),
-            score.user.country || "",
-            score.username,
-            score.user_id,
-            score.maxcombo,
-            score.perfect,
-            score.count300,
-            score.count100,
-            score.count50,
-            score.countgeki,
-            score.countkatu,
-            score.countmiss,
-            score.pp,
-            score.date,
-            `"${getMods(score.enabled_mods)}"`,
-            score.enabled_mods,
-            score.replay_available,
-            score.score_id
-        ]);
+    function scoresToCsv(scores){
+        var header = ["rank", "legacy_total_score", "total_score", "classic_total_score", "accuracy", "country", "username", "user_id", "max_combo", "is_perfect_combo", "great (300)", "good (200)", "ok (100)", "meh (50)", "miss", "perfect (300+)", "large_tick_hit", "large_tick_miss", "small_tick_hit", "small_tick_miss", "pp", "date", "mods", "has_replay", "score_id", "type"];
+        var content = scores.map(score => {
+            let stats = osuapi.normaliseStatistics(score.statistics);
+            return [
+                score.rank,
+                score.legacy_total_score,
+                score.total_score,
+                score.classic_total_score,
+                score.accuracy * 100.0,
+                score.user.country_code || "",
+                score.user.username,
+                score.user_id,
+                score.max_combo,
+                score.is_perfect_combo,
+                stats.great,
+                stats.good,
+                stats.ok,
+                stats.meh,
+                stats.miss,
+                stats.perfect,
+                stats.large_tick_hit,
+                stats.large_tick_miss,
+                stats.small_tick_hit,
+                stats.small_tick_miss,
+                score.pp,
+                score.ended_at,
+                score.mods.map(mod => mod.acronym).join("+"),
+                score.has_replay,
+                score.id,
+                score.type
+            ];
+        });
         var table = [header].concat(content);
         return table.map((row) => row.join(",")).join("\n");
     }
@@ -2742,18 +2898,14 @@
         return mods;
     }
 
-    function getMods(modnum){
-        var modsArray = getModsArray(modnum);
-        if(modsArray.length === 0) return "None";
-        else{
-            return modsArray.map(function(mod){ return mod.short; }).join(",");
+    function getNewModsHTML(mods){
+        let modDict = {};
+        for(let m of modnames){
+            modDict[m.short] = m;
         }
-    }
 
-    function getNewMods(modnum){
-        var modsArray = getModsArray(modnum);
-        var modsHtml = modsArray.map(function(mod){
-            //return `<div class='mods__mod'><div class='mods__mod-image'><div class='mod mod--dynamic mod--${mod.short}' title='${mod.name}'></div></div></div>`;
+        let modsHtml = mods.map(modNew => {
+            let mod = modDict[modNew.acronym];
             return `<div class='mod mod--type-${mod.type}' title='${mod.name}'>
                 <div class='mod__icon mod__icon--${mod.short}' data-acronym=${mod.short}></div>
             </div>`;
@@ -2879,11 +3031,6 @@
         return new Date(datestring).getTime();
     }
 
-    function getCountryUrl(code){
-        var baseFileName = code.split("").map((c) => ((c.charCodeAt(0) + 127397).toString(16))).join("-");
-        return `/assets/images/flags/${baseFileName}.svg`;
-    }
-
     function commarise(num){
         num = num.toString();
         var numarray = [];
@@ -2898,6 +3045,28 @@
         return parseInt(numstr.split("").filter(c => {
             return c >= "0" && c <= "9";
         }).join(""));
+    }
+
+    function getScoringMode(){
+        if(unsafeWindow.currentUser){
+            let pref = unsafeWindow.currentUser.user_preferences;
+            if(pref.legacy_score_only) return "legacy";
+            return pref.scoring_mode; // "standardised" or "classic"
+        }
+        return "legacy";
+    }
+
+    function getTotalScore(score, scoringMode){
+        switch(scoringMode){
+        case "legacy":
+            return score.legacy_total_score;
+        case "standardised":
+            return score.total_score;
+        case "classic":
+            return score.classic_total_score;
+        default:
+            return score.total_score;
+        }
     }
 
     function secsToMins(secs){
@@ -2932,21 +3101,6 @@
         }
     }
 
-    function intToMode(modeint){
-        switch(modeint){
-        case 0:
-            return "osu";
-        case 1:
-            return "taiko";
-        case 2:
-            return "fruits";
-        case 3:
-            return "mania";
-        default:
-            return "osu";
-        }
-    }
-
     // eslint-disable-next-line no-unused-vars
     function formatNumberSuffixed(num, precision){
         const suffixes = ["", "k", "m", "b", "t"];
@@ -2974,354 +3128,51 @@
         return "expert-plus";
     }
 
-    var getBeatmapFileCache = (() => {
-        var callbacks = {},
-            cache = {};
-
-        function getBeatmapFileCache(id, callback){
-            if(id in cache){
-                callback(cache[id]);
-            }else if(id in callbacks){
-                callbacks[id].push(callback);
-            }else{
-                callbacks[id] = [callback];
-                getBeatmapFile(id, function(response){
-                    cache[id] = response;
-                    callbacks[id].forEach(function(cb){
-                        cb(response);
-                    });
-                    delete callbacks[id];
-                });
-            }
-        }
-
-        return getBeatmapFileCache;
-    })();
-
-    function makePpcalcData(modeInt, play, acc, beatmapId) {
+    function makePpcalcData(mode, play, acc, beatmapId) {
+        let stats = play.statistics;
         return {
-            mode: modeInt,
+            mode: modeToInt(mode),
             id: beatmapId,
-            mods: Number(play.enabled_mods),
-            combo: Number(play.maxcombo),
-            n300: Number(play.count300),
-            n100: Number(play.count100),
-            n50: Number(play.count50),
-            nmiss: Number(play.countmiss),
+            mods: Number(modArrayToNum(play.mods)),
+            combo: Number(play.max_combo),
+            n300: Number(stats.count_300),
+            n100: Number(stats.count_100),
+            n50: Number(stats.count_50),
+            nmiss: Number(stats.count_miss),
             acc: acc,
         };
     }
 
-    function doPpcalc(ppcalcData) {
+    async function doPpcalc(ppcalcData) {
         if (ppcalcData.mode != 0)
             throw new Error(`mode not supported: ${ppcalcData.mode}`);
 
-        var ppResult = new Promise(resolve => getBeatmapFileCache(ppcalcData.id, resolve))
-            .then(beatmapFile => {
-                var parser = new ojsama.parser().feed(beatmapFile);
-                //debugValue(parser.toString());
-                //debugValue(parser.map.toString());
+        let beatmapFile = await osuapi.getBeatmapFile(ppcalcData.id);
+        let parser = new ojsama.parser().feed(beatmapFile);
+        let pp = debugValue(ojsama.ppv2({
+            map: parser.map,
+            mode: ppcalcData.mode,
+            mods: ppcalcData.mods,
+            combo: ppcalcData.combo,
+            n300: ppcalcData.n300,
+            n100: ppcalcData.n100,
+            n50: ppcalcData.n50,
+            nmiss: ppcalcData.nmiss,
+        }));
+        // "pp if full combo" is defined here as max combo and every miss converted to 300.
+        // the new n300 is not always (n300 + nmiss), because the play may have failed early.
+        let pp_fc = debugValue(ojsama.ppv2({
+            map: parser.map,
+            mode: ppcalcData.mode,
+            mods: ppcalcData.mods,
+            combo: parser.map.max_combo(),
+            n300: parser.map.objects.length - ppcalcData.n100 - ppcalcData.n50,
+            n100: ppcalcData.n100,
+            n50: ppcalcData.n50,
+            nmiss: 0,
+        }));
 
-                return {
-                    pp: debugValue(ojsama.ppv2({
-                        map: parser.map,
-                        mode: ppcalcData.mode,
-                        mods: ppcalcData.mods,
-                        combo: ppcalcData.combo,
-                        n300: ppcalcData.n300,
-                        n100: ppcalcData.n100,
-                        n50: ppcalcData.n50,
-                        nmiss: ppcalcData.nmiss,
-                    })),
-                    // "pp if full combo" is defined here as max combo and every miss converted to 300.
-                    // the new n300 is not always (n300 + nmiss), because the play may have failed early.
-                    pp_fc: debugValue(ojsama.ppv2({
-                        map: parser.map,
-                        mode: ppcalcData.mode,
-                        mods: ppcalcData.mods,
-                        combo: parser.map.max_combo(),
-                        n300: parser.map.objects.length - ppcalcData.n100 - ppcalcData.n50,
-                        n100: ppcalcData.n100,
-                        n50: ppcalcData.n50,
-                        nmiss: 0,
-                    })),
-                };
-            });
-
-        var getBeatmapsResult = new Promise(resolve => getBeatmapsCache({
-            b: ppcalcData.id,
-            m: ppcalcData.mode,
-            a: 1,
-        }, resolve));
-
-        return Promise.all([ppResult, getBeatmapsResult])
-            .then(([{pp, pp_fc}, [{approved}]]) => {
-                //debugValue([pp, pp_fc, approved]);
-                return {
-                    pp: Math.round(pp.total),
-                    pp_fc: Math.round(pp_fc.total),
-                    approved: approved,
-                };
-            });
-    }
-
-    function getRequest(url, callback, reqTracker){
-        // reqTracker is a list of requests to keep track whether the request is ongoing, to allow abortion
-        if(reqTracker){
-            var req = GetPageJSON(url, function(response){
-                removeFromArray(reqTracker, req);
-                callback(response);
-            });
-            reqTracker.push(req);
-        }else{
-            GetPageJSON(url, callback);
-        }
-    }
-
-    function getScoresWithPlayerInfo(params, showPpRank, callback, reqTracker){
-        var mode = params.m || 0;
-        getScores(params, function(response){
-            var funs = [];
-            response.forEach(function(score, index){
-                if(showPpRank){
-                    funs.push(function(donecb){
-                        getUser({u: score.user_id, type: "id", m: mode}, function(userInfo){
-                            response[index].user = userInfo[0];
-                            savePlayerCountry(score.user_id, userInfo[0].country);
-                            donecb();
-                        }, reqTracker);
-                    });
-                }else{
-                    funs.push(function(donecb){
-                        getPlayerCountry(score.user_id, function(country){
-                            response[index].user = {country: country};
-                            donecb();
-                        });
-                    });
-                }
-            });
-            doManyFunc(funs, function(){
-                callback(response);
-            });
-        }, reqTracker);
-    }
-
-    function getMpEvents(mp){
-        function doBefore(events, first, resolve){
-            var id = events.events[0].id;
-            var url2 = `https://osu.ppy.sh/community/matches/${mp}?before=${id}&limit=100`;
-            $.get(url2, (res) => {
-                if(debug) console.log(url2, res);
-                events.events = res.events.concat(events.events);
-                //combine users
-                for(let u of res.users){
-                    var isthere = false;
-                    for(let v of events.users){
-                        if(v.id === u.id){
-                            isthere = true;
-                            break;
-                        }
-                    }
-                    if(!isthere){
-                        events.users.push(u);
-                    }
-                }
-                if(res.events.length && res.events[0].id > first){
-                    doBefore(events, first, resolve);
-                }else{
-                    resolve(events);
-                }
-            }, "json");
-        }
-
-        return new Promise((resolve, reject) => {
-            var url = `https://osu.ppy.sh/community/matches/${mp}`;
-            $.get(url, (events) => {
-                if(debug) console.log(url, events);
-                var first = events.first_event_id;
-                if(events.events.length && events.events[0].id > first){
-                    doBefore(events, first, resolve);
-                }else{
-                    resolve(events);
-                }
-            }, "json");
-        });
-    }
-
-    function getUserRecent(params, callback, reqTracker){
-        /*
-        k - api key (required).
-        u - specify a user_id or a username to return recent plays from (required).
-        m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, default value is 0.
-        limit - amount of results (range between 1 and 50 - defaults to 10).
-        type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behavior is automatic recognition (may be problematic for usernames made up of digits only).
-        */
-        var url = "https://osu.ppy.sh/api/get_user_recent";
-        params.k = apikey;
-        getRequest(getUrl(url, params), callback, reqTracker);
-    }
-    //eslint-disable-next-line no-unused-vars
-    function getReplay(params, callback, reqTracker){
-        /*
-        k - api key (required).
-        m - the mode the score was played in (required).
-        b - the beatmap ID (not beatmap set ID!) in which the replay was played (required).
-        u - the user that has played the beatmap (required).
-        */
-        var url = "https://osu.ppy.sh/api/get_replay";
-        params.k = apikey;
-        getRequest(getUrl(url, params), callback, reqTracker);
-    }
-
-    function getBeatmaps(params, callback, reqTracker){
-        /*
-        k - api key (required).
-        since - return all beatmaps ranked since this date. Must be a MySQL date.
-        s - specify a beatmapset_id to return metadata from.
-        b - specify a beatmap_id to return metadata from.
-        u - specify a user_id or a username to return metadata from.
-        type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behaviour is automatic recognition (may be problematic for usernames made up of digits only).
-        m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, maps of all modes are returned by default.
-        a - specify whether converted beatmaps are included (0 = not included, 1 = included). Only has an effect if m is chosen and not 0. Converted maps show their converted difficulty rating. Optional, default is 0.
-        h - the beatmap hash. It can be used, for instance, if you're trying to get what beatmap has a replay played in, as .osr replays only provide beatmap hashes (example of hash: a5b99395a42bd55bc5eb1d2411cbdf8b). Optional, by default all beatmaps are returned independently from the hash.
-        limit - amount of results. Optional, default and maximum are 500.
-        */
-        var url = "https://osu.ppy.sh/api/get_beatmaps";
-        params.k = apikey;
-        getRequest(getUrl(url, params), callback, reqTracker);
-    }
-
-    function getScores(params, callback, reqTracker){
-        /*
-        k - api key (required).
-        b - specify a beatmap_id to return score information from (required).
-        u - specify a user_id or a username to return score information for.
-        m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, default value is 0.
-        mods - specify a mod or mod combination (See the bitwise enum)
-        type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behaviour is automatic recognition (may be problematic for usernames made up of digits only).
-        limit - amount of results from the top (range between 1 and 100 - defaults to 50).
-        */
-        var url = "https://osu.ppy.sh/api/get_scores";
-        params.k = apikey;
-        getRequest(getUrl(url, params), callback, reqTracker);
-    }
-
-    function getUser(params, callback, reqTracker){
-        /*
-        k - api key (required).
-        u - specify a user_id or a username to return metadata from (required).
-        m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, default value is 0.
-        type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behaviour is automatic recognition (may be problematic for usernames made up of digits only).
-        event_days - Max number of days between now and last event date. Range of 1-31. Optional, default value is 1.
-        */
-        var url = "https://osu.ppy.sh/api/get_user";
-        params.k = apikey;
-        getRequest(getUrl(url, params), callback, reqTracker);
-    }
-
-    function getUserBest(params, callback, reqTracker){
-        /*
-        k - api key (required).
-        u - specify a user_id or a username to return best scores from (required).
-        m - mode (0 = osu!, 1 = Taiko, 2 = CtB, 3 = osu!mania). Optional, default value is 0.
-        limit - amount of results (range between 1 and 100 - defaults to 10).
-        type - specify if u is a user_id or a username. Use string for usernames or id for user_ids. Optional, default behavior is automatic recognition (may be problematic for usernames made up of digits only).
-        */
-        var url = "https://osu.ppy.sh/api/get_user_best";
-        params.k = apikey;
-        getRequest(getUrl(url, params), callback, reqTracker);
-    }
-
-    function getBeatmapFile(beatmapId, callback, reqTracker){
-        GetPage(`https://osu.ppy.sh/osu/${beatmapId}`, callback, reqTracker);
-    }
-
-    function getUrl(url, params){
-        if(params){
-            var paramarray = [];
-            for(var k in params){
-                paramarray.push(k + "=" + encodeURIComponent(params[k]));
-            }
-            return url + "?" + paramarray.join("&");
-        }else{
-            return url;
-        }
-    }
-
-    function GetPageJSON(url, callback){
-        return GetPage(url, (response) => {
-            let responseJSON;
-            try{
-                responseJSON = JSON.parse(response);
-                try{
-                    callback(responseJSON);
-                }catch(e){
-                    // do nothing
-                }
-            }catch(e){
-                if(debug) console.log(`error parsing JSON: ${response}`);
-                callback(null);
-            }
-        });
-    }
-
-    var requestLimiter = {
-        rate: 100, //time between requests, in ms
-        interval: null,
-        queue: [],
-        loop: function(){
-            if(this.queue.length > 0){
-                var details = this.queue.shift();
-                if(debug) console.log(details.url);
-                GMX.xmlHttpRequest(details);
-            }
-        },
-        makeRequest: function(details){
-            if(this.interval === null){
-                this.interval = setInterval(this.loop.bind(this), this.rate);
-            }
-            this.queue.push(details);
-        }
-        
-    };
-
-    function GetPage(url, callback) {
-        return abortableXHR({
-            method: "GET",
-            url: url,
-            synchronous: false,
-            timeout: 10000,
-            onload: function (resp) {
-                callback(resp.responseText);
-            },
-            ontimeout: function () {
-                if(debug) console.log("timeout!");
-                callback(null);
-            }
-        });
-    }
-
-    function abortableXHR(details){
-        var aborted = false;
-        var abortableOnload = (resp) => {
-            if(!aborted && details.onload){
-                details.onload(resp);
-            }
-        };
-        var abortableOntimeout = (resp) => {
-            if(!aborted && details.ontimeout){
-                details.ontimeout(resp);
-            }
-        };
-        requestLimiter.makeRequest({
-            method: details.method,
-            url: details.url,
-            synchronous: details.synchronous,
-            timeout: details.timeout,
-            onload: abortableOnload,
-            ontimeout: abortableOntimeout
-        });
-        return {abort: () => { aborted = true; }};
+        return {pp: Math.round(pp.total), pp_fc: Math.round(pp_fc.total)};
     }
 
     //-------------------------------
@@ -3329,8 +3180,7 @@
     //-------------------------------
 
     function debugValue(x) {
-        if (debug)
-            console.log(x);
+        if(debug) console.log(x);
         return x;
     }
 
@@ -3381,23 +3231,6 @@
 
     function nullIfBlankOrNull(stringValue) {
         return stringValue === null || stringValue.trim() === "" || stringValue === "null" ? null : stringValue;
-    }
-
-    // runs array of functions funs asynchronously and calls finalcallback() when all are done
-    // each fun in funs must be function(callback) and must call callback() when done
-    function doManyFunc(funs, finalcallback){
-        var done = 0, total = funs.length;
-        for(var i=0; i<total; i++){
-            funs[i](function(){
-                done++;
-                if(done == total){
-                    finalcallback();
-                }
-            });
-        }
-        if(total === 0){
-            finalcallback();
-        }
     }
 
     function downloadFile(data, filename){
