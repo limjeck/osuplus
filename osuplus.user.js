@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.4.0
+// @version      2.4.1
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -2065,7 +2065,8 @@
                      .preview-container {resize: vertical; overflow: hidden}
                      .preview-container:has(.osupreview) {height: 500px;}
                      .preview-container:has(.osupreview2) {height: 700px;}
-                     .preview-container:has(.osupreview3) {height: 700px;}`
+                     .preview-container:has(.osupreview3) {height: 700px;}
+                     .op-beatmap-scoreboard-table-copy {margin-top: 30px;}`
                 ));
             }
         }
@@ -2190,9 +2191,11 @@
             return modeStr;
         }
 
-        function updateScoresTable(){
+        function updateScoresTable(keepCopy=false){
+            if(!keepCopy) $(".op-beatmap-scoreboard-table-copy").remove();
             let scores = scoresResult.scores;
-            $(".beatmap-scoreboard-table__header--grade").text(`/ ${scoresResult.score_count}`);
+            let scoreboardTable = $(".beatmap-scoreboard-table__table:not(.op-beatmap-scoreboard-table-copy)");
+            scoreboardTable.find(".beatmap-scoreboard-table__header--grade").text(`/ ${scoresResult.score_count}`);
             if(scores.length === 0){
                 // needs a dummy, otherwise entire table disappears
                 let dummy = {
@@ -2218,8 +2221,8 @@
 
             // change pp to 2dp
             if(settings.pp2dp){
-                $(".osuplus-pp2dp").remove();
-                $(".beatmap-scoreboard-table__body-row").each((i, row) => {
+                scoreboardTable.find(".osuplus-pp2dp").remove();
+                scoreboardTable.find(".beatmap-scoreboard-table__body-row").each((i, row) => {
                     const len = row.children.length;
                     const pp = scores[i].pp;
                     if(pp !== null){
@@ -2233,8 +2236,8 @@
             }
 
             if(settings.showPpRank){
-                $(".pprank").remove();
-                $(".beatmap-scoreboard-table__body-row").each((i, row) => {
+                scoreboardTable.find(".pprank").remove();
+                scoreboardTable.find(".beatmap-scoreboard-table__body-row").each((i, row) => {
                     $(row.children[5]).children("span").append(
                         `<span class='pprank'>&nbsp;(#${scores[i].user.statistics_rulesets[mapMode].global_rank})</span>`
                     );
@@ -2316,17 +2319,17 @@
                 genModBtns([
                     {mods: ["DT"], selection: 0},
                     {mods: ["DT"], selection: 1},
+                    {mods: ["DT"], selection: 2},
                     {mods: ["NC"], selection: 1},
-                    {mods: ["DT", "NC"], selection: 1},
-                    {mods: ["DT", "NC"], selection: 2},
+                    {mods: ["NC"], selection: 2},
                     {mods: ["HT"], selection: 1},
                     {mods: ["HT"], selection: 2}]),
                 genModBtns([
                     {mods: ["SD"], selection: 0},
                     {mods: ["SD"], selection: 1},
+                    {mods: ["SD"], selection: 2},
                     {mods: ["PF"], selection: 1},
-                    {mods: ["SD", "PF"], selection: 1},
-                    {mods: ["SD", "PF"], selection: 2},
+                    {mods: ["PF"], selection: 2},
                     {mods: ["NF"], selection: 1},
                     {mods: ["NF"], selection: 2}]),
                 genModBtns([
@@ -2347,7 +2350,7 @@
                         {mods: ["MR"], selection: 0},
                         {mods: ["MR"], selection: 1},
                         {mods: ["MR"], selection: 2}]),
-                mapMode !== "standard" ? [] : //SO only for standard
+                mapMode !== "osu" ? [] : //SO only for standard
                     [
                         genModBtns([
                             {mods: ["SO"], selection: 0},
@@ -2429,13 +2432,21 @@
                 scoresResult.scores = scoresResult.scores.concat(result.scores);
             });
             await Promise.all(promises);
+            
+            // Remove duplicates
+            let seen = new Set();
+            scoresResult.scores = scoresResult.scores.filter(score => {
+                if(seen.has(score.id)) return false;
+                seen.add(score.id);
+                return true;
+            });
+
             sortResult("score");
             scoresResult.scores.splice(settings.displayTopNum);
             if(settings.showPpRank){
                 scoresResult = await osuapi.detailifyUsers(scoresResult);
             }
             updateScoresTable();
-            //setTableLoading(false);
             tableLoadingNotice.hide();
         }
 
@@ -2643,13 +2654,15 @@
                     }else if(ascore > bscore){
                         return -1;
                     }else{
-                        return getTime(a.date) - getTime(b.date);
+                        return getTime(a.ended_at) - getTime(b.ended_at);
                     }
                 });
             }else if(sortby === "pp"){
                 scoresResult.scores.sort(function(a,b){
                     let ascore = parseFloat(a.pp),
                         bscore = parseFloat(b.pp);
+                    if(isNaN(ascore)) ascore = 0;
+                    if(isNaN(bscore)) bscore = 0;
                     if(ascore < bscore){
                         return 1;
                     }else if(ascore > bscore){
@@ -2662,7 +2675,7 @@
                         }else if(ascore > bscore){
                             return -1;
                         }else{
-                            return getTime(a.date) - getTime(b.date);
+                            return getTime(a.ended_at) - getTime(b.ended_at);
                         }
                     }
                 });
@@ -2677,8 +2690,9 @@
 
         function modifyTableHeaders(){
             // Add click scores/pp to sort
+            const scoreText = $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--score").text(); // handle other languages
             $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--score").text("").append(
-                $("<a>Score</a>")
+                $(`<a>${scoreText}</a>`)
                     .click(function(){
                         sortResult("score");
                         updateScoresTable();
@@ -2689,8 +2703,9 @@
                 ppheader = $("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--pp'></th>");
                 $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--time").before(ppheader);
             }
+            const ppText = ppheader.text();
             ppheader.text("").append(
-                $("<a>pp</a>")
+                $(`<a>${ppText}</a>`)
                     .click(function(){
                         sortResult("pp");
                         updateScoresTable();
@@ -2733,7 +2748,13 @@
             var searchusernames = $("#searchusertxt").val().split(",");
             var promises = searchusernames.map(async username => {
                 username = username.trim();
-                let user = await osuapi.getUser(`@${username}`);
+                let user;
+                try{
+                    user = await osuapi.getUser(`@${username}`);
+                }catch(e){
+                    // User does not exist
+                    return {score_count: 0, scores: []};
+                }
                 let scores = await osuapi.getScores(mapID, user.id, mapMode, legacy_only, reqsController.signal);
                 scores.scores.forEach(s => s.user = user);
                 return scores;
@@ -2748,7 +2769,13 @@
                     score_count: response.length,
                     scores: response
                 };
-                updateScoresTable();
+
+                if($(".op-beatmap-scoreboard-table-copy").length === 0){
+                    let scoreboardTable = $(".beatmap-scoreboard-table__table");
+                    let scoreboardTableCopy = scoreboardTable.clone().addClass("op-beatmap-scoreboard-table-copy");
+                    scoreboardTable.after(scoreboardTableCopy);
+                }
+                updateScoresTable(true);
                 tableLoadingNotice.hide();
             });
         }
