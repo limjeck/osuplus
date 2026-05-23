@@ -1,3 +1,12 @@
+# 2.4.1 (24 May 2026)
+
+## Bugfixes
+- Added back SO and TD mod selector in beatmap page.
+- Fixed certain scores appearing multiple times when selecting mods in beatmap page.
+- Modified mod selections in beatmap page.
+- Searching users scores now preserves the previous scoreboard in beatmap page.
+- Fixed error when searching non-existent user in beatmap page.
+
 # 2.4.0 (17 May 2026)
 
 ## Features
