@@ -1,3 +1,20 @@
+# 2.4.2 (6 Jun 2026)
+
+## Bugfixes
+- Userpage
+  - Fixed highlight past x days not highlighting properly.
+  - Fixed error when pinned score cannot be found.
+  - Added link to score in ? modal.
+  - Fixed grade for failed scores.
+  - Fixed recent score relative rank when hiding failed scores.
+  - Fixed recent score mods/acc swapped ordering.
+  - Fixed zero score for lazer scores when not in lazer mode.
+- Beatmap page
+  - Fixed not working on Greasemonkey in Firefox.
+  - Fixed scoreboard not updating when changing beatmap and back.
+  - Added user's score for selected mods.
+  - Updated osu!preview url.
+
 # 2.4.1 (24 May 2026)
 
 ## Bugfixes
