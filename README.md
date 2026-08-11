@@ -34,6 +34,7 @@ All features are available on https://osu.ppy.sh/.
 - Display global and country rank in performance ranking
 - Settings tab to enable/disable osuplus features
 - Match cost calculator
+- [Replayviewer](https://www.replayviewer.com/) in score details pages
 
 ## Prerequisites
 - Tampermonkey (for Chrome/Firefox) or Greasemonkey (for Firefox)
@@ -49,5 +50,9 @@ All features are available on https://osu.ppy.sh/.
 ## FAQ
 - I don't see the red banner or the cogs settings!
   - Make sure you have Tampermonkey/Greasemonkey installed and enabled. Make sure Developer Mode is enabled so that the userscript is allowed to inject codes (see https://www.tampermonkey.net/faq.php?locale=en#Q209 for details and instructions).
-- My question is not in this FAQ!
+- In the beatmaps page, how do I see country rankings?
+  - Sorry but country rankings is not possible in osuplus since the osu API does not support it.
+- In the beatmaps page, how do I filter the mods NF/HT/EZ?
+  - Click the SD/DT/HR icons several times, and it will eventually cycle to NF/HT/EZ.
+- How do I ask more questions?
   - You may ask any additional questions in the Discord server.
