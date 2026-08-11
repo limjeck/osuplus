@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         osuplus
 // @namespace    https://osu.ppy.sh/u/1843447
-// @version      2.4.2
+// @version      2.4.3
 // @description  show pp, selected mods ranking, friends ranking and other stuff
 // @author       oneplusone
 // @match        http://osu.ppy.sh/*
@@ -167,6 +167,13 @@
             const response = await this.auth_fetch(url, signal);
             if (!response.ok) throw new Error("Failed to fetch scores");
             return await response.json();
+        }
+
+        async getReplay(score_id, signal=undefined) {
+            const url = new URL(`${this.baseUrl}/scores/${score_id}/download`);
+            const response = await this.auth_fetch(url, signal);
+            if (!response.ok) throw new Error(`Failed to fetch replay for score ${score_id}`);
+            return await response.blob();
         }
 
         async getUserScores(user_id, type, mode="osu", legacy_only=0, include_fails=1, limit=100, offset=0, signal=undefined) {
@@ -886,6 +893,8 @@
                     setNewOsuplus(osuplusNewPpRanking);
                 }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/community\/matches/)){
                     setNewOsuplus(osuplusNewMp);
+                }else if(url.match(/^https?:\/\/osu\.ppy\.sh\/scores\//)){
+                    setNewOsuplus(osuplusNewScores);
                 }
             }
 
@@ -995,7 +1004,7 @@
                             ${matches.map((match, index) => 
                                 `<input type='checkbox' id='mp-map-${match.id}' name='${index}' checked>
                                 <label for='mp-map-${match.id}' class='mp-label'>
-                                    ${match.beatmap.title} [${match.beatmap.version}] ${match.mods.length == 0 ? "" : `+${match.mods.join(",")}`}
+                                    ${escapeHtml(match.beatmap.title)} [${escapeHtml(match.beatmap.version)}] ${match.mods.length == 0 ? "" : `+${match.mods.join(",")}`}
                                 </label><br>`
                             ).join("")}
                         </div>
@@ -1004,7 +1013,7 @@
                             ${userData.map((user) => 
                                 `<div class='mc-user'>
                                     <input type='checkbox' id='mp-user-${user.id}' name='${user.id}' checked>
-                                    <label for='mp-user-${user.id}' class='mp-label'><span class='mp-team-${user.team}'></span> ${user.username}</label>
+                                    <label for='mp-user-${user.id}' class='mp-label'><span class='mp-team-${user.team}'></span> ${escapeHtml(user.username)}</label>
                                 </div>`
                             ).join("")}
                         </div>
@@ -1074,7 +1083,7 @@
                     }
                     mc.sort((a, b) => b.stats.mc - a.stats.mc);
                     mcEle.find(".mc-results").empty().html(
-                        `<div class='mc-results-header'>${jsonEvents.match.name}<br>Formula: ${formula}</div>
+                        `<div class='mc-results-header'>${escapeHtml(jsonEvents.match.name)}<br>Formula: ${formula}</div>
                         <div class='mc-teamresult'>${teamresultDiv}</div>
                         <div class='mc-result'>
                             <table class='mc-list'>
@@ -1082,7 +1091,7 @@
                                 ${mc.map(x => 
                                 `<tr class='mc-list-row'><td></td>
                                     <td class='mc-cell-mc'><span class='mc-mc'>${x.stats.mc.toFixed(3)}</span></td>
-                                    <td class='mc-cell-player'><span class='mp-team-${x.team}'></span> ${x.username}</td>
+                                    <td class='mc-cell-player'><span class='mp-team-${x.team}'></span> ${escapeHtml(x.username)}</td>
                                     <td class='mc-cell-plays'>${x.stats.plays}</td>
                                     <td class='mc-cell-tops'>${x.stats.tops}</td>
                                 </tr>`
@@ -1309,6 +1318,88 @@
 
         function destroy(){
             $(".osuplus-new-beatmaplisting-style").remove();
+        }
+
+        return {init: init, destroy: destroy};
+    }
+
+    function osuplusNewScores(){
+        var replayviewerOrigin = "https://www.replayviewer.com",
+            messageHandler = null;
+
+        function addCss(){
+            if(!$(".osuplus-new-scores-style").length){
+                $(document.head).append($("<style class='osuplus-new-scores-style'></style>").html(
+                    `.osuplus-replayviewer-container {padding: 10px;}
+                     .osuplus-replayviewer {width: 100%; height: 100%;}
+                     .osuplus-replayviewer-error {color: #ff6b6b; padding: 5px 0;}
+                     .preview-container {resize: vertical; overflow: hidden}
+                     .preview-container:has(.osuplus-replayviewer) {height: 700px; margin-left: -20px;}`
+                ));
+            }
+        }
+
+        function showReplayViewerError(replayviewerEle, message){
+            replayviewerEle.prepend(`<div class='osuplus-replayviewer-error'>${escapeHtml(message)}</div>`);
+        }
+
+        function loadReplay(scoreID, iframe, replayviewerEle){
+            osuapi.getReplay(scoreID).then(function(blob){
+                return blob.arrayBuffer();
+            }).then(function(osr){
+                iframe.contentWindow.postMessage({type: "replayviewer:load", osr: osr}, replayviewerOrigin, [osr]);
+            }).catch(function(err){
+                console.error(err);
+                showReplayViewerError(replayviewerEle, "Failed to load replay.");
+            });
+        }
+
+        function addReplayViewer(){
+            var scoreID = window.location.pathname.split("/").filter(Boolean).pop();
+
+            $(".osu-page--generic-compact").append(
+                $("<div class='osuplus-replayviewer-container osuplus-header'><div class='js-spoilerbox bbcode-spoilerbox'>\
+                    <a class='js-spoilerbox__link bbcode-spoilerbox__link' href='#'><span class='bbcode-spoilerbox__link-icon'></span>Replay Viewer</a>\
+                    <div class='js-spoilerbox__body bbcode-spoilerbox__body'><div id='osuplus-replayviewer'></div></div></div>"
+                ).click(function(){
+                    var replayviewerEle = $(this).find("#osuplus-replayviewer");
+                    if(replayviewerEle.data("loaded")) return;
+                    replayviewerEle.data("loaded", true);
+                    replayviewerEle.html(
+                        `<a href='https://www.replayviewer.com/' target='_blank'>replayviewer</a>
+                        <div class='preview-container'>
+                        <iframe class='osuplus-replayviewer' src='${replayviewerOrigin}/?embed=1' allow='autoplay' allowfullscreen></iframe></div>`
+                    );
+
+                    var iframe = replayviewerEle.find(".osuplus-replayviewer")[0];
+                    messageHandler = function(e){
+                        if(e.origin !== replayviewerOrigin || e.source !== iframe.contentWindow) return;
+                        switch(e.data && e.data.type){
+                        case "replayviewer:ready":
+                            loadReplay(scoreID, iframe, replayviewerEle);
+                            break;
+                        case "replayviewer:error":
+                            console.error("replayviewer error:", e.data.message);
+                            showReplayViewerError(replayviewerEle, e.data.message);
+                            break;
+                        }
+                    };
+                    window.addEventListener("message", messageHandler);
+                })
+            );
+        }
+
+        function init(){
+            if($("#osuplusloaded").length) return;
+            $("body").append("<a hidden id='osuplusloaded' class='osuplus'></a>");
+            addCss();
+            addReplayViewer();
+        }
+
+        function destroy(){
+            $(".osuplus-new-scores-style").remove();
+            $(".osuplus-replayviewer-container").remove();
+            if(messageHandler) window.removeEventListener("message", messageHandler);
         }
 
         return {init: init, destroy: destroy};
@@ -1721,7 +1812,7 @@
                 gameMode === "osu" || gameMode === "taiko" ? // Standard/Taiko
                     ` { ${stats.great} / ${stats.ok} / ${stats.meh} / ${stats.miss} }` :
                     gameMode === "fruits" ? // CTB
-                        ` { ${stats.great} / ${stats.large_tick_hit} / ${stats.small_tick_miss} / ${stats.count_miss} }` :
+                        ` { ${stats.great} / ${stats.large_tick_hit} / ${stats.small_tick_miss} / ${stats.miss} }` :
                         // Mania
                         ` { ${stats.perfect} / ${stats.great} / ${stats.good} / ${stats.ok} / ${stats.meh} / ${stats.miss} }`
             );
@@ -1750,7 +1841,7 @@
             osuapi.getBeatmap(beatmap_id).then(beatmap => {
                 const beatmapset = beatmap.beatmapset;
                 opModalContent.html(
-                    `<h1>${beatmapset.artist} - <a href=/beatmapsets/${beatmapset.id}>${beatmapset.title}</a> [<a href=/beatmaps/${beatmap.id}>${beatmap.version}</a>]</h1>
+                    `<h1>${escapeHtml(beatmapset.artist)} - <a href=/beatmapsets/${beatmapset.id}>${escapeHtml(beatmapset.title)}</a> [<a href=/beatmaps/${beatmap.id}>${escapeHtml(beatmap.version)}</a>]</h1>
                     ${score_id ? `<a href=/scores/${score_id}>Score details</a><br>` : ""}
                     <input type="radio" name="mods" value="none" checked="">Nomod
                     <input type="radio" name="mods" value="hr">HR
@@ -1775,7 +1866,7 @@
                           <td>${secsToMins(parseInt(beatmap.total_length))} (${secsToMins(parseInt(beatmap.hit_length))} drain)${(beatmap.max_combo == null ? "" : `<br>${beatmap.max_combo}x combo`)}</td>
                         </tr>
                         <tr>
-                          <td class='tableAttr'>Creator:</td><td>${beatmapset.creator}</td>
+                          <td class='tableAttr'>Creator:</td><td>${escapeHtml(beatmapset.creator)}</td>
                           <td class='tableAttr'>BPM:</td><td>${beatmap.bpm}</td>
                         </tr>
                         <tr>
@@ -1951,7 +2042,7 @@
                     }
                     
                     maplink.html(
-                        `${play.beatmapset.title} <small class="play-detail__artist">by ${play.beatmapset.artist}</small>`
+                        `${escapeHtml(play.beatmapset.title)} <small class="play-detail__artist">by ${escapeHtml(play.beatmapset.artist)}</small>`
                     );
                     if(play.beatmap.max_combo !== null){
                         maxmapcombo.text(` (${play.beatmap.max_combo}x)`);
@@ -2738,18 +2829,16 @@
                     })
             );
             var ppheader = $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--pp");
-            if(ppheader.length == 0){
-                ppheader = $("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--pp'></th>");
-                $(".beatmap-scoreboard-table__table .beatmap-scoreboard-table__header--time").before(ppheader);
+            if(ppheader.length > 0){
+                const ppText = ppheader.text();
+                ppheader.text("").append(
+                    $(`<a>${ppText}</a>`)
+                        .click(function(){
+                            sortResult(scoresResult.scores, "pp");
+                            updateScoresTable();
+                        })
+                );
             }
-            const ppText = ppheader.text();
-            ppheader.text("").append(
-                $(`<a>${ppText}</a>`)
-                    .click(function(){
-                        sortResult(scoresResult.scores, "pp");
-                        updateScoresTable();
-                    })
-            );
 
             // Add date column
             //$(".osuplus-table.beatmap-scoreboard-table__table thead tr").children().last().before("<th class='beatmap-scoreboard-table__header beatmap-scoreboard-table__header--date datecol'>Date</th>");
@@ -3095,6 +3184,15 @@
 
     function getTime(datestring){
         return new Date(datestring).getTime();
+    }
+
+    function escapeHtml(str){
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
     }
 
     function commarise(num){
