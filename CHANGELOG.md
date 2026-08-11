@@ -1,3 +1,13 @@
+# 2.4.3 (11 Aug 2026)
+
+## Features
+- Added replayviewer to score details pages.
+
+## Bugfixes
+- Fixed certain beatmap titles not displaying properly.
+- Fixed misses displayed as undefined in userpage for CTB.
+- Fixed misaligned table columns in beatmap page when there is no pp.
+
 # 2.4.2 (6 Jun 2026)
 
 ## Bugfixes
